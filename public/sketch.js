@@ -78,7 +78,7 @@ function mouseDragged(){
 }
 function newDrawing(data2){
 	//ps.addPalabra(data2.x,data2.y,data2);
-	dibujarCoso(data2);
+	dibujarCoso(map(data2.x,0,1,0,windowWidth),map(data2.y,0,1,0,windowHeight),data2);
 }
 function cleanBackground(){
 	background(0);
@@ -98,16 +98,15 @@ function draw(){
 	data = {
 		x:map(mouseX,0,windowWidth,0,1),
 		y:map(mouseY,0,windowHeight,0,1),
-		c1:col1,
-		s:size,
-		t:texto1,
-		av:alphaVal
+		c1:color(document.getElementById("c1").value),
+		s:document.getElementById("size").value,
+		t:document.getElementById("texto1").value,
+		av:document.getElementById("alphaValue").value
 	}
     if (isMousePressed && !isOverGui && !isOverOpenButton) {
 	    socket.emit('mouse',data);
 		dibujarCoso(mouseX,mouseY,data);
 		noStroke();
-		console.log("SIZE:"+size);
 		mouseFlag = false;
     } 
 	
@@ -118,12 +117,14 @@ function draw(){
 	//ps.dibujar();
 }
 function dibujarCoso(x,y,data){
-	col1 = color(document.getElementById("c1").value);
-	col1.setAlpha(document.getElementById("alphaValue").value);
 	
-	size = document.getElementById("size").value;
+	col1 = convertToP5Color(data.c1);
+	col1.setAlpha(parseInt(data.av));
+	console.log("ALPHA : "+parseInt(data.av))
+	size = data.s;
+	noStroke();
 	fill(col1);
-	ellipse(mouseX,mouseY,parseInt(size),parseInt(size));
+	ellipse(x,y,parseInt(size),parseInt(size));
 	//ellipse(data.x,data.y,size,size);
 }
 
