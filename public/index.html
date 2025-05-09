@@ -1,0 +1,81 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.7.1/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.7.1/addons/p5.dom.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.7.1/addons/p5.sound.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+    <script src='jquery.js'> </script>
+    <script src='config.js'> </script>
+    
+    <!-- Agregando las fuentes de Google -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&family=Montserrat&family=Lato&family=Open+Sans&family=Poppins&family=Dancing+Script&family=Pacifico&family=Indie+Flower&family=Shadows+Into+Light&family=Permanent+Marker&family=Caveat&family=Satisfy&family=Quicksand&family=Comfortaa&family=Josefin+Sans&display=swap" rel="stylesheet">
+    
+    <link rel='stylesheet' href='css/style.css' />
+  </head>
+  <body>
+    <script src="sketch.js"></script>
+	
+	<div id="gui" >
+		<label>Texto</label>
+		<input type="text" value="Standart Text" id="texto1" min="3" max ="10" step="1" class="jpslider" style="font-family: Arial;">
+		<br>
+		<button id="closeButton" class="close-button">
+			<svg viewBox="0 0 24 24">
+				<path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
+			</svg>
+		</button>
+		<label>Color</label><input type="color" value="#FFFFFF" id="c1">
+		<br>
+		<label>Alfa</label>
+		<input type="range" value="255" id="alphaValue" min="0" max ="255" step="1" class="jpslider" >
+		<br>
+		<label>Size</label>
+		<input type="range" value="50" id="size" min="0" max ="100" step="0.1" class="jpslider" >
+		<br>
+
+		
+		
+		
+		<select id="fontSelector" value="Arial"  onchange="updateCurrentFont()" style="font-family: Arial">
+			<option value="Arial" style="font-family: Arial" selected>Tipografía: Arial </option>
+			<option value="Helvetica" style="font-family: Helvetica">Tipografía: Helvetica</option>
+			<option value="Times New Roman" style="font-family: 'Times New Roman'">Tipografía: Times New Roman</option>
+			<option value="Roboto" style="font-family: Roboto">Tipografía: Roboto</option>
+			<option value="Montserrat" style="font-family: Montserrat">Tipografía: Montserrat</option>
+			<option value="Lato" style="font-family: Lato">Tipografía: Lato</option>
+			<option value="Open Sans" style="font-family: 'Open Sans'">Tipografía: Open Sans</option>
+			<option value="Poppins" style="font-family: Poppins">Tipografía: Poppins</option>
+			<option value="Dancing Script" style="font-family: 'Dancing Script'">Tipografía: Dancing Script</option>
+			<option value="Pacifico" style="font-family: Pacifico">Tipografía: Pacifico</option>
+			<option value="Indie Flower" style="font-family: 'Indie Flower'">Tipografía: Indie Flower</option>
+			<option value="Shadows Into Light" style="font-family: 'Shadows Into Light'">Tipografía: Shadows Into Light</option>
+			<option value="Permanent Marker" style="font-family: 'Permanent Marker'">Tipografía: Permanent Marker</option>
+			<option value="Caveat" style="font-family: Caveat">Tipografía: Caveat</option>
+			<option value="Satisfy" style="font-family: Satisfy">Tipografía: Satisfy</option>
+			<option value="Quicksand" style="font-family: Quicksand">Tipografía: Quicksand</option>
+			<option value="Comfortaa" style="font-family: Comfortaa">Tipografía: Comfortaa</option>
+			<option value="Josefin Sans" style="font-family: 'Josefin Sans'">Tipografía: Josefin Sans</option>
+		</select>
+		<br>
+	
+		<!--<input type="button" value="Randomize" onClick="randomValues()" id="rdmvalues" class="jpboton">-->
+		
+		<input type="button" value="No Border" onClick="changeBorder()" id="changborder" class="jpboton">
+		<br>
+		<input type="button" value="Close GUI" onClick="closeGui()" id="closegui" class="jpboton">
+		
+		<input type="button" value="Background" onClick="cleanBackground()" id="resetbackground" class="jpboton">
+	</div>
+	
+	<button id="opengui" class="jpboton animated-button" onClick="openGui()">
+		<svg viewBox="0 0 24 24">
+			<path fill="currentColor" d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"/>
+		</svg>
+	</button>
+	
+	
+  <script src="general.js"></script>
+  </body>
+</html>
