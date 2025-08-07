@@ -78,22 +78,26 @@ function mouseDragged(){
 }
 function newDrawing(data2){
 	//ps.addPalabra(data2.x,data2.y,data2);
-	dibujarCoso(map(data2.x,0,1,0,windowWidth),map(data2.y,0,1,0,windowHeight),data2);
+	if(data2.bc){
+		cleanBackground();
+	}else{
+		dibujarCoso(map(data2.x,0,1,0,windowWidth),map(data2.y,0,1,0,windowHeight),data2);
+	}
+	
 }
 function cleanBackground(){
 	background(0);
+	//socket.emit('mouse',{bc:true});
+	console.log("LIMPIANDO");
 }
 
 
 function draw(){
-
-
 	//background(0);
-	col1 = color(document.getElementById("c1").value);
-	col1.setAlpha(document.getElementById("alphaValue").value);
-	
-	size = document.getElementById("size").value;
-	texto1 = document.getElementById("texto1").value;
+	//col1 = color(document.getElementById("c1").value);
+	//col1.setAlpha(document.getElementById("alphaValue").value);
+	//size = document.getElementById("size").value;
+	//texto1 = document.getElementById("texto1").value;
 	
 	data = {
 		x:map(mouseX,0,windowWidth,0,1),
@@ -101,7 +105,8 @@ function draw(){
 		c1:color(document.getElementById("c1").value),
 		s:document.getElementById("size").value,
 		t:document.getElementById("texto1").value,
-		av:document.getElementById("alphaValue").value
+		av:document.getElementById("alphaValue").value,
+		bc:false,
 	}
     if (isMousePressed && !isOverGui && !isOverOpenButton) {
 	    socket.emit('mouse',data);
