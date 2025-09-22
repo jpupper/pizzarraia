@@ -16,6 +16,7 @@ document.getElementById("gui").onmouseover = function(event) {
 window.onload = function() {
     setupButtonEvents();
     setupCloseButton();
+    setupBrushTypeEvents();
 };
 
 function setupCloseButton() {
@@ -86,3 +87,74 @@ $("#gui").on("touchend", function() {
     }
   }, 100);
 });
+
+// Function to handle brush type changes
+function setupBrushTypeEvents() {
+  const brushTypeSelect = document.getElementById('brushType');
+  const classicBrushParams = document.getElementById('classicBrushParams');
+  const pixelBrushParams = document.getElementById('pixelBrushParams');
+  const artBrushParams = document.getElementById('artBrushParams');
+  
+  // Get all brush parameter containers
+  const allBrushParams = document.querySelectorAll('.brushParams');
+  
+  // Initial check
+  toggleBrushParams();
+  
+  // Add event listener for brush type changes
+  brushTypeSelect.addEventListener('change', toggleBrushParams);
+  
+  function toggleBrushParams() {
+    // Hide all brush parameter containers
+    allBrushParams.forEach(container => {
+      container.style.display = 'none';
+    });
+    
+    // Show the appropriate container based on the selected brush type
+    switch(brushTypeSelect.value) {
+      case 'classic':
+        classicBrushParams.style.display = 'block';
+        break;
+      case 'pixel':
+        pixelBrushParams.style.display = 'block';
+        break;
+      case 'art':
+        artBrushParams.style.display = 'block';
+        break;
+    }
+  }
+  
+  // Add event listeners for grid parameters (Pixel Brush)
+  const gridColsInput = document.getElementById('gridCols');
+  const gridRowsInput = document.getElementById('gridRows');
+  const showGridCheckbox = document.getElementById('showGrid');
+  
+  gridColsInput.addEventListener('input', function() {
+    if (window.gridCols) {
+      window.gridCols = parseInt(this.value);
+      updateGridDimensions();
+    }
+  });
+  
+  gridRowsInput.addEventListener('input', function() {
+    if (window.gridRows) {
+      window.gridRows = parseInt(this.value);
+      updateGridDimensions();
+    }
+  });
+  
+  showGridCheckbox.addEventListener('change', function() {
+    if (window.showGrid !== undefined) {
+      window.showGrid = this.checked;
+    }
+  });
+  
+  // Add event listeners for art brush parameters
+  const starPointsInput = document.getElementById('starPoints');
+  
+  starPointsInput.addEventListener('input', function() {
+    if (window.starPoints !== undefined) {
+      window.starPoints = parseInt(this.value);
+    }
+  });
+}
