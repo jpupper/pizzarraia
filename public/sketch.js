@@ -1,9 +1,8 @@
 var socket;
 
-
-
-
-
+// Session variables
+var sessionId;
+var sessionIndicator;
 
 var col1;
 var col2;
@@ -25,7 +24,8 @@ var data = {
 		x:0,
 		y:0,
 		c1:col1,
-		c2:col2
+		c2:col2,
+		session: '0' // Default session
 	}
 
 function windowResized() {
@@ -35,8 +35,21 @@ function windowResized() {
 
 function setup(){
 	createCanvas(windowWidth, windowHeight);
+	
+	// Get session ID from URL
+	sessionId = config.getSessionId();
+	
+	// Create session indicator
+	createSessionIndicator();
+	
 	const socketConfig = config.getSocketConfig();
 	socket = io(socketConfig.url, socketConfig.options);
+	
+	// Join the session
+	socket.on('connect', function() {
+		socket.emit('join_session', sessionId);
+		console.log('Joined session:', sessionId);
+	});
 	
 	socket.on("mouse",newDrawing);	
 	asignarValores();
@@ -79,16 +92,21 @@ function mouseDragged(){
 function newDrawing(data2){
 	//ps.addPalabra(data2.x,data2.y,data2);
 	if(data2.bc){
-		cleanBackground();
+		cleanBackgroundLocal(); // Usar la función local para evitar reemitir el mensaje
 	}else{
 		dibujarCoso(map(data2.x,0,1,0,windowWidth),map(data2.y,0,1,0,windowHeight),data2);
 	}
 	
 }
-function cleanBackground(){
+function cleanBackgroundLocal(){
 	background(0);
-	//socket.emit('mouse',{bc:true});
-	console.log("LIMPIANDO");
+	console.log("LIMPIANDO LOCALMENTE");
+}
+
+function cleanBackground(){
+	cleanBackgroundLocal();
+	socket.emit('mouse',{bc:true, session: sessionId});
+	console.log("ENVIANDO MENSAJE DE LIMPIEZA PARA SESIÓN:", sessionId);
 }
 
 
@@ -107,6 +125,7 @@ function draw(){
 		t:document.getElementById("texto1").value,
 		av:document.getElementById("alphaValue").value,
 		bc:false,
+		session: sessionId // Include session ID in the data
 	}
     if (isMousePressed && !isOverGui && !isOverOpenButton) {
 	    socket.emit('mouse',data);
@@ -161,6 +180,19 @@ function convertToP5Color(colorObj) {
     return color(colorObj.levels[0], colorObj.levels[1], colorObj.levels[2], colorObj.levels[3]);
   }
   return color(255); // color por defecto si algo sale mal
+}
+
+// Create a visual indicator for the current session
+function createSessionIndicator() {
+	// Create a div element for the session indicator
+	sessionIndicator = createDiv(`Sesión: ${sessionId}`);
+	sessionIndicator.position(10, 10);
+	sessionIndicator.style('background-color', 'rgba(0, 0, 0, 0.7)');
+	sessionIndicator.style('color', 'white');
+	sessionIndicator.style('padding', '5px 10px');
+	sessionIndicator.style('border-radius', '5px');
+	sessionIndicator.style('font-family', 'Arial, sans-serif');
+	sessionIndicator.style('z-index', '1000');
 }
 
 class PalabraSystem{
