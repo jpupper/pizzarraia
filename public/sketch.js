@@ -127,6 +127,7 @@ function draw(){
 		c1:color(document.getElementById("c1").value),
 		s:document.getElementById("size").value,
 		av:document.getElementById("alphaValue").value,
+		bt:document.getElementById("brushType").value, // Add brush type
 		bc:false,
 		session: sessionId // Include session ID in the data
 	}
@@ -151,8 +152,26 @@ function dibujarCoso(x,y,data){
 	size = data.s;
 	noStroke();
 	fill(col1);
-	ellipse(x,y,parseInt(size),parseInt(size));
-	//ellipse(data.x,data.y,size,size);
+	
+	// Get brush type, default to classic if not specified
+	const brushType = data.bt || 'classic';
+	
+	switch(brushType) {
+		case 'art':
+			// Art brush - draws a star
+			drawStar(x, y, parseInt(size)/2);
+			break;
+		case 'pixel':
+			// Pixel brush - draws a square
+			rectMode(CENTER);
+			rect(x, y, parseInt(size), parseInt(size));
+			break;
+		case 'classic':
+		default:
+			// Classic circle brush
+			ellipse(x, y, parseInt(size), parseInt(size));
+			break;
+	}
 }
 
 function polygon(x, y, radius, npoints,fase) {
@@ -161,6 +180,23 @@ function polygon(x, y, radius, npoints,fase) {
   for (let a = 0; a < TWO_PI; a += angle) {
     let sx = x + cos(a+fase) * radius;
     let sy = y + sin(a+fase) * radius;
+    vertex(sx, sy);
+  }
+  endShape(CLOSE);
+}
+
+// Function to draw a star shape
+function drawStar(x, y, radius) {
+  let numPoints = 5; // Number of points in the star
+  let outerRadius = radius;
+  let innerRadius = radius * 0.4;
+  
+  beginShape();
+  for (let i = 0; i < numPoints * 2; i++) {
+    let r = (i % 2 === 0) ? outerRadius : innerRadius;
+    let angle = PI / numPoints * i;
+    let sx = x + cos(angle) * r;
+    let sy = y + sin(angle) * r;
     vertex(sx, sy);
   }
   endShape(CLOSE);
