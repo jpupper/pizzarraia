@@ -2,6 +2,7 @@ const http = require('http');
 const socketIo = require('socket.io');
 const fs = require('fs');
 const path = require('path');
+const url = require('url');
 
 const hostname = '0.0.0.0';
 const port = 3025;
@@ -10,6 +11,10 @@ const APP_PATH = 'pizarraia';  // Nueva variable global
 // Create HTTP server with proper file serving
 const server = http.createServer((req, res) => {
   let pathname = req.url;
+  
+  // Parse the URL to extract query parameters
+  const parsedUrl = url.parse(pathname, true);
+  pathname = parsedUrl.pathname;
   
   if (pathname === '/' || pathname === `/${APP_PATH}/`) {
     pathname = '/index.html';
@@ -70,19 +75,74 @@ const io = socketIo(server, {
   }
 });
 
+// Store active sessions and their sockets
+const sessions = {};
+
 io.on('connection', (socket) => {
   console.log('Cliente conectado: ' + socket.id);
+  
+  // Handle session joining
+  socket.on('join_session', (sessionId) => {
+    // Convert to string and ensure it's a valid number
+    sessionId = String(sessionId || '0');
+    
+    // Remove from previous session if any
+    Object.keys(sessions).forEach(sid => {
+      if (sessions[sid] && sessions[sid].includes(socket.id)) {
+        sessions[sid] = sessions[sid].filter(id => id !== socket.id);
+      }
+    });
+    
+    // Add to new session
+    if (!sessions[sessionId]) {
+      sessions[sessionId] = [];
+    }
+    sessions[sessionId].push(socket.id);
+    
+    console.log(`Cliente ${socket.id} se unió a la sesión ${sessionId}`);
+    console.log('Sesiones activas:', sessions);
+    
+    // Store the session ID in the socket object for easy access
+    socket.sessionId = sessionId;
+  });
   
   socket.on('mouse', mouseMsg);
   
   function mouseMsg(data){
-    socket.broadcast.emit('mouse', data);
-    console.log(data);
+    // Only broadcast to clients in the same session
+    const sessionId = socket.sessionId || '0';
+    
+    if (sessions[sessionId]) {
+      // Get all socket IDs in the same session
+      const sessionSockets = sessions[sessionId];
+      
+      // Broadcast to all sockets in the same session except the sender
+      sessionSockets.forEach(socketId => {
+        if (socketId !== socket.id) {
+          io.to(socketId).emit('mouse', data);
+        }
+      });
+    }
+    
+    console.log(`Data from session ${sessionId}:`, data);
   }	
 
   // Manejar la desconexión del cliente
   socket.on('disconnect', () => {
     console.log('Cliente desconectado: ' + socket.id);
+    
+    // Remove from session
+    const sessionId = socket.sessionId || '0';
+    if (sessions[sessionId]) {
+      sessions[sessionId] = sessions[sessionId].filter(id => id !== socket.id);
+      
+      // Clean up empty sessions
+      if (sessions[sessionId].length === 0) {
+        delete sessions[sessionId];
+      }
+    }
+    
+    console.log('Sesiones activas después de desconexión:', sessions);
   });
 });
 
