@@ -19,6 +19,16 @@ var isMousePressed = false;
 var isOverGui = false;
 var mouseFlag = true;
 
+// Grid system variables for pixel brush
+var gridSize = 1024; // Grid size (1024x1024)
+var gridCols = 32; // Default number of columns
+var gridRows = 32; // Default number of rows
+var cellWidth, cellHeight; // Will be calculated based on gridSize and cols/rows
+var showGrid = false; // Flag to show/hide grid
+
+// Art brush variables
+var starPoints = 5; // Default number of points for star brush
+
 var ps;
 var data = {
 		x:0,
@@ -30,6 +40,45 @@ var data = {
 
 function windowResized() {
 	resizeCanvas(windowWidth, windowHeight);
+	updateGridDimensions();
+}
+
+// Function to update grid cell dimensions
+function updateGridDimensions() {
+	// Make grid cells proportional to the canvas size
+	cellWidth = gridSize / gridCols;
+	cellHeight = gridSize / gridRows;
+	console.log(`Grid updated: ${gridCols}x${gridRows}, cell size: ${cellWidth}x${cellHeight}`);
+}
+
+// Convert canvas coordinates to grid coordinates
+function canvasToGrid(x, y) {
+	// Scale canvas coordinates to grid space (0-1024)
+	const gridX = map(x, 0, windowWidth, 0, gridSize);
+	const gridY = map(y, 0, windowHeight, 0, gridSize);
+	
+	// Calculate grid cell
+	const cellX = Math.floor(gridX / cellWidth);
+	const cellY = Math.floor(gridY / cellHeight);
+	
+	// Constrain to grid bounds
+	return {
+		cellX: constrain(cellX, 0, gridCols - 1),
+		cellY: constrain(cellY, 0, gridRows - 1)
+	};
+}
+
+// Convert grid coordinates back to canvas coordinates
+function gridToCanvas(cellX, cellY) {
+	// Get the center point of the grid cell
+	const gridX = (cellX * cellWidth) + (cellWidth / 2);
+	const gridY = (cellY * cellHeight) + (cellHeight / 2);
+	
+	// Map back to canvas coordinates
+	return {
+		x: map(gridX, 0, gridSize, 0, windowWidth),
+		y: map(gridY, 0, gridSize, 0, windowHeight)
+	};
 }
 
 
@@ -54,6 +103,9 @@ function setup(){
 	socket.on("mouse",newDrawing);	
 	asignarValores();
 	background(0);
+
+	// Initialize grid dimensions
+	updateGridDimensions();
 
 	ps = new PalabraSystem();
 	textAlign(CENTER,CENTER	);
@@ -98,9 +150,18 @@ function newDrawing(data2){
 	if(data2.bc){
 		cleanBackgroundLocal(); // Usar la función local para evitar reemitir el mensaje
 	}else{
+		// Update grid parameters if received (for pixel brush)
+		if (data2.bt === 'pixel' && data2.cols && data2.rows) {
+			// Only update if values are different to avoid unnecessary recalculations
+			if (data2.cols !== gridCols || data2.rows !== gridRows) {
+				gridCols = data2.cols;
+				gridRows = data2.rows;
+				updateGridDimensions();
+			}
+		}
+		
 		dibujarCoso(map(data2.x,0,1,0,windowWidth),map(data2.y,0,1,0,windowHeight),data2);
 	}
-	
 }
 function cleanBackgroundLocal(){
 	background(0);
@@ -114,22 +175,72 @@ function cleanBackground(){
 }
 
 
+// Function to draw the grid for pixel brush
+function drawGrid() {
+	push(); // Save current drawing state
+	
+	// Set grid style
+	stroke(100, 100, 100, 50); // Semi-transparent gray
+	strokeWeight(0.5);
+	noFill();
+	
+	// Calculate grid cell size in canvas coordinates
+	const canvasGridCellWidth = windowWidth / gridCols;
+	const canvasGridCellHeight = windowHeight / gridRows;
+	
+	// Draw vertical lines
+	for (let i = 0; i <= gridCols; i++) {
+		const x = i * canvasGridCellWidth;
+		line(x, 0, x, windowHeight);
+	}
+	
+	// Draw horizontal lines
+	for (let j = 0; j <= gridRows; j++) {
+		const y = j * canvasGridCellHeight;
+		line(0, y, windowWidth, y);
+	}
+	
+	pop(); // Restore previous drawing state
+}
+
 function draw(){
 	//background(0);
 	//col1 = color(document.getElementById("c1").value);
 	//col1.setAlpha(document.getElementById("alphaValue").value);
-	//size = document.getElementById("size").value;
-	//texto1 = document.getElementById("texto1").value;
+	//size = document.getElementById("size").value);
+	//texto1 = document.getElementById("texto1").value);
 	
+	// Draw grid if enabled and pixel brush is selected
+	if (showGrid && document.getElementById("brushType").value === 'pixel') {
+		drawGrid();
+	}
+	
+	const brushType = document.getElementById("brushType").value;
+	
+	// Base data object
 	data = {
 		x:map(mouseX,0,windowWidth,0,1),
 		y:map(mouseY,0,windowHeight,0,1),
 		c1:color(document.getElementById("c1").value),
 		s:document.getElementById("size").value,
 		av:document.getElementById("alphaValue").value,
-		bt:document.getElementById("brushType").value, // Add brush type
+		bt:brushType, // Add brush type
 		bc:false,
 		session: sessionId // Include session ID in the data
+	}
+	
+	// Add brush-specific parameters based on the selected brush type
+	switch(brushType) {
+		case 'pixel':
+			// Add grid parameters for pixel brush
+			data.cols = gridCols;
+			data.rows = gridRows;
+			data.showGrid = document.getElementById('showGrid').checked;
+			break;
+		case 'art':
+			// Add star points parameter for art brush
+			data.starPts = parseInt(document.getElementById('starPoints').value);
+			break;
 	}
     if (isMousePressed && !isOverGui && !isOverOpenButton) {
 	    socket.emit('mouse',data);
@@ -148,7 +259,6 @@ function dibujarCoso(x,y,data){
 	
 	col1 = convertToP5Color(data.c1);
 	col1.setAlpha(parseInt(data.av));
-	console.log("ALPHA : "+parseInt(data.av))
 	size = data.s;
 	noStroke();
 	fill(col1);
@@ -156,15 +266,20 @@ function dibujarCoso(x,y,data){
 	// Get brush type, default to classic if not specified
 	const brushType = data.bt || 'classic';
 	
+	// Update global parameters if they're included in the data
+	if (data.starPts) starPoints = data.starPts;
+	if (data.cols) gridCols = data.cols;
+	if (data.rows) gridRows = data.rows;
+	if (data.showGrid !== undefined) showGrid = data.showGrid;
+	
 	switch(brushType) {
 		case 'art':
-			// Art brush - draws a star
-			drawStar(x, y, parseInt(size)/2);
+			// Art brush - draws a star with specified points
+			drawStar(x, y, parseInt(size)/2, data.starPts);
 			break;
 		case 'pixel':
-			// Pixel brush - draws a square
-			rectMode(CENTER);
-			rect(x, y, parseInt(size), parseInt(size));
+			// Pixel brush - draws a square on the grid
+			drawPixelOnGrid(x, y, parseInt(size));
 			break;
 		case 'classic':
 		default:
@@ -172,6 +287,26 @@ function dibujarCoso(x,y,data){
 			ellipse(x, y, parseInt(size), parseInt(size));
 			break;
 	}
+}
+
+// Function to draw a pixel on the grid
+function drawPixelOnGrid(x, y, size) {
+	// Convert canvas coordinates to grid coordinates
+	const gridPos = canvasToGrid(x, y);
+	
+	// Get the canvas coordinates for the grid cell
+	const canvasPos = gridToCanvas(gridPos.cellX, gridPos.cellY);
+	
+	// Calculate pixel size based on brush size and grid cell size
+	// We'll use the brush size to determine how many grid cells to fill
+	const pixelSize = map(size, 0, 100, cellWidth/2, cellWidth*3);
+	
+	// Draw the pixel at the grid position
+	rectMode(CENTER);
+	rect(canvasPos.x, canvasPos.y, pixelSize, pixelSize);
+	
+	// Debug info
+	console.log(`Drawing pixel at grid cell (${gridPos.cellX}, ${gridPos.cellY}), canvas pos (${canvasPos.x}, ${canvasPos.y})`);
 }
 
 function polygon(x, y, radius, npoints,fase) {
@@ -186,8 +321,9 @@ function polygon(x, y, radius, npoints,fase) {
 }
 
 // Function to draw a star shape
-function drawStar(x, y, radius) {
-  let numPoints = 5; // Number of points in the star
+function drawStar(x, y, radius, points = null) {
+  // Use the passed points parameter or the global starPoints variable
+  let numPoints = points || starPoints;
   let outerRadius = radius;
   let innerRadius = radius * 0.4;
   

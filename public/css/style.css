@@ -307,6 +307,23 @@ select option {
     color: white;
 }
 
+/* Estilos para los controladores de pinceles */
+.brushParams {
+    margin-top: 10px;
+    padding: 5px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Estilos para checkbox */
+.jpcheckbox {
+    width: 20px;
+    height: 20px;
+    margin: 5px 0;
+    cursor: pointer;
+    vertical-align: middle;
+    accent-color: var(--accent);
+}
+
 #currentFont {
     font-style: italic;
     opacity: 0.9;

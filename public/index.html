@@ -40,6 +40,30 @@
 			<option value="pixel">Pixel Brush</option>
 		</select>
 		<br>
+		<!-- Classic Brush Controls (default, no additional controls) -->
+		<div id="classicBrushParams" class="brushParams" style="display: none;">
+			<!-- No additional controls for classic brush -->
+		</div>
+		
+		<!-- Pixel Brush Controls -->
+		<div id="pixelBrushParams" class="brushParams" style="display: none;">
+			<label>Grid Columns</label>
+			<input type="range" value="32" id="gridCols" min="4" max="64" step="4" class="jpslider">
+			<br>
+			<label>Grid Rows</label>
+			<input type="range" value="32" id="gridRows" min="4" max="64" step="4" class="jpslider">
+			<br>
+			<label>Show Grid</label>
+			<input type="checkbox" id="showGrid" class="jpcheckbox">
+			<br>
+		</div>
+		
+		<!-- Art Brush Controls -->
+		<div id="artBrushParams" class="brushParams" style="display: none;">
+			<label>Star Points</label>
+			<input type="range" value="5" id="starPoints" min="3" max="12" step="1" class="jpslider">
+			<br>
+		</div>
 		<input type="button" value="Close GUI" onClick="closeGui()" id="closegui" class="jpboton">
 		
 		<input type="button" value="Background" onClick="cleanBackground()" id="resetbackground" class="jpboton">
