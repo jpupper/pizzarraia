@@ -140,8 +140,7 @@ function updateGridBuffer() {
     // Limpiar el buffer de la grilla
     guiBuffer.clear();
     
-    // Usar directamente el valor del checkbox para determinar si dibujar la grilla
-    if (!document.getElementById('showGrid') || !document.getElementById('showGrid').checked) return; // No dibujar si la grilla está oculta
+    if (!showGrid) return; // No dibujar si la grilla está oculta
     
     // Configurar estilo de la grilla
     guiBuffer.stroke(100, 100, 100, 50); // Gris semitransparente
@@ -173,9 +172,8 @@ function draw() {
     // Mostrar el buffer de dibujo en el canvas principal
     image(drawBuffer, 0, 0);
     
-    // Mostrar el buffer de la grilla si está activado localmente
-    // Usar directamente el valor del checkbox para determinar si mostrar la grilla
-    if (document.getElementById("brushType").value === 'pixel' && document.getElementById('showGrid').checked) {
+    // Mostrar el buffer de la grilla si está activado
+    if (showGrid && document.getElementById("brushType").value === 'pixel') {
         image(guiBuffer, 0, 0);
     }
     
@@ -258,23 +256,41 @@ function dibujarCoso(buffer, x, y, data) {
     // Obtener tipo de pincel, predeterminado a classic si no se especifica
     const brushType = data.bt || 'classic';
     
-    // No actualizar ninguna variable global, cada trazo es independiente
+    // Actualizar parámetros globales si están incluidos en los datos
+    let gridUpdated = false;
+    
+    if (data.starPts) starPoints = data.starPts;
+    
+    if (data.cols && data.cols !== gridCols) {
+        gridCols = data.cols;
+        gridUpdated = true;
+    }
+    
+    if (data.rows && data.rows !== gridRows) {
+        gridRows = data.rows;
+        gridUpdated = true;
+    }
+    
+    if (data.showGrid !== undefined && data.showGrid !== showGrid) {
+        showGrid = data.showGrid;
+        gridUpdated = true;
+    }
+    
+    // Actualizar grilla si es necesario
+    if (gridUpdated) {
+        updateGridDimensions();
+        updateGridBuffer();
+    }
     
     // Dibujar según el tipo de pincel
     switch (brushType) {
         case 'art':
             // Art brush - dibuja una estrella con puntas específicas
-            // Usar el valor de starPoints del dato recibido, sin actualizar el global
             drawStar(buffer, x, y, brushSize/2, data.starPts);
             break;
         case 'pixel':
             // Pixel brush - dibuja un cuadrado en la grilla
-            // Usar los valores de cols y rows del dato recibido, sin actualizar los globales
-            if (data.cols && data.rows) {
-                drawPixelOnGridWithParams(buffer, x, y, brushSize, data.cols, data.rows);
-            } else {
-                drawPixelOnGrid(buffer, x, y, brushSize);
-            }
+            drawPixelOnGrid(buffer, x, y, brushSize);
             break;
         case 'classic':
         default:
@@ -284,7 +300,7 @@ function dibujarCoso(buffer, x, y, data) {
     }
 }
 
-// Función para dibujar un píxel en la grilla usando los parámetros globales
+// Función para dibujar un píxel en la grilla
 function drawPixelOnGrid(buffer, x, y, size) {
     // Convertir coordenadas del canvas a coordenadas de la grilla
     const gridPos = canvasToGrid(x, y);
@@ -292,24 +308,6 @@ function drawPixelOnGrid(buffer, x, y, size) {
     // Calcular el ancho y alto de la celda en el canvas
     const canvasGridCellWidth = windowWidth / gridCols;
     const canvasGridCellHeight = windowHeight / gridRows;
-    
-    // Calcular la esquina superior izquierda de la celda
-    const cellX = gridPos.cellX * canvasGridCellWidth;
-    const cellY = gridPos.cellY * canvasGridCellHeight;
-    
-    // Dibujar el píxel como un rectángulo que coincide exactamente con la celda
-    buffer.rectMode(CORNER); // Usar modo CORNER para coincidir exactamente con la grilla
-    buffer.rect(cellX, cellY, canvasGridCellWidth, canvasGridCellHeight);
-}
-
-// Función para dibujar un píxel en la grilla usando parámetros específicos
-function drawPixelOnGridWithParams(buffer, x, y, size, cols, rows) {
-    // Convertir coordenadas del canvas a coordenadas de la grilla con los parámetros específicos
-    const gridPos = canvasToGridWithParams(x, y, cols, rows);
-    
-    // Calcular el ancho y alto de la celda en el canvas con los parámetros específicos
-    const canvasGridCellWidth = windowWidth / cols;
-    const canvasGridCellHeight = windowHeight / rows;
     
     // Calcular la esquina superior izquierda de la celda
     const cellX = gridPos.cellX * canvasGridCellWidth;
@@ -354,7 +352,7 @@ function polygon(buffer, x, y, radius, npoints, fase) {
 // FUNCIONES DE CONVERSIÓN DE COORDENADAS
 // ============================================================
 
-// Convertir coordenadas del canvas a coordenadas de la grilla usando parámetros globales
+// Convertir coordenadas del canvas a coordenadas de la grilla
 function canvasToGrid(x, y) {
     // Escalar coordenadas del canvas al espacio de la grilla (0-1024)
     const gridX = map(x, 0, windowWidth, 0, gridSize);
@@ -368,27 +366,6 @@ function canvasToGrid(x, y) {
     return {
         cellX: constrain(cellX, 0, gridCols - 1),
         cellY: constrain(cellY, 0, gridRows - 1)
-    };
-}
-
-// Convertir coordenadas del canvas a coordenadas de la grilla usando parámetros específicos
-function canvasToGridWithParams(x, y, cols, rows) {
-    // Escalar coordenadas del canvas al espacio de la grilla (0-1024)
-    const gridX = map(x, 0, windowWidth, 0, gridSize);
-    const gridY = map(y, 0, windowHeight, 0, gridSize);
-    
-    // Calcular ancho y alto de celda con los parámetros específicos
-    const cellWidthParam = gridSize / cols;
-    const cellHeightParam = gridSize / rows;
-    
-    // Calcular celda de la grilla
-    const cellX = Math.floor(gridX / cellWidthParam);
-    const cellY = Math.floor(gridY / cellHeightParam);
-    
-    // Restringir a los límites de la grilla
-    return {
-        cellX: constrain(cellX, 0, cols - 1),
-        cellY: constrain(cellY, 0, rows - 1)
     };
 }
 
@@ -414,10 +391,35 @@ function newDrawing(data2) {
     if (data2.bc) {
         cleanBackgroundLocal(); // Usar la función local para evitar reemitir el mensaje
     } else {
-        // No actualizar ninguna variable global, cada trazo es completamente independiente
+        // Actualizar parámetros de la grilla si se reciben (para pixel brush)
+        let gridUpdated = false;
         
-        // Dibujar en el buffer de dibujo usando los parámetros recibidos
-        // sin actualizar los valores globales
+        if (data2.bt === 'pixel') {
+            // Actualizar columnas y filas si cambiaron
+            if (data2.cols && data2.cols !== gridCols) {
+                gridCols = data2.cols;
+                gridUpdated = true;
+            }
+            
+            if (data2.rows && data2.rows !== gridRows) {
+                gridRows = data2.rows;
+                gridUpdated = true;
+            }
+            
+            // Actualizar visibilidad de la grilla si cambió
+            if (data2.showGrid !== undefined && data2.showGrid !== showGrid) {
+                showGrid = data2.showGrid;
+                gridUpdated = true;
+            }
+            
+            // Actualizar dimensiones y buffer de la grilla si es necesario
+            if (gridUpdated) {
+                updateGridDimensions();
+                updateGridBuffer();
+            }
+        }
+        
+        // Dibujar en el buffer de dibujo
         dibujarCoso(
             drawBuffer,
             map(data2.x, 0, 1, 0, windowWidth),

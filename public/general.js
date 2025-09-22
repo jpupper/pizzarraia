@@ -133,6 +133,7 @@ function setupBrushTypeEvents() {
     if (window.gridCols) {
       window.gridCols = parseInt(this.value);
       updateGridDimensions();
+      updateGridBuffer(); // Update grid buffer when columns change
     }
   });
   
@@ -140,13 +141,13 @@ function setupBrushTypeEvents() {
     if (window.gridRows) {
       window.gridRows = parseInt(this.value);
       updateGridDimensions();
+      updateGridBuffer(); // Update grid buffer when rows change
     }
   });
   
   showGridCheckbox.addEventListener('change', function() {
-    if (window.showGrid !== undefined) {
-      window.showGrid = this.checked;
-    }
+    // Solo actualizar el buffer de la grilla cuando cambia la visibilidad
+    updateGridBuffer();
   });
   
   // Add event listeners for art brush parameters
