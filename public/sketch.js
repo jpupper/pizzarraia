@@ -39,8 +39,8 @@ function setup(){
 	// Get session ID from URL
 	sessionId = config.getSessionId();
 	
-	// Create session indicator
-	createSessionIndicator();
+	// Update session indicator in GUI
+	document.getElementById('sessionIndicator').innerText = `Sesión: ${sessionId}`;
 	
 	const socketConfig = config.getSocketConfig();
 	socket = io(socketConfig.url, socketConfig.options);
@@ -79,6 +79,10 @@ function mouseReleased(){
 function keyPressed(){
 	if(key == 'b'){
 		cleanBackground();
+	}
+	// Toggle GUI button visibility with G key
+	if(key == 'g' || key == 'G'){
+		toggleGuiButtonVisibility();
 	}
 }
 function mousePressed(){
@@ -122,7 +126,6 @@ function draw(){
 		y:map(mouseY,0,windowHeight,0,1),
 		c1:color(document.getElementById("c1").value),
 		s:document.getElementById("size").value,
-		t:document.getElementById("texto1").value,
 		av:document.getElementById("alphaValue").value,
 		bc:false,
 		session: sessionId // Include session ID in the data
@@ -182,18 +185,16 @@ function convertToP5Color(colorObj) {
   return color(255); // color por defecto si algo sale mal
 }
 
-// Create a visual indicator for the current session
-function createSessionIndicator() {
-	// Create a div element for the session indicator
-	sessionIndicator = createDiv(`Sesión: ${sessionId}`);
-	sessionIndicator.position(10, 10);
-	sessionIndicator.style('background-color', 'rgba(0, 0, 0, 0.7)');
-	sessionIndicator.style('color', 'white');
-	sessionIndicator.style('padding', '5px 10px');
-	sessionIndicator.style('border-radius', '5px');
-	sessionIndicator.style('font-family', 'Arial, sans-serif');
-	sessionIndicator.style('z-index', '1000');
+// Toggle GUI button visibility
+function toggleGuiButtonVisibility() {
+  const openGuiButton = document.getElementById('opengui');
+  if (openGuiButton.style.display === 'none') {
+    openGuiButton.style.display = 'block';
+  } else {
+    openGuiButton.style.display = 'none';
+  }
 }
+
 
 class PalabraSystem{
 	constructor(){
