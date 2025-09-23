@@ -35,12 +35,10 @@ var cellWidth, cellHeight; // Se calculará en base a gridSize y cols/rows
 var showGrid = false; // Flag para mostrar/ocultar la grilla
 
 // Variables del art brush
-var starPoints = 5; // Número predeterminado de puntas para el star brush
 var particleCount = 10; // Número predeterminado de partículas por emisión
 
 // Sistemas
 var ps; // Sistema de palabras
-var particleSystem; // Sistema de partículas para el Art Brush
 var pmouseXGlobal = 0; // Posición anterior del mouse en X
 var pmouseYGlobal = 0; // Posición anterior del mouse en Y
 
@@ -98,7 +96,6 @@ function setup() {
     
     // Inicializar sistemas
     ps = new PalabraSystem();
-    particleSystem = new ParticleSystem();
     textAlign(CENTER, CENTER);
     textSize(80);
     
@@ -184,9 +181,9 @@ function draw() {
         
     image(guiBuffer, 0, 0);
     }
-    // Actualizar y dibujar el sistema de partículas
-    particleSystem.update();
-    particleSystem.draw(drawBuffer);
+    // Actualizar y dibujar el sistema de partículas del Art Brush
+    updateArtBrush();
+    drawArtBrushParticles(drawBuffer);
     
     const brushType = document.getElementById("brushType").value;
     
@@ -218,8 +215,52 @@ function draw() {
     
     // Dibujar si el mouse está presionado y no está sobre la GUI
     if (isMousePressed && !isOverGui && !isOverOpenButton) {
-        socket.emit('mouse', data);
+        // Primero dibujamos localmente para obtener los parámetros de sincronización si es necesario
         dibujarCoso(drawBuffer, mouseX, mouseY, data);
+        
+        // Si hay parámetros de sincronización, normalizarlos antes de enviarlos
+        if (data.syncParams) {
+            const syncParams = data.syncParams;
+            // Normalizar las coordenadas del canvas a valores entre 0 y 1
+            const normalizedSyncParams = {
+                x: map(syncParams.x, 0, windowWidth, 0, 1),
+                y: map(syncParams.y, 0, windowHeight, 0, 1),
+                pmouseX: map(syncParams.pmouseX, 0, windowWidth, 0, 1),
+                pmouseY: map(syncParams.pmouseY, 0, windowHeight, 0, 1),
+                count: syncParams.count,
+                size: syncParams.size,
+                baseSeed: syncParams.baseSeed,
+                mouseDirection: syncParams.mouseDirection,
+                mouseSpeed: syncParams.mouseSpeed
+            };
+            
+            // Si hay parámetros exactos para cada partícula, normalizarlos también
+            if (syncParams.particleParams && syncParams.particleParams.length > 0) {
+                const normalizedParticleParams = [];
+                
+                // Normalizar las coordenadas de cada partícula
+                for (let i = 0; i < syncParams.particleParams.length; i++) {
+                    const p = syncParams.particleParams[i];
+                    normalizedParticleParams.push({
+                        x: map(p.x, 0, windowWidth, 0, 1),
+                        y: map(p.y, 0, windowHeight, 0, 1),
+                        vx: p.vx,  // La velocidad no necesita ser normalizada
+                        vy: p.vy,  // La velocidad no necesita ser normalizada
+                        size: p.size,
+                        seed: p.seed
+                    });
+                }
+                
+                // Añadir los parámetros de partículas normalizados
+                normalizedSyncParams.particleParams = normalizedParticleParams;
+            }
+            
+            // Actualizar los parámetros de sincronización en los datos
+            data.syncParams = normalizedSyncParams;
+        }
+        
+        // Luego enviamos los datos por socket (con syncParams normalizados)
+        socket.emit('mouse', data);
         mouseFlag = false;
     }
     
@@ -265,97 +306,55 @@ function dibujarCoso(buffer, x, y, data) {
     col.setAlpha(parseInt(data.av));
     const brushSize = parseInt(data.s);
     
-    buffer.noStroke();
-    buffer.fill(col);
-    
     // Obtener tipo de pincel, predeterminado a classic si no se especifica
     const brushType = data.bt || 'classic';
-    
-    // No actualizar ninguna variable global, cada trazo es independiente
     
     // Dibujar según el tipo de pincel
     switch (brushType) {
         case 'art':
             // Art brush - sistema de partículas
-            // Usar el valor de particleCount del dato recibido, sin actualizar el global
-            drawStar(buffer, x, y, brushSize/2, data.particleCount);
+            // Usar el valor de particleCount del dato recibido
+            // Si hay parámetros de sincronización, usarlos
+            if (data.syncParams) {
+                drawArtBrush(
+                    buffer, 
+                    x, y, 
+                    pmouseXGlobal, pmouseYGlobal, 
+                    data.particleCount, 
+                    brushSize, 
+                    col,
+                    data.syncParams
+                );
+            } else {
+                // Generar nuevas partículas y obtener los parámetros para sincronización
+                const syncParams = drawArtBrush(
+                    buffer, 
+                    x, y, 
+                    pmouseXGlobal, pmouseYGlobal, 
+                    data.particleCount, 
+                    brushSize, 
+                    col
+                );
+                
+                // Guardar los parámetros de sincronización para enviarlos por socket
+                data.syncParams = syncParams;
+            }
             break;
         case 'pixel':
             // Pixel brush - dibuja un cuadrado en la grilla
-            // Usar los valores de cols y rows del dato recibido, sin actualizar los globales
+            // Usar los valores de cols y rows del dato recibido
             if (data.cols && data.rows) {
-                drawPixelOnGridWithParams(buffer, x, y, brushSize, data.cols, data.rows);
+                drawPixelBrush(buffer, x, y, brushSize, data.cols, data.rows, col);
             } else {
-                drawPixelOnGrid(buffer, x, y, brushSize);
+                drawPixelBrush(buffer, x, y, brushSize, gridCols, gridRows, col);
             }
             break;
         case 'classic':
         default:
             // Classic circle brush
-            buffer.ellipse(x, y, brushSize, brushSize);
+            drawStandardBrush(buffer, x, y, brushSize, col);
             break;
     }
-}
-
-// Función para dibujar un píxel en la grilla usando los parámetros globales
-function drawPixelOnGrid(buffer, x, y, size) {
-    // Convertir coordenadas del canvas a coordenadas de la grilla
-    const gridPos = canvasToGrid(x, y);
-    
-    // Calcular el ancho y alto de la celda en el canvas
-    const canvasGridCellWidth = windowWidth / gridCols;
-    const canvasGridCellHeight = windowHeight / gridRows;
-    
-    // Calcular la esquina superior izquierda de la celda
-    const cellX = gridPos.cellX * canvasGridCellWidth;
-    const cellY = gridPos.cellY * canvasGridCellHeight;
-    
-    // Dibujar el píxel como un rectángulo que coincide exactamente con la celda
-    buffer.rectMode(CORNER); // Usar modo CORNER para coincidir exactamente con la grilla
-    buffer.rect(cellX, cellY, canvasGridCellWidth, canvasGridCellHeight);
-}
-
-// Función para dibujar un píxel en la grilla usando parámetros específicos
-function drawPixelOnGridWithParams(buffer, x, y, size, cols, rows) {
-    // Convertir coordenadas del canvas a coordenadas de la grilla con los parámetros específicos
-    const gridPos = canvasToGridWithParams(x, y, cols, rows);
-    
-    // Calcular el ancho y alto de la celda en el canvas con los parámetros específicos
-    const canvasGridCellWidth = windowWidth / cols;
-    const canvasGridCellHeight = windowHeight / rows;
-    
-    // Calcular la esquina superior izquierda de la celda
-    const cellX = gridPos.cellX * canvasGridCellWidth;
-    const cellY = gridPos.cellY * canvasGridCellHeight;
-    
-    // Dibujar el píxel como un rectángulo que coincide exactamente con la celda
-    buffer.rectMode(CORNER); // Usar modo CORNER para coincidir exactamente con la grilla
-    buffer.rect(cellX, cellY, canvasGridCellWidth, canvasGridCellHeight);
-}
-
-// Función para emitir partículas (reemplaza a drawStar)
-function drawStar(buffer, x, y, radius, points = null) {
-    // Usar el parámetro de puntas pasado o la variable global starPoints
-    const numPoints = points || particleCount;
-    
-    // Calcular la posición anterior del mouse para determinar la dirección y velocidad
-    let prevX = pmouseXGlobal;
-    let prevY = pmouseYGlobal;
-    
-    // Si es el primer punto o no hay movimiento significativo, usar una posición ligeramente desplazada
-    if (dist(x, y, prevX, prevY) < 1) {
-        prevX = x - 1;
-        prevY = y - 1;
-    }
-    
-    // Añadir partículas al sistema
-    particleSystem.addParticles(
-        x, y,                // Posición actual
-        prevX, prevY,        // Posición anterior
-        numPoints,           // Número de partículas
-        buffer.fill(),       // Color
-        radius * 2           // Tamaño
-    );
 }
 
 // Función para dibujar un polígono
@@ -374,43 +373,6 @@ function polygon(buffer, x, y, radius, npoints, fase) {
 // FUNCIONES DE CONVERSIÓN DE COORDENADAS
 // ============================================================
 
-// Convertir coordenadas del canvas a coordenadas de la grilla usando parámetros globales
-function canvasToGrid(x, y) {
-    // Escalar coordenadas del canvas al espacio de la grilla (0-1024)
-    const gridX = map(x, 0, windowWidth, 0, gridSize);
-    const gridY = map(y, 0, windowHeight, 0, gridSize);
-    
-    // Calcular celda de la grilla
-    const cellX = Math.floor(gridX / cellWidth);
-    const cellY = Math.floor(gridY / cellHeight);
-    
-    // Restringir a los límites de la grilla
-    return {
-        cellX: constrain(cellX, 0, gridCols - 1),
-        cellY: constrain(cellY, 0, gridRows - 1)
-    };
-}
-
-// Convertir coordenadas del canvas a coordenadas de la grilla usando parámetros específicos
-function canvasToGridWithParams(x, y, cols, rows) {
-    // Escalar coordenadas del canvas al espacio de la grilla (0-1024)
-    const gridX = map(x, 0, windowWidth, 0, gridSize);
-    const gridY = map(y, 0, windowHeight, 0, gridSize);
-    
-    // Calcular ancho y alto de celda con los parámetros específicos
-    const cellWidthParam = gridSize / cols;
-    const cellHeightParam = gridSize / rows;
-    
-    // Calcular celda de la grilla
-    const cellX = Math.floor(gridX / cellWidthParam);
-    const cellY = Math.floor(gridY / cellHeightParam);
-    
-    // Restringir a los límites de la grilla
-    return {
-        cellX: constrain(cellX, 0, cols - 1),
-        cellY: constrain(cellY, 0, rows - 1)
-    };
-}
 
 // Convertir coordenadas de la grilla a coordenadas del canvas
 function gridToCanvas(cellX, cellY) {
@@ -436,12 +398,64 @@ function newDrawing(data2) {
     } else {
         // No actualizar ninguna variable global, cada trazo es completamente independiente
         
+        // Convertir coordenadas normalizadas a coordenadas del canvas
+        const canvasX = map(data2.x, 0, 1, 0, windowWidth);
+        const canvasY = map(data2.y, 0, 1, 0, windowHeight);
+        
+        // Si es un trazo de art brush con parámetros de sincronización
+        if (data2.bt === 'art' && data2.syncParams) {
+            // Asegurarse de que los parámetros de sincronización están en coordenadas del canvas
+            const syncParams = data2.syncParams;
+            
+            // Convertir las coordenadas normalizadas a coordenadas del canvas
+            const syncX = map(syncParams.x, 0, 1, 0, windowWidth);
+            const syncY = map(syncParams.y, 0, 1, 0, windowHeight);
+            const syncPmouseX = map(syncParams.pmouseX, 0, 1, 0, windowWidth);
+            const syncPmouseY = map(syncParams.pmouseY, 0, 1, 0, windowHeight);
+            
+            // Crear un objeto de parámetros de sincronización con coordenadas del canvas
+            const localSyncParams = {
+                x: syncX,
+                y: syncY,
+                pmouseX: syncPmouseX,
+                pmouseY: syncPmouseY,
+                count: syncParams.count,
+                size: syncParams.size,
+                baseSeed: syncParams.baseSeed,
+                mouseDirection: syncParams.mouseDirection,
+                mouseSpeed: syncParams.mouseSpeed
+            };
+            
+            // Si hay parámetros exactos para cada partícula, convertirlos también
+            if (syncParams.particleParams && syncParams.particleParams.length > 0) {
+                const localParticleParams = [];
+                
+                // Convertir las coordenadas de cada partícula
+                for (let i = 0; i < syncParams.particleParams.length; i++) {
+                    const p = syncParams.particleParams[i];
+                    localParticleParams.push({
+                        x: map(p.x, 0, 1, 0, windowWidth),
+                        y: map(p.y, 0, 1, 0, windowHeight),
+                        vx: p.vx,  // La velocidad no necesita ser convertida
+                        vy: p.vy,  // La velocidad no necesita ser convertida
+                        size: p.size,
+                        seed: p.seed
+                    });
+                }
+                
+                // Añadir los parámetros de partículas convertidos
+                localSyncParams.particleParams = localParticleParams;
+            }
+            
+            // Actualizar los parámetros de sincronización en los datos
+            data2.syncParams = localSyncParams;
+        }
+        
         // Dibujar en el buffer de dibujo usando los parámetros recibidos
-        // sin actualizar los valores globales
         dibujarCoso(
             drawBuffer,
-            map(data2.x, 0, 1, 0, windowWidth),
-            map(data2.y, 0, 1, 0, windowHeight),
+            canvasX,
+            canvasY,
             data2
         );
     }
@@ -486,100 +500,6 @@ function toggleGuiButtonVisibility() {
 // CLASES
 // ============================================================
 
-// Clase para una partícula individual del Art Brush
-class Particle {
-    constructor(x, y, radius, angle, speed, color, size) {
-        // Posición inicial usando radio y ángulo
-        this.x = x + cos(angle) * radius;
-        this.y = y + sin(angle) * radius;
-        
-        // Velocidad basada en la dirección del mouse y la velocidad proporcionada
-        this.vx = cos(angle) * speed;
-        this.vy = sin(angle) * speed;
-        
-        this.color = color;      // Color de la partícula
-        this.size = size;        // Tamaño de la partícula
-        this.alpha = 255;        // Opacidad inicial
-        this.life = 255;         // Vida de la partícula (se reduce con el tiempo)
-        this.decay = random(2, 5); // Velocidad de degradación
-    }
-    
-    // Actualizar posición y vida de la partícula
-    update() {
-        // Mover la partícula según su velocidad
-        this.x += this.vx;
-        this.y += this.vy;
-        
-        // Reducir la vida y la opacidad
-        this.life -= this.decay;
-        this.alpha = this.life;
-    }
-    
-    // Dibujar la partícula
-    draw(buffer) {
-        // Configurar color y opacidad
-        const particleColor = color(this.color.levels[0], this.color.levels[1], this.color.levels[2]);
-        particleColor.setAlpha(this.alpha);
-        buffer.fill(particleColor);
-        buffer.noStroke();
-        
-        // Dibujar la partícula como un círculo
-        buffer.ellipse(this.x, this.y, this.size, this.size);
-    }
-    
-    // Verificar si la partícula sigue viva
-    isAlive() {
-        return this.life > 0;
-    }
-}
-
-// Sistema de partículas para el Art Brush
-class ParticleSystem {
-    constructor() {
-        this.particles = [];
-    }
-    
-    // Añadir nuevas partículas
-    addParticles(x, y, pmouseX, pmouseY, count, color, size) {
-        // Calcular la dirección y velocidad del mouse
-        const mouseDirection = atan2(y - pmouseY, x - pmouseX);
-        const mouseSpeed = dist(x, y, pmouseX, pmouseY) * 0.1; // Ajustar la velocidad según la rapidez del movimiento
-        
-        // Crear nuevas partículas
-        for (let i = 0; i < count; i++) {
-            // Calcular radio y ángulo aleatorios para la posición inicial
-            const radius = random(0, size / 2);
-            const angle = mouseDirection + random(-PI/4, PI/4); // Variación en el ángulo
-            
-            // Calcular velocidad basada en el movimiento del mouse
-            const speed = mouseSpeed * random(0.5, 1.5); // Variación en la velocidad
-            
-            // Crear y añadir la partícula
-            const particle = new Particle(x, y, radius, angle, speed, color, random(2, size/4));
-            this.particles.push(particle);
-        }
-    }
-    
-    // Actualizar todas las partículas
-    update() {
-        // Actualizar cada partícula
-        for (let i = this.particles.length - 1; i >= 0; i--) {
-            this.particles[i].update();
-            
-            // Eliminar partículas muertas
-            if (!this.particles[i].isAlive()) {
-                this.particles.splice(i, 1);
-            }
-        }
-    }
-    
-    // Dibujar todas las partículas
-    draw(buffer) {
-        for (let particle of this.particles) {
-            particle.draw(buffer);
-        }
-    }
-}
 
 // Sistema de palabras
 class PalabraSystem {
