@@ -36,9 +36,13 @@ var showGrid = false; // Flag para mostrar/ocultar la grilla
 
 // Variables del art brush
 var starPoints = 5; // Número predeterminado de puntas para el star brush
+var particleCount = 10; // Número predeterminado de partículas por emisión
 
-// Sistema de palabras
-var ps;
+// Sistemas
+var ps; // Sistema de palabras
+var particleSystem; // Sistema de partículas para el Art Brush
+var pmouseXGlobal = 0; // Posición anterior del mouse en X
+var pmouseYGlobal = 0; // Posición anterior del mouse en Y
 
 // Datos para enviar por socket
 var data = {
@@ -92,8 +96,9 @@ function setup() {
     // Actualizar buffer de la grilla inicialmente
     updateGridBuffer();
     
-    // Inicializar sistema de palabras
+    // Inicializar sistemas
     ps = new PalabraSystem();
+    particleSystem = new ParticleSystem();
     textAlign(CENTER, CENTER);
     textSize(80);
     
@@ -139,13 +144,13 @@ function updateGridDimensions() {
 function updateGridBuffer() {
     // Limpiar el buffer de la grilla
     guiBuffer.clear();
-    
+   // guiBuffer.background(255,0,0);
     // Usar directamente el valor del checkbox para determinar si dibujar la grilla
-    if (!document.getElementById('showGrid') || !document.getElementById('showGrid').checked) return; // No dibujar si la grilla está oculta
+    //if (!document.getElementById('showGrid') || !document.getElementById('showGrid').checked) return; // No dibujar si la grilla está oculta
     
     // Configurar estilo de la grilla
-    guiBuffer.stroke(100, 100, 100, 50); // Gris semitransparente
-    guiBuffer.strokeWeight(0.5);
+    guiBuffer.stroke(100, 100, 100, 255); // Gris semitransparente
+    guiBuffer.strokeWeight(5);
     guiBuffer.noFill();
     
     // Calcular tamaño de celda en coordenadas del canvas
@@ -176,8 +181,12 @@ function draw() {
     // Mostrar el buffer de la grilla si está activado localmente
     // Usar directamente el valor del checkbox para determinar si mostrar la grilla
     if (document.getElementById("brushType").value === 'pixel' && document.getElementById('showGrid').checked) {
-        image(guiBuffer, 0, 0);
+        
+    image(guiBuffer, 0, 0);
     }
+    // Actualizar y dibujar el sistema de partículas
+    particleSystem.update();
+    particleSystem.draw(drawBuffer);
     
     const brushType = document.getElementById("brushType").value;
     
@@ -202,8 +211,8 @@ function draw() {
             data.showGrid = document.getElementById('showGrid').checked;
             break;
         case 'art':
-            // Añadir parámetro de puntas para art brush
-            data.starPts = parseInt(document.getElementById('starPoints').value);
+            // Añadir parámetro de cantidad de partículas para art brush
+            data.particleCount = parseInt(document.getElementById('particleCount').value);
             break;
     }
     
@@ -217,6 +226,10 @@ function draw() {
     if (!isMousePressed) {
         mouseFlag = true;
     }
+    
+    // Guardar la posición actual del mouse para el siguiente ciclo
+    pmouseXGlobal = mouseX;
+    pmouseYGlobal = mouseY;
 }
 
 // ============================================================
@@ -263,9 +276,9 @@ function dibujarCoso(buffer, x, y, data) {
     // Dibujar según el tipo de pincel
     switch (brushType) {
         case 'art':
-            // Art brush - dibuja una estrella con puntas específicas
-            // Usar el valor de starPoints del dato recibido, sin actualizar el global
-            drawStar(buffer, x, y, brushSize/2, data.starPts);
+            // Art brush - sistema de partículas
+            // Usar el valor de particleCount del dato recibido, sin actualizar el global
+            drawStar(buffer, x, y, brushSize/2, data.particleCount);
             break;
         case 'pixel':
             // Pixel brush - dibuja un cuadrado en la grilla
@@ -320,22 +333,29 @@ function drawPixelOnGridWithParams(buffer, x, y, size, cols, rows) {
     buffer.rect(cellX, cellY, canvasGridCellWidth, canvasGridCellHeight);
 }
 
-// Función para dibujar una estrella
+// Función para emitir partículas (reemplaza a drawStar)
 function drawStar(buffer, x, y, radius, points = null) {
     // Usar el parámetro de puntas pasado o la variable global starPoints
-    const numPoints = points || starPoints;
-    const outerRadius = radius;
-    const innerRadius = radius * 0.4;
+    const numPoints = points || particleCount;
     
-    buffer.beginShape();
-    for (let i = 0; i < numPoints * 2; i++) {
-        let r = (i % 2 === 0) ? outerRadius : innerRadius;
-        let angle = PI / numPoints * i;
-        let sx = x + cos(angle) * r;
-        let sy = y + sin(angle) * r;
-        buffer.vertex(sx, sy);
+    // Calcular la posición anterior del mouse para determinar la dirección y velocidad
+    let prevX = pmouseXGlobal;
+    let prevY = pmouseYGlobal;
+    
+    // Si es el primer punto o no hay movimiento significativo, usar una posición ligeramente desplazada
+    if (dist(x, y, prevX, prevY) < 1) {
+        prevX = x - 1;
+        prevY = y - 1;
     }
-    buffer.endShape(CLOSE);
+    
+    // Añadir partículas al sistema
+    particleSystem.addParticles(
+        x, y,                // Posición actual
+        prevX, prevY,        // Posición anterior
+        numPoints,           // Número de partículas
+        buffer.fill(),       // Color
+        radius * 2           // Tamaño
+    );
 }
 
 // Función para dibujar un polígono
@@ -465,6 +485,101 @@ function toggleGuiButtonVisibility() {
 // ============================================================
 // CLASES
 // ============================================================
+
+// Clase para una partícula individual del Art Brush
+class Particle {
+    constructor(x, y, radius, angle, speed, color, size) {
+        // Posición inicial usando radio y ángulo
+        this.x = x + cos(angle) * radius;
+        this.y = y + sin(angle) * radius;
+        
+        // Velocidad basada en la dirección del mouse y la velocidad proporcionada
+        this.vx = cos(angle) * speed;
+        this.vy = sin(angle) * speed;
+        
+        this.color = color;      // Color de la partícula
+        this.size = size;        // Tamaño de la partícula
+        this.alpha = 255;        // Opacidad inicial
+        this.life = 255;         // Vida de la partícula (se reduce con el tiempo)
+        this.decay = random(2, 5); // Velocidad de degradación
+    }
+    
+    // Actualizar posición y vida de la partícula
+    update() {
+        // Mover la partícula según su velocidad
+        this.x += this.vx;
+        this.y += this.vy;
+        
+        // Reducir la vida y la opacidad
+        this.life -= this.decay;
+        this.alpha = this.life;
+    }
+    
+    // Dibujar la partícula
+    draw(buffer) {
+        // Configurar color y opacidad
+        const particleColor = color(this.color.levels[0], this.color.levels[1], this.color.levels[2]);
+        particleColor.setAlpha(this.alpha);
+        buffer.fill(particleColor);
+        buffer.noStroke();
+        
+        // Dibujar la partícula como un círculo
+        buffer.ellipse(this.x, this.y, this.size, this.size);
+    }
+    
+    // Verificar si la partícula sigue viva
+    isAlive() {
+        return this.life > 0;
+    }
+}
+
+// Sistema de partículas para el Art Brush
+class ParticleSystem {
+    constructor() {
+        this.particles = [];
+    }
+    
+    // Añadir nuevas partículas
+    addParticles(x, y, pmouseX, pmouseY, count, color, size) {
+        // Calcular la dirección y velocidad del mouse
+        const mouseDirection = atan2(y - pmouseY, x - pmouseX);
+        const mouseSpeed = dist(x, y, pmouseX, pmouseY) * 0.1; // Ajustar la velocidad según la rapidez del movimiento
+        
+        // Crear nuevas partículas
+        for (let i = 0; i < count; i++) {
+            // Calcular radio y ángulo aleatorios para la posición inicial
+            const radius = random(0, size / 2);
+            const angle = mouseDirection + random(-PI/4, PI/4); // Variación en el ángulo
+            
+            // Calcular velocidad basada en el movimiento del mouse
+            const speed = mouseSpeed * random(0.5, 1.5); // Variación en la velocidad
+            
+            // Crear y añadir la partícula
+            const particle = new Particle(x, y, radius, angle, speed, color, random(2, size/4));
+            this.particles.push(particle);
+        }
+    }
+    
+    // Actualizar todas las partículas
+    update() {
+        // Actualizar cada partícula
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            this.particles[i].update();
+            
+            // Eliminar partículas muertas
+            if (!this.particles[i].isAlive()) {
+                this.particles.splice(i, 1);
+            }
+        }
+    }
+    
+    // Dibujar todas las partículas
+    draw(buffer) {
+        for (let particle of this.particles) {
+            particle.draw(buffer);
+        }
+    }
+}
 
 // Sistema de palabras
 class PalabraSystem {

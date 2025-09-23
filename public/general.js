@@ -151,11 +151,11 @@ function setupBrushTypeEvents() {
   });
   
   // Add event listeners for art brush parameters
-  const starPointsInput = document.getElementById('starPoints');
+  const particleCountInput = document.getElementById('particleCount');
   
-  starPointsInput.addEventListener('input', function() {
-    if (window.starPoints !== undefined) {
-      window.starPoints = parseInt(this.value);
+  particleCountInput.addEventListener('input', function() {
+    if (window.particleCount !== undefined) {
+      window.particleCount = parseInt(this.value);
     }
   });
 }
