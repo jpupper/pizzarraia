@@ -4,15 +4,16 @@
  * Clase para una partícula individual del Art Brush
  */
 class Particle {
-    constructor(x, y, vx, vy, color, size, seed) {
+    constructor(x, y, vx, vy, particleColor, size, seed, colorSeed = null) {
         this.x = x;
         this.y = y;
         this.vx = vx;
         this.vy = vy;
-        this.color = color;
         this.size = size;
         this.alpha = 255;
-        this.life = 255;
+        
+        // Usar la vida definida por el slider o el valor por defecto
+        this.life = window.artBrushParticleLife || 255;
         
         // Usar la semilla para generar un valor de decay determinista
         // Multiplicamos por un número primo y tomamos el módulo para generar un valor pseudoaleatorio
@@ -21,13 +22,35 @@ class Particle {
         
         // Guardar la semilla para futuros cálculos deterministas
         this.seed = seed;
+        
+        // Asignar una semilla única para el color de esta partícula
+        // Si se proporciona un colorSeed, usarlo; de lo contrario, generar uno nuevo
+        this.colorSeed = colorSeed !== null ? colorSeed : seed + 10000;
+        
+        // Algoritmo de color: interpolar entre el color seleccionado y blanco/negro
+        const whiteColor = color(255);
+        const blackColor = color(0);
+        
+        // Usar la semilla para determinar si interpolar con blanco o negro
+        const useWhite = (this.colorSeed % 2 === 0);
+        
+        // Calcular factor de interpolación basado en la semilla
+        const lerpFactor = sin(this.colorSeed * 0.01) * 0.5 + 0.5;
+        
+        // Interpolar entre el color seleccionado y blanco/negro
+        this.color = useWhite ? 
+            lerpColor(particleColor, whiteColor, lerpFactor * 0.7) : 
+            lerpColor(particleColor, blackColor, lerpFactor * 0.3);
     }
     
     // Actualizar posición y vida de la partícula
     update() {
-        // Mover la partícula según su velocidad
-        this.x += this.vx;
-        this.y += this.vy;
+        // Obtener el factor de velocidad global o usar el valor por defecto
+        const speedFactor = window.artBrushSpeedFactor || 1.0;
+        
+        // Mover la partícula según su velocidad ajustada por el factor global
+        this.x += this.vx * speedFactor;
+        this.y += this.vy * speedFactor;
         
         // Reducir la vida y la opacidad
         this.life -= this.decay;
@@ -36,9 +59,16 @@ class Particle {
     
     // Dibujar la partícula
     draw(buffer) {
+        // Obtener el alpha global o usar el valor actual
+        const globalAlpha = window.artBrushAlpha !== undefined ? window.artBrushAlpha : 255;
+        
+        // Calcular el alpha final como un porcentaje de la vida restante y el alpha global
+        const alphaPercentage = this.life / (window.artBrushParticleLife || 255);
+        const finalAlpha = alphaPercentage * globalAlpha;
+        
         // Configurar color y opacidad
         const particleColor = color(this.color.levels[0], this.color.levels[1], this.color.levels[2]);
-        particleColor.setAlpha(this.alpha);
+        particleColor.setAlpha(finalAlpha);
         buffer.fill(particleColor);
         buffer.noStroke();
         
@@ -59,7 +89,8 @@ class Particle {
             vx: this.vx,
             vy: this.vy,
             size: this.size,
-            seed: this.seed
+            seed: this.seed,
+            colorSeed: this.colorSeed // Incluir la semilla de color para sincronización
         };
     }
 }
@@ -103,7 +134,8 @@ class ParticleSystem {
                     p.vy,
                     color,
                     p.size,
-                    p.seed
+                    p.seed,
+                    p.colorSeed // Usar la semilla de color para sincronización
                 );
                 this.particles.push(particle);
             }
@@ -132,19 +164,34 @@ class ParticleSystem {
             // Generar semilla única para esta partícula
             const particleSeed = localBaseSeed + i;
             
-            // Usar valores pseudoaleatorios deterministas basados en la semilla
-            const offsetX = (this.pseudoRandom(particleSeed) * 2 - 1) * (size/4);
-            const offsetY = (this.pseudoRandom(particleSeed + 1) * 2 - 1) * (size/4);
+            // Distribución radial de partículas
+            // Generar un ángulo aleatorio alrededor del punto central (0-2PI)
+            const positionAngle = this.pseudoRandom(particleSeed) * Math.PI * 2;
             
+            // Generar un radio aleatorio basado en el tamaño del pincel
+            const minRadius = 1; // Radio mínimo
+            const maxRadius = size / 4; // Radio máximo basado en el tamaño del pincel
+            const radius = minRadius + this.pseudoRandom(particleSeed + 1) * (maxRadius - minRadius);
+            
+            // Convertir de coordenadas polares a cartesianas
+            const offsetX = Math.cos(positionAngle) * radius;
+            const offsetY = Math.sin(positionAngle) * radius;
+            
+            // Calcular el ángulo de movimiento con variación
             const angleVariation = (this.pseudoRandom(particleSeed + 2) * 2 - 1) * (PI/6);
-            const angle = calculatedMouseDirection + angleVariation;
+            const velocityAngle = calculatedMouseDirection + angleVariation;
             
             const speedVariation = this.pseudoRandom(particleSeed + 3);
             const speed = max(0.5, calculatedMouseSpeed * (0.5 + speedVariation));
-            const vx = cos(angle) * speed;
-            const vy = sin(angle) * speed;
+            const vx = cos(velocityAngle) * speed;
+            const vy = sin(velocityAngle) * speed;
             
-            const particleSize = 2 + this.pseudoRandom(particleSeed + 4) * (size/3 - 2);
+            // Usar el tamaño máximo definido por el slider o calcular basado en el tamaño del pincel
+            const maxParticleSize = window.artBrushParticleMaxSize || (size/3);
+            const particleSize = 2 + this.pseudoRandom(particleSeed + 4) * (maxParticleSize - 2);
+            
+            // Generar una semilla única para el color de esta partícula
+            const colorSeed = particleSeed * (i + 1) * 1000;
             
             // Posición final de la partícula
             const particleX = x + offsetX;
@@ -157,7 +204,8 @@ class ParticleSystem {
                 vx: vx,
                 vy: vy,
                 size: particleSize,
-                seed: particleSeed
+                seed: particleSeed,
+                colorSeed: colorSeed
             });
             
             // Crear y añadir la partícula
@@ -168,7 +216,8 @@ class ParticleSystem {
                 vy,
                 color,
                 particleSize,
-                particleSeed
+                particleSeed,
+                colorSeed
             );
             this.particles.push(particle);
         }
@@ -191,9 +240,18 @@ class ParticleSystem {
         const mouseDirection = atan2(y - pmouseY, x - pmouseX);
         const mouseSpeed = dist(x, y, pmouseX, pmouseY) * 0.2;
         
+        // Obtener el valor de particleCount del slider o usar el valor proporcionado
+        const particleCount = window.particleCount || count || 10;
+        
+        // Obtener el valor de alpha global
+        window.artBrushAlpha = parseInt(document.getElementById('alphaValue').value);
+        
         // Usar el método determinista con todos los parámetros necesarios
         return this.addParticlesWithParams({
-            x, y, pmouseX, pmouseY, count, color, size, 
+            x, y, pmouseX, pmouseY, 
+            count: particleCount, 
+            color, 
+            size, 
             baseSeed: this.baseSeed,
             mouseDirection: mouseDirection,
             mouseSpeed: mouseSpeed

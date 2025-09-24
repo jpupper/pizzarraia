@@ -139,32 +139,53 @@ function updateGridDimensions() {
 
 // Función para actualizar el buffer de la grilla
 function updateGridBuffer() {
-    // Limpiar el buffer de la grilla
-    guiBuffer.clear();
-   // guiBuffer.background(255,0,0);
-    // Usar directamente el valor del checkbox para determinar si dibujar la grilla
-    //if (!document.getElementById('showGrid') || !document.getElementById('showGrid').checked) return; // No dibujar si la grilla está oculta
+    // Dibujar la grilla si está activada
+    if (document.getElementById('showGrid').checked) {
+        // Dibujar la grilla
+        guiBuffer.stroke(100, 100, 100, 255); // Gris semitransparente
+        guiBuffer.strokeWeight(5);
+        guiBuffer.noFill();
+        
+        // Calcular tamaño de celda en coordenadas del canvas
+        const canvasGridCellWidth = windowWidth / gridCols;
+        const canvasGridCellHeight = windowHeight / gridRows;
+        
+        // Dibujar líneas verticales
+        for (let i = 0; i <= gridCols; i++) {
+            const x = i * canvasGridCellWidth;
+            guiBuffer.line(x, 0, x, windowHeight);
+        }
+        
+        // Dibujar líneas horizontales
+        for (let j = 0; j <= gridRows; j++) {
+            const y = j * canvasGridCellHeight;
+            guiBuffer.line(0, y, windowWidth, y);
+        }
+    }
+}
+
+// Función para dibujar un puntero circular que muestra el tamaño del pincel actual
+function drawBrushCursor() {
+    // Obtener el tamaño del pincel desde el slider
+    const brushSize = parseInt(document.getElementById('size').value);
     
-    // Configurar estilo de la grilla
-    guiBuffer.stroke(100, 100, 100, 255); // Gris semitransparente
-    guiBuffer.strokeWeight(5);
-    guiBuffer.noFill();
-    
-    // Calcular tamaño de celda en coordenadas del canvas
-    const canvasGridCellWidth = windowWidth / gridCols;
-    const canvasGridCellHeight = windowHeight / gridRows;
-    
-    // Dibujar líneas verticales
-    for (let i = 0; i <= gridCols; i++) {
-        const x = i * canvasGridCellWidth;
-        guiBuffer.line(x, 0, x, windowHeight);
+    // No dibujar el cursor si el mouse está sobre la GUI o si el mouse no está en el canvas
+    if (isOverGui || isOverOpenButton || mouseX < 0 || mouseY < 0 || mouseX > windowWidth || mouseY > windowHeight) {
+        return;
     }
     
-    // Dibujar líneas horizontales
-    for (let j = 0; j <= gridRows; j++) {
-        const y = j * canvasGridCellHeight;
-        guiBuffer.line(0, y, windowWidth, y);
-    }
+    // Configurar el estilo del cursor
+    guiBuffer.stroke(255); // Color blanco para el borde
+    guiBuffer.strokeWeight(1.5); // Grosor del borde
+    guiBuffer.noFill(); // Sin relleno
+    
+    // Dibujar un círculo en la posición del mouse con el tamaño del pincel
+    guiBuffer.ellipse(mouseX, mouseY, brushSize, brushSize);
+    
+    // Dibujar una cruz pequeña en el centro para mayor precisión
+    const crossSize = 4;
+    guiBuffer.line(mouseX - crossSize, mouseY, mouseX + crossSize, mouseY);
+    guiBuffer.line(mouseX, mouseY - crossSize, mouseX, mouseY + crossSize);
 }
 
 // ============================================================
@@ -172,15 +193,23 @@ function updateGridBuffer() {
 // ============================================================
 
 function draw() {
+    // Limpiar el buffer GUI en cada frame
+    guiBuffer.clear();
+    
     // Mostrar el buffer de dibujo en el canvas principal
     image(drawBuffer, 0, 0);
     
-    // Mostrar el buffer de la grilla si está activado localmente
-    // Usar directamente el valor del checkbox para determinar si mostrar la grilla
+    // Dibujar la grilla en el buffer GUI si está activado
     if (document.getElementById("brushType").value === 'pixel' && document.getElementById('showGrid').checked) {
-        
-    image(guiBuffer, 0, 0);
+        updateGridBuffer();
     }
+    
+    // Dibujar el puntero circular que muestra el tamaño del pincel
+    drawBrushCursor();
+    
+    // Mostrar el buffer GUI siempre
+    image(guiBuffer, 0, 0);
+    
     // Actualizar y dibujar el sistema de partículas del Art Brush
     updateArtBrush();
     drawArtBrushParticles(drawBuffer);
@@ -247,7 +276,8 @@ function draw() {
                         vx: p.vx,  // La velocidad no necesita ser normalizada
                         vy: p.vy,  // La velocidad no necesita ser normalizada
                         size: p.size,
-                        seed: p.seed
+                        seed: p.seed,
+                        colorSeed: p.colorSeed // Incluir la semilla de color para sincronización
                     });
                 }
                 
@@ -439,7 +469,8 @@ function newDrawing(data2) {
                         vx: p.vx,  // La velocidad no necesita ser convertida
                         vy: p.vy,  // La velocidad no necesita ser convertida
                         size: p.size,
-                        seed: p.seed
+                        seed: p.seed,
+                        colorSeed: p.colorSeed // Incluir la semilla de color para sincronización
                     });
                 }
                 

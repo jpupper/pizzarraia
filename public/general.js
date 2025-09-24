@@ -152,10 +152,59 @@ function setupBrushTypeEvents() {
   
   // Add event listeners for art brush parameters
   const particleCountInput = document.getElementById('particleCount');
+  const maxSpeedInput = document.getElementById('maxSpeed');
+  const particleLifeInput = document.getElementById('particleLife');
+  const particleMaxSizeInput = document.getElementById('particleMaxSize');
   
   particleCountInput.addEventListener('input', function() {
     if (window.particleCount !== undefined) {
       window.particleCount = parseInt(this.value);
     }
   });
+  
+  // Event listener for max speed slider
+  maxSpeedInput.addEventListener('input', function() {
+    // Actualizar la velocidad de las partículas
+    const maxSpeed = parseFloat(this.value);
+    updateArtBrushParameters({ maxSpeed: maxSpeed });
+  });
+  
+  // Event listener for particle life slider
+  particleLifeInput.addEventListener('input', function() {
+    // Actualizar la vida de las partículas
+    const particleLife = parseInt(this.value);
+    updateArtBrushParameters({ particleLife: particleLife });
+  });
+  
+  // Event listener for particle size slider
+  particleMaxSizeInput.addEventListener('input', function() {
+    // Actualizar el tamaño máximo de las partículas
+    const particleMaxSize = parseInt(this.value);
+    updateArtBrushParameters({ particleMaxSize: particleMaxSize });
+  });
+}
+
+// Función para actualizar los parámetros del Art Brush
+function updateArtBrushParameters(params) {
+  // Verificar si el sistema de partículas está inicializado
+  if (typeof artBrushParticleSystem === 'undefined') {
+    console.warn('Art Brush Particle System no está inicializado');
+    return;
+  }
+  
+  // Actualizar la velocidad máxima
+  if (params.maxSpeed !== undefined) {
+    // Modificar la velocidad de las partículas
+    window.artBrushSpeedFactor = params.maxSpeed;
+  }
+  
+  // Actualizar la vida de las partículas
+  if (params.particleLife !== undefined) {
+    window.artBrushParticleLife = params.particleLife;
+  }
+  
+  // Actualizar el tamaño máximo de las partículas
+  if (params.particleMaxSize !== undefined) {
+    window.artBrushParticleMaxSize = params.particleMaxSize;
+  }
 }
