@@ -22,6 +22,9 @@ var isMousePressed = false;
 var isOverGui = false;
 var mouseFlag = true;
 
+// Variables para cursores de otros clientes
+var remoteCursors = {}; // Objeto para almacenar cursores de otros clientes {socketId: {x, y, isDrawing, timestamp}}
+
 // Variables de canvas
 var mainCanvas; // Canvas principal
 var drawBuffer; // Buffer para dibujar los pinceles
@@ -84,6 +87,9 @@ function setup() {
     // Configurar evento para recibir datos de dibujo
     socket.on("mouse", newDrawing);
     
+    // Configurar evento para recibir posiciones de cursor de otros clientes
+    socket.on("cursor", updateRemoteCursor);
+    
     // Inicializar valores
     asignarValores();
     drawBuffer.background(0);
@@ -104,19 +110,39 @@ function setup() {
 }
 
 function windowResized() {
+    // Guardar el contenido del buffer de dibujo actual
+    let tempBuffer = createGraphics(drawBuffer.width, drawBuffer.height);
+    tempBuffer.image(drawBuffer, 0, 0);
+    
     // Redimensionar canvas principal
     resizeCanvas(windowWidth, windowHeight);
     
-    // Redimensionar buffers
-    drawBuffer = createGraphics(windowWidth, windowHeight);
-    guiBuffer = createGraphics(windowWidth, windowHeight);
+    // Crear nuevos buffers con las dimensiones actualizadas
+    let newDrawBuffer = createGraphics(windowWidth, windowHeight);
+    let newGuiBuffer = createGraphics(windowWidth, windowHeight);
     
-    // Copiar contenido anterior si es necesario
-    // (Aquí podrías implementar una función para preservar el dibujo)
+    // Copiar el contenido anterior al nuevo buffer de dibujo
+    // Usar scale para ajustar proporcionalmente si es necesario
+    const scaleX = windowWidth / tempBuffer.width;
+    const scaleY = windowHeight / tempBuffer.height;
+    
+    newDrawBuffer.push();
+    newDrawBuffer.background(0); // Fondo negro
+    newDrawBuffer.image(tempBuffer, 0, 0, windowWidth, windowHeight);
+    newDrawBuffer.pop();
+    
+    // Actualizar las referencias a los buffers
+    drawBuffer = newDrawBuffer;
+    guiBuffer = newGuiBuffer;
+    
+    // Limpiar el buffer temporal
+    tempBuffer.remove();
     
     // Actualizar dimensiones de la grilla y redibujar
     updateGridDimensions();
     updateGridBuffer();
+    
+    console.log('Canvas redimensionado a:', windowWidth, 'x', windowHeight);
 }
 
 // Función para inicializar valores aleatorios
@@ -174,18 +200,95 @@ function drawBrushCursor() {
         return;
     }
     
-    // Configurar el estilo del cursor
-    guiBuffer.stroke(255); // Color blanco para el borde
-    guiBuffer.strokeWeight(1.5); // Grosor del borde
-    guiBuffer.noFill(); // Sin relleno
+    // Animación diferente cuando el mouse está presionado
+    if (isMousePressed) {
+        // Cursor cuando está dibujando - más dinámico
+        guiBuffer.stroke(255, 100, 100); // Color rojizo
+        guiBuffer.strokeWeight(2.5); // Grosor más grueso
+        guiBuffer.noFill();
+        
+        // Círculo pulsante (usando frameCount para animación)
+        const pulseSize = brushSize + sin(frameCount * 0.2) * 5;
+        guiBuffer.ellipse(mouseX, mouseY, pulseSize, pulseSize);
+        
+        // Círculo interno adicional
+        guiBuffer.stroke(255, 150, 150, 150);
+        guiBuffer.strokeWeight(1);
+        guiBuffer.ellipse(mouseX, mouseY, brushSize * 0.5, brushSize * 0.5);
+        
+        // Cruz más grande y visible
+        guiBuffer.stroke(255, 100, 100);
+        guiBuffer.strokeWeight(2);
+        const crossSize = 6;
+        guiBuffer.line(mouseX - crossSize, mouseY, mouseX + crossSize, mouseY);
+        guiBuffer.line(mouseX, mouseY - crossSize, mouseX, mouseY + crossSize);
+    } else {
+        // Cursor normal cuando no está dibujando
+        guiBuffer.stroke(255); // Color blanco para el borde
+        guiBuffer.strokeWeight(1.5); // Grosor del borde
+        guiBuffer.noFill(); // Sin relleno
+        
+        // Dibujar un círculo en la posición del mouse con el tamaño del pincel
+        guiBuffer.ellipse(mouseX, mouseY, brushSize, brushSize);
+        
+        // Dibujar una cruz pequeña en el centro para mayor precisión
+        const crossSize = 4;
+        guiBuffer.line(mouseX - crossSize, mouseY, mouseX + crossSize, mouseY);
+        guiBuffer.line(mouseX, mouseY - crossSize, mouseX, mouseY + crossSize);
+    }
+}
+
+// Función para dibujar cursores de otros clientes
+function drawRemoteCursors() {
+    const currentTime = Date.now();
+    const CURSOR_TIMEOUT = 5000; // 5 segundos sin actualización = eliminar cursor
     
-    // Dibujar un círculo en la posición del mouse con el tamaño del pincel
-    guiBuffer.ellipse(mouseX, mouseY, brushSize, brushSize);
+    // Limpiar cursores antiguos
+    Object.keys(remoteCursors).forEach(socketId => {
+        if (currentTime - remoteCursors[socketId].timestamp > CURSOR_TIMEOUT) {
+            delete remoteCursors[socketId];
+        }
+    });
     
-    // Dibujar una cruz pequeña en el centro para mayor precisión
-    const crossSize = 4;
-    guiBuffer.line(mouseX - crossSize, mouseY, mouseX + crossSize, mouseY);
-    guiBuffer.line(mouseX, mouseY - crossSize, mouseX, mouseY + crossSize);
+    // Dibujar cada cursor remoto
+    Object.keys(remoteCursors).forEach(socketId => {
+        const cursor = remoteCursors[socketId];
+        const x = map(cursor.x, 0, 1, 0, windowWidth);
+        const y = map(cursor.y, 0, 1, 0, windowHeight);
+        const brushSize = cursor.brushSize || 20;
+        
+        // Estilo diferente si el usuario remoto está dibujando
+        if (cursor.isDrawing) {
+            // Cursor activo (dibujando)
+            guiBuffer.stroke(100, 255, 100); // Verde
+            guiBuffer.strokeWeight(2);
+            guiBuffer.noFill();
+            
+            // Círculo pulsante
+            const pulseSize = brushSize + sin(frameCount * 0.2) * 3;
+            guiBuffer.ellipse(x, y, pulseSize, pulseSize);
+            
+            // Círculo interno
+            guiBuffer.stroke(150, 255, 150, 150);
+            guiBuffer.strokeWeight(1);
+            guiBuffer.ellipse(x, y, brushSize * 0.5, brushSize * 0.5);
+        } else {
+            // Cursor inactivo (solo moviendo)
+            guiBuffer.stroke(100, 150, 255, 180); // Azul semitransparente
+            guiBuffer.strokeWeight(1.5);
+            guiBuffer.noFill();
+            
+            // Círculo simple
+            guiBuffer.ellipse(x, y, brushSize, brushSize);
+        }
+        
+        // Cruz central
+        guiBuffer.stroke(cursor.isDrawing ? color(100, 255, 100) : color(100, 150, 255));
+        guiBuffer.strokeWeight(1.5);
+        const crossSize = 4;
+        guiBuffer.line(x - crossSize, y, x + crossSize, y);
+        guiBuffer.line(x, y - crossSize, x, y + crossSize);
+    });
 }
 
 // ============================================================
@@ -204,7 +307,10 @@ function draw() {
         updateGridBuffer();
     }
     
-    // Dibujar el puntero circular que muestra el tamaño del pincel
+    // Dibujar cursores de otros clientes
+    drawRemoteCursors();
+    
+    // Dibujar el puntero circular que muestra el tamaño del pincel (local)
     drawBrushCursor();
     
     // Mostrar el buffer GUI siempre
@@ -242,6 +348,19 @@ function draw() {
             break;
     }
     
+    // Enviar posición del cursor siempre (para que otros vean el cursor)
+    const cursorData = {
+        x: map(mouseX, 0, windowWidth, 0, 1),
+        y: map(mouseY, 0, windowHeight, 0, 1),
+        isDrawing: isMousePressed && !isOverGui && !isOverOpenButton,
+        brushSize: parseInt(document.getElementById('size').value),
+        session: sessionId,
+        isCursorOnly: true // Flag para indicar que es solo actualización de cursor
+    };
+    
+    // Enviar posición del cursor cada frame
+    socket.emit('cursor', cursorData);
+    
     // Dibujar si el mouse está presionado y no está sobre la GUI
     if (isMousePressed && !isOverGui && !isOverOpenButton) {
         // Primero dibujamos localmente para obtener los parámetros de sincronización si es necesario
@@ -260,7 +379,8 @@ function draw() {
                 size: syncParams.size,
                 baseSeed: syncParams.baseSeed,
                 mouseDirection: syncParams.mouseDirection,
-                mouseSpeed: syncParams.mouseSpeed
+                mouseSpeed: syncParams.mouseSpeed,
+                speedFactor: window.artBrushSpeedFactor || 1.0 // Incluir el factor de velocidad actual
             };
             
             // Si hay parámetros exactos para cada partícula, normalizarlos también
@@ -453,8 +573,14 @@ function newDrawing(data2) {
                 size: syncParams.size,
                 baseSeed: syncParams.baseSeed,
                 mouseDirection: syncParams.mouseDirection,
-                mouseSpeed: syncParams.mouseSpeed
+                mouseSpeed: syncParams.mouseSpeed,
+                speedFactor: syncParams.speedFactor || 1.0 // Usar el factor de velocidad recibido
             };
+            
+            // Guardar temporalmente el factor de velocidad actual
+            const originalSpeedFactor = window.artBrushSpeedFactor;
+            // Establecer el factor de velocidad recibido para estas partículas
+            window.artBrushSpeedFactor = localSyncParams.speedFactor;
             
             // Si hay parámetros exactos para cada partícula, convertirlos también
             if (syncParams.particleParams && syncParams.particleParams.length > 0) {
@@ -489,6 +615,26 @@ function newDrawing(data2) {
             canvasY,
             data2
         );
+        
+        // Restaurar el factor de velocidad original si estamos procesando un trazo de art brush
+        if (data2.bt === 'art' && data2.syncParams && typeof originalSpeedFactor !== 'undefined') {
+            window.artBrushSpeedFactor = originalSpeedFactor;
+            console.log('Restaurando factor de velocidad original:', originalSpeedFactor);
+        }
+    }
+}
+
+// Función para actualizar cursor remoto
+function updateRemoteCursor(data) {
+    // Guardar o actualizar la posición del cursor del cliente remoto
+    if (data.socketId) {
+        remoteCursors[data.socketId] = {
+            x: data.x,
+            y: data.y,
+            isDrawing: data.isDrawing || false,
+            brushSize: data.brushSize || 20,
+            timestamp: Date.now()
+        };
     }
 }
 
@@ -498,11 +644,21 @@ function cleanBackgroundLocal() {
     console.log("LIMPIANDO LOCALMENTE");
 }
 
-// Función para limpiar el fondo y enviar mensaje a otros clientes
+// Función para limpiar el fondo y enviar mensaje a otros clientes si está activada la sincronización
 function cleanBackground() {
+    // Limpiar el fondo localmente siempre
     cleanBackgroundLocal();
-    socket.emit('mouse', {bc: true, session: sessionId});
-    console.log("ENVIANDO MENSAJE DE LIMPIEZA PARA SESIÓN:", sessionId);
+    
+    // Verificar si el checkbox de sincronización está activado
+    const syncBackground = document.getElementById('syncBackground').checked;
+    
+    // Si está activado, enviar mensaje a otros clientes
+    if (syncBackground) {
+        socket.emit('mouse', {bc: true, session: sessionId});
+        console.log("ENVIANDO MENSAJE DE LIMPIEZA PARA SESIÓN:", sessionId);
+    } else {
+        console.log("LIMPIEZA LOCAL SOLAMENTE (SINCRONIZACIÓN DESACTIVADA)");
+    }
 }
 
 // ============================================================

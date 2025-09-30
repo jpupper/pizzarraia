@@ -157,9 +157,9 @@ function setupBrushTypeEvents() {
   const particleMaxSizeInput = document.getElementById('particleMaxSize');
   
   particleCountInput.addEventListener('input', function() {
-    if (window.particleCount !== undefined) {
-      window.particleCount = parseInt(this.value);
-    }
+    // Asignar directamente el valor del slider a la variable global
+    window.particleCount = parseInt(this.value);
+    console.log('Particle count actualizado:', window.particleCount);
   });
   
   // Event listener for max speed slider

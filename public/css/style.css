@@ -324,6 +324,36 @@ select option {
     accent-color: var(--accent);
 }
 
+/* Estilos para el grupo de control de sincronización */
+.control-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    width: 100%;
+}
+
+.sync-control {
+    display: flex;
+    align-items: center;
+    margin-left: 10px;
+    background-color: var(--primary-light);
+    padding: 5px 10px;
+    border-radius: 4px;
+    min-width: 80px; /* Ancho mínimo para evitar que se corte el texto */
+    height: 36px; /* Altura fija para alinearse con el botón */
+}
+
+.sync-label {
+    color: var(--text);
+    margin-left: 5px;
+    margin-bottom: 0;
+    font-size: 0.9rem;
+    font-weight: bold;
+    white-space: nowrap; /* Evita que el texto se corte */
+    display: inline-block; /* Asegura que el texto se muestre completo */
+    overflow: visible; /* Permite que el texto sea visible incluso si desborda */
+}
+
 #currentFont {
     font-style: italic;
     opacity: 0.9;

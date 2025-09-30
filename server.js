@@ -107,6 +107,7 @@ io.on('connection', (socket) => {
   });
   
   socket.on('mouse', mouseMsg);
+  socket.on('cursor', cursorMsg);
   
   function mouseMsg(data){
     // Only broadcast to clients in the same session
@@ -125,6 +126,26 @@ io.on('connection', (socket) => {
     }
     
     console.log(`Data from session ${sessionId}:`, data);
+  }
+  
+  function cursorMsg(data){
+    // Only broadcast cursor position to clients in the same session
+    const sessionId = socket.sessionId || '0';
+    
+    if (sessions[sessionId]) {
+      // Get all socket IDs in the same session
+      const sessionSockets = sessions[sessionId];
+      
+      // Add the sender's socket ID to the data so clients can identify different cursors
+      data.socketId = socket.id;
+      
+      // Broadcast to all sockets in the same session except the sender
+      sessionSockets.forEach(socketId => {
+        if (socketId !== socket.id) {
+          io.to(socketId).emit('cursor', data);
+        }
+      });
+    }
   }	
 
   // Manejar la desconexión del cliente

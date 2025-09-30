@@ -78,7 +78,13 @@
 		</div>
 		<input type="button" value="Close GUI" onClick="closeGui()" id="closegui" class="jpboton">
 		
-		<input type="button" value="Background" onClick="cleanBackground()" id="resetbackground" class="jpboton">
+		<div class="control-group">
+			<input type="button" value="Background" onClick="cleanBackground()" id="resetbackground" class="jpboton">
+			<div class="sync-control">
+				<input type="checkbox" id="syncBackground" class="jpcheckbox" checked>
+				<label for="syncBackground" class="sync-label">Sync</label>
+			</div>
+		</div>
 	</div>
 	
 	<button id="opengui" class="jpboton animated-button" onClick="openGui()">
