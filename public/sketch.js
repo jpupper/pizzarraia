@@ -22,8 +22,8 @@ var isMousePressed = false;
 var isOverGui = false;
 var mouseFlag = true;
 
-// Variables para cursores de otros clientes
-var remoteCursors = {}; // Objeto para almacenar cursores de otros clientes {socketId: {x, y, isDrawing, timestamp}}
+// Sistema de cursores remotos
+var cursorServer; // Instancia de CursorServer para gestionar cursores de otros clientes
 
 // Variables de canvas
 var mainCanvas; // Canvas principal
@@ -102,6 +102,7 @@ function setup() {
     
     // Inicializar sistemas
     ps = new PalabraSystem();
+    cursorServer = new CursorServer(); // Inicializar el servidor de cursores
     textAlign(CENTER, CENTER);
     textSize(80);
     
@@ -240,55 +241,16 @@ function drawBrushCursor() {
 
 // Función para dibujar cursores de otros clientes
 function drawRemoteCursors() {
-    const currentTime = Date.now();
-    const CURSOR_TIMEOUT = 5000; // 5 segundos sin actualización = eliminar cursor
+    // Actualizar el servidor de cursores (eliminar obsoletos)
+    cursorServer.update();
     
-    // Limpiar cursores antiguos
-    Object.keys(remoteCursors).forEach(socketId => {
-        if (currentTime - remoteCursors[socketId].timestamp > CURSOR_TIMEOUT) {
-            delete remoteCursors[socketId];
-        }
-    });
+    // Debug: mostrar cantidad de cursores
+    if (cursorServer.cursors.length > 0 && frameCount % 60 === 0) {
+        console.log('Dibujando cursores:', cursorServer.cursors.length);
+    }
     
-    // Dibujar cada cursor remoto
-    Object.keys(remoteCursors).forEach(socketId => {
-        const cursor = remoteCursors[socketId];
-        const x = map(cursor.x, 0, 1, 0, windowWidth);
-        const y = map(cursor.y, 0, 1, 0, windowHeight);
-        const brushSize = cursor.brushSize || 20;
-        
-        // Estilo diferente si el usuario remoto está dibujando
-        if (cursor.isDrawing) {
-            // Cursor activo (dibujando)
-            guiBuffer.stroke(100, 255, 100); // Verde
-            guiBuffer.strokeWeight(2);
-            guiBuffer.noFill();
-            
-            // Círculo pulsante
-            const pulseSize = brushSize + sin(frameCount * 0.2) * 3;
-            guiBuffer.ellipse(x, y, pulseSize, pulseSize);
-            
-            // Círculo interno
-            guiBuffer.stroke(150, 255, 150, 150);
-            guiBuffer.strokeWeight(1);
-            guiBuffer.ellipse(x, y, brushSize * 0.5, brushSize * 0.5);
-        } else {
-            // Cursor inactivo (solo moviendo)
-            guiBuffer.stroke(100, 150, 255, 180); // Azul semitransparente
-            guiBuffer.strokeWeight(1.5);
-            guiBuffer.noFill();
-            
-            // Círculo simple
-            guiBuffer.ellipse(x, y, brushSize, brushSize);
-        }
-        
-        // Cruz central
-        guiBuffer.stroke(cursor.isDrawing ? color(100, 255, 100) : color(100, 150, 255));
-        guiBuffer.strokeWeight(1.5);
-        const crossSize = 4;
-        guiBuffer.line(x - crossSize, y, x + crossSize, y);
-        guiBuffer.line(x, y - crossSize, x, y + crossSize);
-    });
+    // Dibujar todos los cursores en el guiBuffer
+    cursorServer.display(guiBuffer);
 }
 
 // ============================================================
@@ -635,16 +597,10 @@ function newDrawing(data2) {
 
 // Función para actualizar cursor remoto
 function updateRemoteCursor(data) {
-    // Guardar o actualizar la posición del cursor del cliente remoto
-    if (data.socketId) {
-        remoteCursors[data.socketId] = {
-            x: data.x,
-            y: data.y,
-            isDrawing: data.isDrawing || false,
-            brushSize: data.brushSize || 20,
-            timestamp: Date.now()
-        };
-    }
+    // Procesar los datos del cursor usando CursorServer
+    console.log('Cursor recibido:', data);
+    cursorServer.processCursorData(data);
+    console.log('Total cursores:', cursorServer.cursors.length);
 }
 
 // Función para limpiar el fondo localmente
