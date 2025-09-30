@@ -544,7 +544,16 @@ function gridToCanvas(cellX, cellY) {
 // Función para manejar nuevos dibujos recibidos por socket
 function newDrawing(data2) {
     if (data2.bc) {
-        cleanBackgroundLocal(); // Usar la función local para evitar reemitir el mensaje
+        // Verificar si el LOCK está activado
+        const isLocked = document.getElementById('lockBackground').checked;
+        
+        if (!isLocked) {
+            // Solo limpiar si NO está bloqueado
+            cleanBackgroundLocal(); // Usar la función local para evitar reemitir el mensaje
+            console.log("LIMPIEZA REMOTA APLICADA");
+        } else {
+            console.log("LIMPIEZA REMOTA BLOQUEADA POR LOCK");
+        }
     } else {
         // No actualizar ninguna variable global, cada trazo es completamente independiente
         
