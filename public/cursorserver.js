@@ -161,6 +161,12 @@ class CursorServer {
             return;
         }
 
+        // Obtener configuración actual del pincel
+        const brushSize = parseInt(document.getElementById('size').value) || 20;
+        const brushType = document.getElementById('brushType').value || 'classic';
+        const alphaValue = parseInt(document.getElementById('alphaValue').value) || 100;
+        const colorValue = document.getElementById('c1').value;
+
         // Crear un mapa de los cursores actuales por ID para búsqueda rápida
         const currentCursorsMap = {};
         for (let i = 0; i < this.cursors.length; i++) {
@@ -170,70 +176,91 @@ class CursorServer {
         // Crear un conjunto de IDs del nuevo JSON para verificar qué cursores eliminar
         const newCursorIds = new Set();
         _json.points.forEach(point => {
-            newCursorIds.add(point.id);
+            newCursorIds.add('lidar_' + point.id); // Prefijo para diferenciar de sockets
         });
 
-        // Eliminar cursores que ya no existen en el nuevo JSON
+        // Eliminar cursores que ya no existen en el nuevo JSON (solo los LIDAR)
         for (let i = this.cursors.length - 1; i >= 0; i--) {
-            if (!newCursorIds.has(this.cursors[i].socketId)) {
+            if (this.cursors[i].socketId.startsWith('lidar_') && !newCursorIds.has(this.cursors[i].socketId)) {
                 this.cursors.splice(i, 1);
             }
         }
 
-        // Actualizar cursores existentes o crear nuevos Y dibujar
+        // Procesar cada punto
         _json.points.forEach(point => {
-            const index = currentCursorsMap[point.id];
+            const pointId = 'lidar_' + point.id;
+            const index = currentCursorsMap[pointId];
             
             // Convertir coordenadas normalizadas (0-1) a coordenadas del canvas
             const canvasX = map(point.x, 0, 1, 0, windowWidth);
             const canvasY = map(point.y, 0, 1, 0, windowHeight);
             
+            // Actualizar o crear cursor para visualización
             if (index !== undefined) {
-                // Actualizar cursor existente
-                this.cursors[index].set(
-                    canvasX,
-                    canvasY,
-                    true, // TouchDesigner points SIEMPRE están "dibujando"
-                    20 // Tamaño por defecto
-                );
+                this.cursors[index].set(canvasX, canvasY, true, brushSize);
             } else {
-                // Crear nuevo cursor
-                this.cursors.push(new CursorPoint(
-                    canvasX,
-                    canvasY,
-                    point.id, // Usar el ID del punto como socketId
-                    true, // SIEMPRE dibujando
-                    20
-                ));
+                this.cursors.push(new CursorPoint(canvasX, canvasY, pointId, true, brushSize));
             }
             
-            // DIBUJAR el punto inmediatamente en el drawBuffer
+            // DIBUJAR localmente
             if (window.drawBuffer && window.dibujarCoso) {
-                const brushSize = parseInt(document.getElementById('size').value) || 20;
-                const col = color(document.getElementById('c1').value);
-                col.setAlpha(parseInt(document.getElementById('alphaValue').value) || 100);
+                const col = color(colorValue);
+                col.setAlpha(alphaValue);
                 
-                // Dibujar en el buffer principal
-                dibujarCoso(drawBuffer, canvasX, canvasY, {
+                const drawData = {
                     c1: col,
                     s: brushSize,
-                    av: parseInt(document.getElementById('alphaValue').value) || 100,
-                    bt: document.getElementById('brushType').value || 'classic',
+                    av: alphaValue,
+                    bt: brushType,
                     bc: false
-                });
+                };
+                
+                // Agregar parámetros específicos según el tipo de pincel
+                if (brushType === 'pixel') {
+                    drawData.cols = window.gridCols || 32;
+                    drawData.rows = window.gridRows || 32;
+                } else if (brushType === 'art') {
+                    drawData.particleCount = parseInt(document.getElementById('particleCount').value) || 10;
+                }
+                
+                dibujarCoso(drawBuffer, canvasX, canvasY, drawData);
+                
+                // ENVIAR por socket si shouldBroadcast es true
+                if (shouldBroadcast && window.socket && window.sessionId) {
+                    // Crear objeto de datos completo para enviar
+                    const socketData = {
+                        x: point.x, // Ya normalizado (0-1)
+                        y: point.y, // Ya normalizado (0-1)
+                        c1: col,
+                        s: brushSize,
+                        av: alphaValue,
+                        bt: brushType,
+                        bc: false,
+                        session: sessionId,
+                        sourceType: 'lidar', // Identificar origen
+                        pointId: point.id
+                    };
+                    
+                    // Agregar parámetros específicos del pincel
+                    if (brushType === 'pixel') {
+                        socketData.cols = window.gridCols || 32;
+                        socketData.rows = window.gridRows || 32;
+                    } else if (brushType === 'art') {
+                        socketData.particleCount = parseInt(document.getElementById('particleCount').value) || 10;
+                    }
+                    
+                    // Si hay syncParams del art brush, incluirlos
+                    if (drawData.syncParams) {
+                        socketData.syncParams = drawData.syncParams;
+                    }
+                    
+                    // Enviar como evento de dibujo normal
+                    socket.emit('mouse', socketData);
+                }
             }
         });
 
-        console.log(`Procesados ${_json.total_points} puntos de TouchDesigner. Cursores actuales: ${this.cursors.length}`);
-        
-        // Enviar por socket a otros clientes si shouldBroadcast es true
-        if (shouldBroadcast && window.socket && window.sessionId) {
-            socket.emit('touchpoints', {
-                points: _json.points,
-                total_points: _json.total_points,
-                session: sessionId
-            });
-        }
+        console.log(`Procesados ${_json.total_points} puntos de TouchDesigner/LIDAR`);
     }
     
     /**
