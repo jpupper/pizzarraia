@@ -339,8 +339,7 @@ function draw() {
                 size: syncParams.size,
                 baseSeed: syncParams.baseSeed,
                 mouseDirection: syncParams.mouseDirection,
-                mouseSpeed: syncParams.mouseSpeed,
-                speedFactor: window.artBrushSpeedFactor || 1.0 // Incluir el factor de velocidad actual
+                mouseSpeed: syncParams.mouseSpeed
             };
             
             // Si hay parámetros exactos para cada partícula, normalizarlos también
@@ -562,14 +561,11 @@ function newDrawing(data2) {
                 size: syncParams.size,
                 baseSeed: syncParams.baseSeed,
                 mouseDirection: syncParams.mouseDirection,
-                mouseSpeed: syncParams.mouseSpeed,
-                speedFactor: syncParams.speedFactor || 1.0 // Usar el factor de velocidad recibido
+                mouseSpeed: syncParams.mouseSpeed
             };
             
-            // Guardar temporalmente el factor de velocidad actual
-            const originalSpeedFactor = window.artBrushSpeedFactor;
-            // Establecer el factor de velocidad recibido para estas partículas
-            window.artBrushSpeedFactor = localSyncParams.speedFactor;
+            // NO modificar los valores de los sliders locales
+            // Las partículas ya vienen con sus velocidades calculadas en particleParams
             
             // Si hay parámetros exactos para cada partícula, convertirlos también
             if (syncParams.particleParams && syncParams.particleParams.length > 0) {
@@ -608,12 +604,6 @@ function newDrawing(data2) {
         // Restaurar las posiciones anteriores globales
         window.pmouseXGlobal = tempPmouseX;
         window.pmouseYGlobal = tempPmouseY;
-        
-        // Restaurar el factor de velocidad original si estamos procesando un trazo de art brush
-        if (data2.bt === 'art' && data2.syncParams && typeof originalSpeedFactor !== 'undefined') {
-            window.artBrushSpeedFactor = originalSpeedFactor;
-            console.log('Restaurando factor de velocidad original:', originalSpeedFactor);
-        }
     }
 }
 
