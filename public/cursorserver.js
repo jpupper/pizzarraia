@@ -151,6 +151,67 @@ class CursorServer {
     }
     
     /**
+     * Procesar JSON de TouchDesigner (compatible con lidartoweb)
+     * Este método es llamado desde TouchDesigner vía executeJavaScript
+     */
+    processJSONtouch(_json) {
+        // Verificar si el JSON es válido
+        if (!_json || !_json.points || !Array.isArray(_json.points)) {
+            console.error('JSON inválido o no contiene puntos');
+            return;
+        }
+
+        // Crear un mapa de los cursores actuales por ID para búsqueda rápida
+        const currentCursorsMap = {};
+        for (let i = 0; i < this.cursors.length; i++) {
+            currentCursorsMap[this.cursors[i].socketId] = i;
+        }
+
+        // Crear un conjunto de IDs del nuevo JSON para verificar qué cursores eliminar
+        const newCursorIds = new Set();
+        _json.points.forEach(point => {
+            newCursorIds.add(point.id);
+        });
+
+        // Eliminar cursores que ya no existen en el nuevo JSON
+        for (let i = this.cursors.length - 1; i >= 0; i--) {
+            if (!newCursorIds.has(this.cursors[i].socketId)) {
+                this.cursors.splice(i, 1);
+            }
+        }
+
+        // Actualizar cursores existentes o crear nuevos
+        _json.points.forEach(point => {
+            const index = currentCursorsMap[point.id];
+            
+            // Convertir coordenadas normalizadas (0-1) a coordenadas del canvas
+            const canvasX = map(point.x, 0, 1, 0, windowWidth);
+            const canvasY = map(point.y, 0, 1, 0, windowHeight);
+            
+            if (index !== undefined) {
+                // Actualizar cursor existente
+                this.cursors[index].set(
+                    canvasX,
+                    canvasY,
+                    false, // TouchDesigner points no están "dibujando"
+                    20 // Tamaño por defecto
+                );
+            } else {
+                // Crear nuevo cursor
+                this.cursors.push(new CursorPoint(
+                    canvasX,
+                    canvasY,
+                    point.id, // Usar el ID del punto como socketId
+                    false,
+                    20
+                ));
+            }
+        });
+
+        console.log(`Procesados ${_json.total_points} puntos de TouchDesigner. Cursores actuales: ${this.cursors.length}`);
+    }
+    
+    /**
      * Procesar múltiples cursores desde un array
      * Útil si en el futuro se envían múltiples cursores en un solo mensaje
      */
