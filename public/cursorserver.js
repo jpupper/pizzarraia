@@ -43,6 +43,7 @@ class CursorServer {
         this.cursors = []; // Array de CursorPoint
         this.CURSOR_TIMEOUT = 5000; // 5 segundos sin actualización = eliminar cursor
         this.previousPositions = {}; // Mapa de posiciones anteriores por socketId/pointId
+        this.lastCursorCount = 0; // Para evitar spam de logs
     }
     
     /**
@@ -57,9 +58,13 @@ class CursorServer {
      */
     update() {
         // Eliminar cursores obsoletos
+        // Usar timeout más largo para cursores LIDAR (10 segundos vs 5 segundos)
         for (let i = this.cursors.length - 1; i >= 0; i--) {
-            if (this.cursors[i].isStale(this.CURSOR_TIMEOUT)) {
-                console.log(`Cursor obsoleto eliminado: ${this.cursors[i].socketId}`);
+            const cursor = this.cursors[i];
+            const timeout = cursor.socketId.startsWith('lidar_') ? 10000 : this.CURSOR_TIMEOUT;
+            
+            if (cursor.isStale(timeout)) {
+                console.log(`Cursor obsoleto eliminado: ${cursor.socketId} (timeout: ${timeout}ms)`);
                 this.cursors.splice(i, 1);
             }
         }
@@ -159,7 +164,15 @@ class CursorServer {
                 data.isDrawing || false,
                 data.brushSize || 20
             ));
-            console.log(`Nuevo cursor agregado: ${data.socketId}`);
+            console.log(`Nuevo cursor remoto agregado: ${data.socketId} en (${canvasX.toFixed(1)}, ${canvasY.toFixed(1)})`);
+        }
+        
+        // Debug: mostrar total de cursores (solo cuando cambia)
+        const lidarCount = this.cursors.filter(c => c.socketId.startsWith('lidar_')).length;
+        const regularCount = this.cursors.length - lidarCount;
+        if (lidarCount > 0 || this.cursors.length !== this.lastCursorCount) {
+            console.log(`Cursores totales: ${this.cursors.length} (LIDAR: ${lidarCount}, Regulares: ${regularCount})`);
+            this.lastCursorCount = this.cursors.length;
         }
     }
     
