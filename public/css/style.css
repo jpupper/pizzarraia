@@ -35,11 +35,11 @@ canvas {
     padding: 1.5rem;
     border-radius: 8px;
     box-shadow: 0 4px 6px var(--shadow);
-    width: 300px;
+    width: 326px;
     z-index: 1000;
     display: none;
     transition: transform 0.3s ease;
-    max-height: 90vh; /* Altura máxima */
+    max-height: 90vh; /* Altura mÃ¡xima */
     overflow-y: auto; /* Permite scroll solo en el GUI */
 }
 
@@ -171,8 +171,8 @@ br {
     display: none;
 }
 
-/* Estilos para dispositivos móviles */
-/* Estilos base para móvil */
+/* Estilos para dispositivos mÃ³viles */
+/* Estilos base para mÃ³vil */
 @media screen and (max-width: 768px) {
   #gui {
     width: 90%;
@@ -249,7 +249,7 @@ br {
     height: 30px;
   }
 
-  /* Estilos para el scrollbar personalizado en móvil */
+  /* Estilos para el scrollbar personalizado en mÃ³vil */
   #gui::-webkit-scrollbar {
     width: 8px;
   }
@@ -324,7 +324,7 @@ select option {
     accent-color: var(--accent);
 }
 
-/* Estilos para el grupo de control de sincronización */
+/* Estilos para el grupo de control de sincronizaciÃ³n */
 .control-group {
     display: flex;
     align-items: center;
@@ -339,8 +339,8 @@ select option {
     background-color: var(--primary-light);
     padding: 5px 10px;
     border-radius: 4px;
-    min-width: 80px; /* Ancho mínimo para evitar que se corte el texto */
-    height: 36px; /* Altura fija para alinearse con el botón */
+    min-width: 80px; /* Ancho mÃ­nimo para evitar que se corte el texto */
+    height: 36px; /* Altura fija para alinearse con el botÃ³n */
 }
 
 .sync-label {

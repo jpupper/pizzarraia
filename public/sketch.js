@@ -284,6 +284,8 @@ function draw() {
     data = {
         x: map(mouseX, 0, windowWidth, 0, 1),
         y: map(mouseY, 0, windowHeight, 0, 1),
+        pmouseX: map(pmouseXGlobal, 0, windowWidth, 0, 1),
+        pmouseY: map(pmouseYGlobal, 0, windowHeight, 0, 1),
         c1: color(document.getElementById("c1").value),
         s: document.getElementById("size").value,
         av: document.getElementById("alphaValue").value,
@@ -419,6 +421,10 @@ function dibujarCoso(buffer, x, y, data) {
     
     // Dibujar según el tipo de pincel
     switch (brushType) {
+        case 'line':
+            // Line brush - dibuja una línea entre la posición anterior y actual
+            drawLineBrush(buffer, x, y, pmouseXGlobal, pmouseYGlobal, brushSize, col);
+            break;
         case 'art':
             // Art brush - sistema de partículas
             // Usar el valor de particleCount del dato recibido
@@ -519,6 +525,22 @@ function newDrawing(data2) {
         const canvasX = map(data2.x, 0, 1, 0, windowWidth);
         const canvasY = map(data2.y, 0, 1, 0, windowHeight);
         
+        // Convertir pmouseX y pmouseY si están presentes
+        let remotePmouseX = canvasX;
+        let remotePmouseY = canvasY;
+        if (data2.pmouseX !== undefined && data2.pmouseY !== undefined) {
+            remotePmouseX = map(data2.pmouseX, 0, 1, 0, windowWidth);
+            remotePmouseY = map(data2.pmouseY, 0, 1, 0, windowHeight);
+        }
+        
+        // Guardar temporalmente las posiciones anteriores globales
+        const tempPmouseX = window.pmouseXGlobal;
+        const tempPmouseY = window.pmouseYGlobal;
+        
+        // Establecer las posiciones anteriores para este trazo remoto
+        window.pmouseXGlobal = remotePmouseX;
+        window.pmouseYGlobal = remotePmouseY;
+        
         // Si es un trazo de art brush con parámetros de sincronización
         if (data2.bt === 'art' && data2.syncParams) {
             // Asegurarse de que los parámetros de sincronización están en coordenadas del canvas
@@ -582,6 +604,10 @@ function newDrawing(data2) {
             canvasY,
             data2
         );
+        
+        // Restaurar las posiciones anteriores globales
+        window.pmouseXGlobal = tempPmouseX;
+        window.pmouseYGlobal = tempPmouseY;
         
         // Restaurar el factor de velocidad original si estamos procesando un trazo de art brush
         if (data2.bt === 'art' && data2.syncParams && typeof originalSpeedFactor !== 'undefined') {
