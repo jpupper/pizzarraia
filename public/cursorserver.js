@@ -225,9 +225,10 @@ class CursorServer {
             const canvasY = map(point.y, 0, 1, 0, windowHeight);
             
             // Obtener posición anterior de este punto específico
-            const prevPos = this.previousPositions[pointId] || { x: canvasX, y: canvasY };
-            const pmouseX = prevPos.x;
-            const pmouseY = prevPos.y;
+            const prevPos = this.previousPositions[pointId];
+            const isFirstFrame = !prevPos; // Es la primera vez que vemos este punto
+            const pmouseX = prevPos ? prevPos.x : canvasX;
+            const pmouseY = prevPos ? prevPos.y : canvasY;
             
             // Guardar la posición actual para el próximo frame
             this.previousPositions[pointId] = { x: canvasX, y: canvasY };
@@ -237,6 +238,12 @@ class CursorServer {
                 this.cursors[index].set(canvasX, canvasY, true, brushSize);
             } else {
                 this.cursors.push(new CursorPoint(canvasX, canvasY, pointId, true, brushSize));
+            }
+            
+            // NO dibujar en el primer frame (necesitamos al menos 2 frames para calcular velocidad)
+            if (isFirstFrame) {
+                console.log(`Punto LIDAR ${pointId} detectado por primera vez, esperando siguiente frame para dibujar`);
+                return; // Salir del forEach para este punto
             }
             
             // DIBUJAR localmente
@@ -300,9 +307,45 @@ class CursorServer {
                         socketData.particleCount = parseInt(document.getElementById('particleCount').value) || 10;
                     }
                     
-                    // Si hay syncParams del art brush, incluirlos
+                    // Si hay syncParams del art brush, normalizarlos antes de enviar
                     if (drawData.syncParams) {
-                        socketData.syncParams = drawData.syncParams;
+                        const syncParams = drawData.syncParams;
+                        
+                        // Normalizar las coordenadas del canvas a valores entre 0 y 1
+                        const normalizedSyncParams = {
+                            x: map(syncParams.x, 0, windowWidth, 0, 1),
+                            y: map(syncParams.y, 0, windowHeight, 0, 1),
+                            pmouseX: map(syncParams.pmouseX, 0, windowWidth, 0, 1),
+                            pmouseY: map(syncParams.pmouseY, 0, windowHeight, 0, 1),
+                            count: syncParams.count,
+                            size: syncParams.size,
+                            baseSeed: syncParams.baseSeed,
+                            mouseDirection: syncParams.mouseDirection,
+                            mouseSpeed: syncParams.mouseSpeed,
+                            speedFactor: window.artBrushSpeedFactor || 1.0
+                        };
+                        
+                        // Si hay parámetros exactos para cada partícula, normalizarlos también
+                        if (syncParams.particleParams && syncParams.particleParams.length > 0) {
+                            const normalizedParticleParams = [];
+                            
+                            for (let i = 0; i < syncParams.particleParams.length; i++) {
+                                const p = syncParams.particleParams[i];
+                                normalizedParticleParams.push({
+                                    x: map(p.x, 0, windowWidth, 0, 1),
+                                    y: map(p.y, 0, windowHeight, 0, 1),
+                                    vx: p.vx,
+                                    vy: p.vy,
+                                    size: p.size,
+                                    seed: p.seed,
+                                    colorSeed: p.colorSeed
+                                });
+                            }
+                            
+                            normalizedSyncParams.particleParams = normalizedParticleParams;
+                        }
+                        
+                        socketData.syncParams = normalizedSyncParams;
                     }
                     
                     // Enviar como evento de dibujo normal
