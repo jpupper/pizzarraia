@@ -136,8 +136,11 @@ io.on('connection', (socket) => {
       // Get all socket IDs in the same session
       const sessionSockets = sessions[sessionId];
       
-      // Add the sender's socket ID to the data so clients can identify different cursors
-      data.socketId = socket.id;
+      // Add the sender's socket ID to the data ONLY if not already set
+      // (para permitir múltiples cursores LIDAR con IDs únicos)
+      if (!data.socketId) {
+        data.socketId = socket.id;
+      }
       
       // Broadcast to all sockets in the same session except the sender
       sessionSockets.forEach(socketId => {
