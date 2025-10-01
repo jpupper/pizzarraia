@@ -42,6 +42,7 @@ class CursorServer {
     constructor() {
         this.cursors = []; // Array de CursorPoint
         this.CURSOR_TIMEOUT = 5000; // 5 segundos sin actualización = eliminar cursor
+        this.previousPositions = {}; // Mapa de posiciones anteriores por socketId/pointId
     }
     
     /**
@@ -74,23 +75,29 @@ class CursorServer {
             cursorCountElement.textContent = `Cursores: ${this.cursors.length}`;
         }
         
+        // Debug: verificar si hay cursores LIDAR
+        const lidarCursors = this.cursors.filter(c => c.socketId.startsWith('lidar_'));
+        if (lidarCursors.length > 0) {
+            console.log(`Dibujando ${lidarCursors.length} cursores LIDAR`);
+        }
+        
         for (let i = 0; i < this.cursors.length; i++) {
             const cursor = this.cursors[i];
             
             // Estilo diferente si el usuario remoto está dibujando
             if (cursor.isDrawing) {
-                // Cursor activo (dibujando)
-                buffer.stroke(100, 255, 100); // Verde
-                buffer.strokeWeight(2);
+                // Cursor activo (dibujando) - MÁS VISIBLE
+                buffer.stroke(100, 255, 100, 255); // Verde brillante
+                buffer.strokeWeight(3);
                 buffer.noFill();
                 
-                // Círculo pulsante
-                const pulseSize = cursor.brushSize + sin(frameCount * 0.2) * 3;
+                // Círculo pulsante más grande
+                const pulseSize = cursor.brushSize + sin(frameCount * 0.2) * 5;
                 buffer.ellipse(cursor.x, cursor.y, pulseSize, pulseSize);
                 
                 // Círculo interno
-                buffer.stroke(150, 255, 150, 150);
-                buffer.strokeWeight(1);
+                buffer.stroke(150, 255, 150, 200);
+                buffer.strokeWeight(2);
                 buffer.ellipse(cursor.x, cursor.y, cursor.brushSize * 0.5, cursor.brushSize * 0.5);
             } else {
                 // Cursor inactivo (solo moviendo)
@@ -102,10 +109,10 @@ class CursorServer {
                 buffer.ellipse(cursor.x, cursor.y, cursor.brushSize, cursor.brushSize);
             }
             
-            // Cruz central
-            buffer.stroke(cursor.isDrawing ? color(100, 255, 100) : color(100, 150, 255));
-            buffer.strokeWeight(1.5);
-            const crossSize = 4;
+            // Cruz central MÁS VISIBLE
+            buffer.stroke(cursor.isDrawing ? color(100, 255, 100, 255) : color(100, 150, 255, 180));
+            buffer.strokeWeight(2);
+            const crossSize = 6;
             buffer.line(cursor.x - crossSize, cursor.y, cursor.x + crossSize, cursor.y);
             buffer.line(cursor.x, cursor.y - crossSize, cursor.x, cursor.y + crossSize);
         }
@@ -188,7 +195,10 @@ class CursorServer {
         // Eliminar cursores que ya no existen en el nuevo JSON (solo los LIDAR)
         for (let i = this.cursors.length - 1; i >= 0; i--) {
             if (this.cursors[i].socketId.startsWith('lidar_') && !newCursorIds.has(this.cursors[i].socketId)) {
+                const removedId = this.cursors[i].socketId;
                 this.cursors.splice(i, 1);
+                // También eliminar la posición anterior guardada
+                delete this.previousPositions[removedId];
             }
         }
 
@@ -200,6 +210,14 @@ class CursorServer {
             // Convertir coordenadas normalizadas (0-1) a coordenadas del canvas
             const canvasX = map(point.x, 0, 1, 0, windowWidth);
             const canvasY = map(point.y, 0, 1, 0, windowHeight);
+            
+            // Obtener posición anterior de este punto específico
+            const prevPos = this.previousPositions[pointId] || { x: canvasX, y: canvasY };
+            const pmouseX = prevPos.x;
+            const pmouseY = prevPos.y;
+            
+            // Guardar la posición actual para el próximo frame
+            this.previousPositions[pointId] = { x: canvasX, y: canvasY };
             
             // Actualizar o crear cursor para visualización
             if (index !== undefined) {
@@ -229,7 +247,19 @@ class CursorServer {
                     drawData.particleCount = parseInt(document.getElementById('particleCount').value) || 10;
                 }
                 
+                // Guardar temporalmente las posiciones anteriores globales
+                const tempPmouseX = window.pmouseXGlobal;
+                const tempPmouseY = window.pmouseYGlobal;
+                
+                // Establecer las posiciones anteriores específicas de este punto
+                window.pmouseXGlobal = pmouseX;
+                window.pmouseYGlobal = pmouseY;
+                
                 dibujarCoso(drawBuffer, canvasX, canvasY, drawData);
+                
+                // Restaurar las posiciones anteriores globales
+                window.pmouseXGlobal = tempPmouseX;
+                window.pmouseYGlobal = tempPmouseY;
                 
                 // ENVIAR por socket si shouldBroadcast es true
                 if (shouldBroadcast && window.socket && window.sessionId) {
@@ -237,6 +267,8 @@ class CursorServer {
                     const socketData = {
                         x: point.x, // Ya normalizado (0-1)
                         y: point.y, // Ya normalizado (0-1)
+                        pmouseX: map(pmouseX, 0, windowWidth, 0, 1), // Normalizar posición anterior
+                        pmouseY: map(pmouseY, 0, windowHeight, 0, 1), // Normalizar posición anterior
                         c1: col,
                         s: brushSize,
                         av: alphaValue,
@@ -262,6 +294,18 @@ class CursorServer {
                     
                     // Enviar como evento de dibujo normal
                     socket.emit('mouse', socketData);
+                    
+                    // TAMBIÉN enviar actualización de cursor para que se vea en otros clientes
+                    const cursorData = {
+                        x: point.x, // Ya normalizado (0-1)
+                        y: point.y, // Ya normalizado (0-1)
+                        isDrawing: true,
+                        brushSize: brushSize,
+                        session: sessionId,
+                        socketId: pointId, // Usar el pointId como identificador único
+                        isCursorOnly: false // No es solo cursor, también está dibujando
+                    };
+                    socket.emit('cursor', cursorData);
                 }
             }
         });
