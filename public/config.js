@@ -66,11 +66,17 @@ const config = {
       default: 10,
       step: 1
     },
+    speedForce: {
+      min: 0.1,
+      max: 2.0,
+      default: 0.5,
+      step: 0.1
+    },
     maxSpeed: {
-      min: 0.01,
-      max: 0.1,
-      default: 0.01,
-      step: 0.01
+      min: 0.1,
+      max: 3.0,
+      default: 0.5,
+      step: 0.1
     },
     particleLife: {
       min: 50,

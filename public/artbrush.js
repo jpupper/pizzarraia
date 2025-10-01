@@ -181,8 +181,19 @@ class ParticleSystem {
             const angleVariation = (this.pseudoRandom(particleSeed + 2) * 2 - 1) * (PI/6);
             const velocityAngle = calculatedMouseDirection + angleVariation;
             
+            // Obtener Speed Force (multiplicador) y Max Speed (límite)
+            const speedForce = (window.artBrushSpeedForce !== undefined) ? window.artBrushSpeedForce : 0.5;
+            const maxSpeedLimit = (window.artBrushMaxSpeed !== undefined) ? window.artBrushMaxSpeed : 2.0;
+            
+            // Calcular velocidad con variación aleatoria
             const speedVariation = this.pseudoRandom(particleSeed + 3);
-            const speed = max(0.5, calculatedMouseSpeed * (0.5 + speedVariation));
+            
+            // Aplicar Speed Force como multiplicador
+            const baseSpeed = calculatedMouseSpeed * speedForce * (0.5 + speedVariation);
+            
+            // LIMITAR la velocidad al Max Speed configurado
+            const speed = min(baseSpeed, maxSpeedLimit);
+            
             const vx = cos(velocityAngle) * speed;
             const vy = sin(velocityAngle) * speed;
             

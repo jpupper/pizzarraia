@@ -321,8 +321,7 @@ class CursorServer {
                             size: syncParams.size,
                             baseSeed: syncParams.baseSeed,
                             mouseDirection: syncParams.mouseDirection,
-                            mouseSpeed: syncParams.mouseSpeed,
-                            speedFactor: window.artBrushSpeedFactor || 1.0
+                            mouseSpeed: syncParams.mouseSpeed
                         };
                         
                         // Si hay parámetros exactos para cada partícula, normalizarlos también

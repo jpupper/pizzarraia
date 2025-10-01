@@ -5,19 +5,46 @@ var GUI = document.getElementById("gui");
 var MODAL = document.getElementById("modal");
 var isModalOpen = true;
 
-/*
-document.getElementById("gui").onmouseout = function(event) {
-  console.log("AFUERA");
-};
-document.getElementById("gui").onmouseover = function(event) {
-  console.log("ADENTRO");
-};*/
-
 window.onload = function() {
+    initializeSlidersFromConfig();
     setupButtonEvents();
     setupCloseButton();
     setupBrushTypeEvents();
 };
+
+// Función para inicializar sliders desde config.js
+function initializeSlidersFromConfig() {
+    if (!config || !config.sliders) {
+        console.warn('Config.sliders no está definido');
+        return;
+    }
+    
+    const sliders = config.sliders;
+    
+    // Aplicar configuración a cada slider
+    Object.keys(sliders).forEach(sliderId => {
+        const slider = document.getElementById(sliderId);
+        if (slider) {
+            const sliderConfig = sliders[sliderId];
+            slider.min = sliderConfig.min;
+            slider.max = sliderConfig.max;
+            slider.value = sliderConfig.default;
+            slider.step = sliderConfig.step;
+            
+            console.log(`Slider ${sliderId} configurado: min=${sliderConfig.min}, max=${sliderConfig.max}, value=${sliderConfig.default}, step=${sliderConfig.step}`);
+        }
+    });
+    
+    // Inicializar variables globales del Art Brush con los valores por defecto
+    if (config.sliders.speedForce) {
+        window.artBrushSpeedForce = config.sliders.speedForce.default;
+        console.log('artBrushSpeedForce inicializado a:', window.artBrushSpeedForce);
+    }
+    if (config.sliders.maxSpeed) {
+        window.artBrushMaxSpeed = config.sliders.maxSpeed.default;
+        console.log('artBrushMaxSpeed inicializado a:', window.artBrushMaxSpeed);
+    }
+}
 
 function setupCloseButton() {
     const closeButton = document.getElementById("closeButton");
@@ -152,6 +179,7 @@ function setupBrushTypeEvents() {
   
   // Add event listeners for art brush parameters
   const particleCountInput = document.getElementById('particleCount');
+  const speedForceInput = document.getElementById('speedForce');
   const maxSpeedInput = document.getElementById('maxSpeed');
   const particleLifeInput = document.getElementById('particleLife');
   const particleMaxSizeInput = document.getElementById('particleMaxSize');
@@ -162,10 +190,19 @@ function setupBrushTypeEvents() {
     console.log('Particle count actualizado:', window.particleCount);
   });
   
+  // Event listener for speed force slider
+  speedForceInput.addEventListener('input', function() {
+    // Actualizar el multiplicador de velocidad
+    const speedForce = parseFloat(this.value);
+    console.log('Speed Force slider cambiado a:', speedForce);
+    updateArtBrushParameters({ speedForce: speedForce });
+  });
+  
   // Event listener for max speed slider
   maxSpeedInput.addEventListener('input', function() {
-    // Actualizar la velocidad de las partículas
+    // Actualizar el límite máximo de velocidad
     const maxSpeed = parseFloat(this.value);
+    console.log('Max Speed slider cambiado a:', maxSpeed);
     updateArtBrushParameters({ maxSpeed: maxSpeed });
   });
   
@@ -192,10 +229,16 @@ function updateArtBrushParameters(params) {
     return;
   }
   
-  // Actualizar la velocidad máxima
+  // Actualizar el multiplicador de velocidad (Speed Force)
+  if (params.speedForce !== undefined) {
+    window.artBrushSpeedForce = params.speedForce;
+    console.log('artBrushSpeedForce actualizado a:', window.artBrushSpeedForce);
+  }
+  
+  // Actualizar el límite máximo de velocidad (Max Speed)
   if (params.maxSpeed !== undefined) {
-    // Modificar la velocidad de las partículas
-    window.artBrushSpeedFactor = params.maxSpeed;
+    window.artBrushMaxSpeed = params.maxSpeed;
+    console.log('artBrushMaxSpeed actualizado a:', window.artBrushMaxSpeed);
   }
   
   // Actualizar la vida de las partículas
