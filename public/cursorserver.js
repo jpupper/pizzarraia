@@ -154,7 +154,7 @@ class CursorServer {
      * Procesar JSON de TouchDesigner (compatible con lidartoweb)
      * Este método es llamado desde TouchDesigner vía executeJavaScript
      */
-    processJSONtouch(_json) {
+    processJSONtouch(_json, shouldBroadcast = true) {
         // Verificar si el JSON es válido
         if (!_json || !_json.points || !Array.isArray(_json.points)) {
             console.error('JSON inválido o no contiene puntos');
@@ -180,7 +180,7 @@ class CursorServer {
             }
         }
 
-        // Actualizar cursores existentes o crear nuevos
+        // Actualizar cursores existentes o crear nuevos Y dibujar
         _json.points.forEach(point => {
             const index = currentCursorsMap[point.id];
             
@@ -193,7 +193,7 @@ class CursorServer {
                 this.cursors[index].set(
                     canvasX,
                     canvasY,
-                    false, // TouchDesigner points no están "dibujando"
+                    true, // TouchDesigner points SIEMPRE están "dibujando"
                     20 // Tamaño por defecto
                 );
             } else {
@@ -202,13 +202,38 @@ class CursorServer {
                     canvasX,
                     canvasY,
                     point.id, // Usar el ID del punto como socketId
-                    false,
+                    true, // SIEMPRE dibujando
                     20
                 ));
+            }
+            
+            // DIBUJAR el punto inmediatamente en el drawBuffer
+            if (window.drawBuffer && window.dibujarCoso) {
+                const brushSize = parseInt(document.getElementById('size').value) || 20;
+                const col = color(document.getElementById('c1').value);
+                col.setAlpha(parseInt(document.getElementById('alphaValue').value) || 100);
+                
+                // Dibujar en el buffer principal
+                dibujarCoso(drawBuffer, canvasX, canvasY, {
+                    c1: col,
+                    s: brushSize,
+                    av: parseInt(document.getElementById('alphaValue').value) || 100,
+                    bt: document.getElementById('brushType').value || 'classic',
+                    bc: false
+                });
             }
         });
 
         console.log(`Procesados ${_json.total_points} puntos de TouchDesigner. Cursores actuales: ${this.cursors.length}`);
+        
+        // Enviar por socket a otros clientes si shouldBroadcast es true
+        if (shouldBroadcast && window.socket && window.sessionId) {
+            socket.emit('touchpoints', {
+                points: _json.points,
+                total_points: _json.total_points,
+                session: sessionId
+            });
+        }
     }
     
     /**

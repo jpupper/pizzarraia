@@ -90,6 +90,9 @@ function setup() {
     // Configurar evento para recibir posiciones de cursor de otros clientes
     socket.on("cursor", updateRemoteCursor);
     
+    // Configurar evento para recibir puntos de TouchDesigner de otros clientes
+    socket.on("touchpoints", receiveTouchPoints);
+    
     // Inicializar valores
     asignarValores();
     drawBuffer.background(0);
@@ -602,6 +605,14 @@ function updateRemoteCursor(data) {
     console.log('Cursor recibido:', data);
     PS.processCursorData(data);
     console.log('Total cursores:', PS.cursors.length);
+}
+
+// Función para recibir puntos de TouchDesigner de otros clientes
+function receiveTouchPoints(data) {
+    console.log('TouchPoints recibidos:', data);
+    
+    // Procesar los puntos sin reenviar (shouldBroadcast = false)
+    PS.processJSONtouch(data, false);
 }
 
 // Función para limpiar el fondo localmente
