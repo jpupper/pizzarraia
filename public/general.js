@@ -44,6 +44,32 @@ function initializeSlidersFromConfig() {
         window.artBrushMaxSpeed = config.sliders.maxSpeed.default;
         console.log('artBrushMaxSpeed inicializado a:', window.artBrushMaxSpeed);
     }
+    
+    // Actualizar los valores numéricos iniciales
+    updateAllSliderValues();
+}
+
+// Función para actualizar el valor numérico de un slider
+function updateSliderValue(sliderId) {
+    const slider = document.getElementById(sliderId);
+    const valueSpan = document.getElementById(sliderId + '-value');
+    
+    if (slider && valueSpan) {
+        let value = slider.value;
+        // Formatear según el tipo de slider
+        if (sliderId === 'size' || sliderId === 'speedForce' || sliderId === 'maxSpeed') {
+            value = parseFloat(value).toFixed(1);
+        } else {
+            value = parseInt(value);
+        }
+        valueSpan.textContent = value;
+    }
+}
+
+// Función para actualizar todos los valores numéricos
+function updateAllSliderValues() {
+    const sliderIds = ['alphaValue', 'size', 'gridCols', 'gridRows', 'particleCount', 'speedForce', 'maxSpeed', 'particleLife', 'particleMaxSize'];
+    sliderIds.forEach(sliderId => updateSliderValue(sliderId));
 }
 
 function setupCloseButton() {
@@ -117,6 +143,22 @@ $("#gui").on("touchend", function() {
 
 // Function to handle brush type changes
 function setupBrushTypeEvents() {
+  // Event listeners para sliders globales
+  const alphaValueInput = document.getElementById('alphaValue');
+  const sizeInput = document.getElementById('size');
+  
+  if (alphaValueInput) {
+    alphaValueInput.addEventListener('input', function() {
+      updateSliderValue('alphaValue');
+    });
+  }
+  
+  if (sizeInput) {
+    sizeInput.addEventListener('input', function() {
+      updateSliderValue('size');
+    });
+  }
+  
   const brushTypeSelect = document.getElementById('brushType');
   const classicBrushParams = document.getElementById('classicBrushParams');
   const pixelBrushParams = document.getElementById('pixelBrushParams');
@@ -162,6 +204,7 @@ function setupBrushTypeEvents() {
       updateGridDimensions();
       updateGridBuffer(); // Update grid buffer when columns change
     }
+    updateSliderValue('gridCols');
   });
   
   gridRowsInput.addEventListener('input', function() {
@@ -170,6 +213,7 @@ function setupBrushTypeEvents() {
       updateGridDimensions();
       updateGridBuffer(); // Update grid buffer when rows change
     }
+    updateSliderValue('gridRows');
   });
   
   showGridCheckbox.addEventListener('change', function() {
@@ -188,6 +232,7 @@ function setupBrushTypeEvents() {
     // Asignar directamente el valor del slider a la variable global
     window.particleCount = parseInt(this.value);
     console.log('Particle count actualizado:', window.particleCount);
+    updateSliderValue('particleCount');
   });
   
   // Event listener for speed force slider
@@ -196,6 +241,7 @@ function setupBrushTypeEvents() {
     const speedForce = parseFloat(this.value);
     console.log('Speed Force slider cambiado a:', speedForce);
     updateArtBrushParameters({ speedForce: speedForce });
+    updateSliderValue('speedForce');
   });
   
   // Event listener for max speed slider
@@ -204,6 +250,7 @@ function setupBrushTypeEvents() {
     const maxSpeed = parseFloat(this.value);
     console.log('Max Speed slider cambiado a:', maxSpeed);
     updateArtBrushParameters({ maxSpeed: maxSpeed });
+    updateSliderValue('maxSpeed');
   });
   
   // Event listener for particle life slider
@@ -211,6 +258,7 @@ function setupBrushTypeEvents() {
     // Actualizar la vida de las partículas
     const particleLife = parseInt(this.value);
     updateArtBrushParameters({ particleLife: particleLife });
+    updateSliderValue('particleLife');
   });
   
   // Event listener for particle size slider
@@ -218,6 +266,7 @@ function setupBrushTypeEvents() {
     // Actualizar el tamaño máximo de las partículas
     const particleMaxSize = parseInt(this.value);
     updateArtBrushParameters({ particleMaxSize: particleMaxSize });
+    updateSliderValue('particleMaxSize');
   });
 }
 
