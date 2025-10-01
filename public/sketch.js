@@ -22,8 +22,8 @@ var isMousePressed = false;
 var isOverGui = false;
 var mouseFlag = true;
 
-// Sistema de cursores remotos
-var cursorServer; // Instancia de CursorServer para gestionar cursores de otros clientes
+// Sistema de cursores remotos (compatible con TouchDesigner)
+var PS; // Instancia de CursorServer (PointServer) para gestionar cursores de otros clientes
 
 // Variables de canvas
 var mainCanvas; // Canvas principal
@@ -102,7 +102,8 @@ function setup() {
     
     // Inicializar sistemas
     ps = new PalabraSystem();
-    cursorServer = new CursorServer(); // Inicializar el servidor de cursores
+    PS = new CursorServer(); // Inicializar el servidor de cursores (PointServer)
+    window.PS = PS; // Hacer PS accesible globalmente para TouchDesigner
     textAlign(CENTER, CENTER);
     textSize(80);
     
@@ -242,15 +243,15 @@ function drawBrushCursor() {
 // Función para dibujar cursores de otros clientes
 function drawRemoteCursors() {
     // Actualizar el servidor de cursores (eliminar obsoletos)
-    cursorServer.update();
+    PS.update();
     
     // Debug: mostrar cantidad de cursores
-    if (cursorServer.cursors.length > 0 && frameCount % 60 === 0) {
-        console.log('Dibujando cursores:', cursorServer.cursors.length);
+    if (PS.cursors.length > 0 && frameCount % 60 === 0) {
+        console.log('Dibujando cursores:', PS.cursors.length);
     }
     
     // Dibujar todos los cursores en el guiBuffer
-    cursorServer.display(guiBuffer);
+    PS.display(guiBuffer);
 }
 
 // ============================================================
@@ -599,8 +600,8 @@ function newDrawing(data2) {
 function updateRemoteCursor(data) {
     // Procesar los datos del cursor usando CursorServer
     console.log('Cursor recibido:', data);
-    cursorServer.processCursorData(data);
-    console.log('Total cursores:', cursorServer.cursors.length);
+    PS.processCursorData(data);
+    console.log('Total cursores:', PS.cursors.length);
 }
 
 // Función para limpiar el fondo localmente

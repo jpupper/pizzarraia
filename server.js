@@ -139,13 +139,10 @@ io.on('connection', (socket) => {
       // Add the sender's socket ID to the data so clients can identify different cursors
       data.socketId = socket.id;
       
-      console.log(`Cursor de ${socket.id} en sesión ${sessionId}:`, {x: data.x, y: data.y, isDrawing: data.isDrawing});
-      
       // Broadcast to all sockets in the same session except the sender
       sessionSockets.forEach(socketId => {
         if (socketId !== socket.id) {
           io.to(socketId).emit('cursor', data);
-          console.log(`  -> Enviado a ${socketId}`);
         }
       });
     }
