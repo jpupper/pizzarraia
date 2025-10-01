@@ -68,6 +68,12 @@ class CursorServer {
      * Dibujar todos los cursores en el buffer especificado
      */
     display(buffer) {
+        // Actualizar contador en la interfaz
+        const cursorCountElement = document.getElementById('cursorCount');
+        if (cursorCountElement) {
+            cursorCountElement.textContent = `Cursores: ${this.cursors.length}`;
+        }
+        
         for (let i = 0; i < this.cursors.length; i++) {
             const cursor = this.cursors[i];
             

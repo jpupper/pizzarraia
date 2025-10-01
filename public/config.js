@@ -27,5 +27,62 @@ const config = {
         }
       };
     }
+  },
+  
+  // Configuración de sliders - Valores mínimos, máximos y por defecto
+  sliders: {
+    // Sliders globales
+    alphaValue: {
+      min: 0,
+      max: 255,
+      default: 100,
+      step: 1
+    },
+    size: {
+      min: 0,
+      max: 100,
+      default: 50,
+      step: 0.1
+    },
+    
+    // Pixel Brush
+    gridCols: {
+      min: 4,
+      max: 64,
+      default: 32,
+      step: 4
+    },
+    gridRows: {
+      min: 4,
+      max: 64,
+      default: 32,
+      step: 4
+    },
+    
+    // Art Brush
+    particleCount: {
+      min: 1,
+      max: 30,
+      default: 10,
+      step: 1
+    },
+    maxSpeed: {
+      min: 0.1,
+      max: 0.5,
+      default: 0.2,
+      step: 0.01
+    },
+    particleLife: {
+      min: 50,
+      max: 500,
+      default: 255,
+      step: 10
+    },
+    particleMaxSize: {
+      min: 1,
+      max: 20,
+      default: 8,
+      step: 1
+    }
   }
 };
