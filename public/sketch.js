@@ -84,14 +84,11 @@ function setup() {
         console.log('Joined session:', sessionId);
     });
     
-    // Configurar evento para recibir datos de dibujo
+    // Configurar evento para recibir datos de dibujo (incluye mouse, touch y LIDAR)
     socket.on("mouse", newDrawing);
     
     // Configurar evento para recibir posiciones de cursor de otros clientes
     socket.on("cursor", updateRemoteCursor);
-    
-    // Configurar evento para recibir puntos de TouchDesigner de otros clientes
-    socket.on("touchpoints", receiveTouchPoints);
     
     // Inicializar valores
     asignarValores();
@@ -247,11 +244,6 @@ function drawBrushCursor() {
 function drawRemoteCursors() {
     // Actualizar el servidor de cursores (eliminar obsoletos)
     PS.update();
-    
-    // Debug: mostrar cantidad de cursores
-    if (PS.cursors.length > 0 && frameCount % 60 === 0) {
-        console.log('Dibujando cursores:', PS.cursors.length);
-    }
     
     // Dibujar todos los cursores en el guiBuffer
     PS.display(guiBuffer);
@@ -602,17 +594,7 @@ function newDrawing(data2) {
 // Función para actualizar cursor remoto
 function updateRemoteCursor(data) {
     // Procesar los datos del cursor usando CursorServer
-    console.log('Cursor recibido:', data);
     PS.processCursorData(data);
-    console.log('Total cursores:', PS.cursors.length);
-}
-
-// Función para recibir puntos de TouchDesigner de otros clientes
-function receiveTouchPoints(data) {
-    console.log('TouchPoints recibidos:', data);
-    
-    // Procesar los puntos sin reenviar (shouldBroadcast = false)
-    PS.processJSONtouch(data, false);
 }
 
 // Función para limpiar el fondo localmente

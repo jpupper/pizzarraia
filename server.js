@@ -108,7 +108,6 @@ io.on('connection', (socket) => {
   
   socket.on('mouse', mouseMsg);
   socket.on('cursor', cursorMsg);
-  socket.on('touchpoints', touchPointsMsg);
   
   function mouseMsg(data){
     // Only broadcast to clients in the same session
@@ -148,25 +147,6 @@ io.on('connection', (socket) => {
       });
     }
   }
-  
-  function touchPointsMsg(data){
-    // Broadcast TouchDesigner points to all clients in the same session
-    const sessionId = socket.sessionId || '0';
-    
-    console.log(`TouchPoints de ${socket.id} en sesión ${sessionId}: ${data.total_points} puntos`);
-    
-    if (sessions[sessionId]) {
-      // Get all socket IDs in the same session
-      const sessionSockets = sessions[sessionId];
-      
-      // Broadcast to all sockets in the same session except the sender
-      sessionSockets.forEach(socketId => {
-        if (socketId !== socket.id) {
-          io.to(socketId).emit('touchpoints', data);
-        }
-      });
-    }
-  }	
 
   // Manejar la desconexión del cliente
   socket.on('disconnect', () => {
