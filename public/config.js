@@ -89,6 +89,22 @@ const config = {
       max: 20,
       default: 8,
       step: 1
+    },
+    
+    // Text Brush
+    textSize: {
+      min: 10,
+      max: 200,
+      default: 40,
+      step: 5
+    },
+    
+    // Geometry Brush
+    polygonSides: {
+      min: 2,
+      max: 10,
+      default: 5,
+      step: 1
     }
   }
 };

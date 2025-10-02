@@ -19,6 +19,8 @@
     <script src="pixelbrush.js"></script>
     <script src="artbrush.js"></script>
     <script src="linebrush.js"></script>
+    <script src="textbrush.js"></script>
+    <script src="geometrybrush.js"></script>
     <script src="cursorserver.js"></script>
     <script src="sketch.js"></script>
 	
@@ -45,6 +47,8 @@
 			<option value="line">Line Brush</option>
 			<option value="art">Art Brush</option>
 			<option value="pixel">Pixel Brush</option>
+			<option value="text">Text Brush</option>
+			<option value="geometry">Geometry Brush</option>
 		</select>
 		<br>
 		<!-- Classic Brush Controls (default, no additional controls) -->
@@ -83,6 +87,44 @@
 			<input type="range" value="8" id="particleMaxSize" min="1" max="20" step="1" class="jpslider">
 			<br>
 		</div>
+		
+		<!-- Text Brush Controls -->
+		<div id="textBrushParams" class="brushParams" style="display: none;">
+			<label>Text</label>
+			<input type="text" id="textContent" value="TEXTO" class="jpinput" style="width: 90%; padding: 5px; margin-bottom: 5px;">
+			<br>
+			<label>Font</label>
+			<select id="textFont" class="jpselect">
+				<option value="Arial">Arial</option>
+				<option value="Roboto">Roboto</option>
+				<option value="Montserrat">Montserrat</option>
+				<option value="Lato">Lato</option>
+				<option value="Open Sans">Open Sans</option>
+				<option value="Poppins">Poppins</option>
+				<option value="Dancing Script">Dancing Script</option>
+				<option value="Pacifico">Pacifico</option>
+				<option value="Indie Flower">Indie Flower</option>
+				<option value="Shadows Into Light">Shadows Into Light</option>
+				<option value="Permanent Marker">Permanent Marker</option>
+				<option value="Caveat">Caveat</option>
+				<option value="Satisfy">Satisfy</option>
+				<option value="Quicksand">Quicksand</option>
+				<option value="Comfortaa">Comfortaa</option>
+				<option value="Josefin Sans">Josefin Sans</option>
+			</select>
+			<br>
+			<label>Text Size: <span id="textSize-value">40</span></label>
+			<input type="range" value="40" id="textSize" min="10" max="200" step="5" class="jpslider">
+			<br>
+		</div>
+		
+		<!-- Geometry Brush Controls -->
+		<div id="geometryBrushParams" class="brushParams" style="display: none;">
+			<label>Polygon Sides: <span id="polygonSides-value">5</span></label>
+			<input type="range" value="5" id="polygonSides" min="2" max="10" step="1" class="jpslider">
+			<br>
+		</div>
+		
 		<input type="button" value="Close GUI" onClick="closeGui()" id="closegui" class="jpboton">
 		
 		<div class="control-group">
@@ -96,6 +138,7 @@
 				<label for="lockBackground" class="sync-label">Lock</label>
 			</div>
 		</div>
+		<input type="button" value="Download Image" onClick="downloadImage()" id="downloadButton" class="jpboton">
 	</div>
 	
 	<button id="opengui" class="jpboton animated-button" onClick="openGui()">

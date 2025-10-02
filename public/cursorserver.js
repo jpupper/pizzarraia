@@ -265,6 +265,12 @@ class CursorServer {
                     drawData.rows = window.gridRows || 32;
                 } else if (brushType === 'art') {
                     drawData.particleCount = parseInt(document.getElementById('particleCount').value) || 10;
+                } else if (brushType === 'text') {
+                    drawData.textContent = document.getElementById('textContent').value || 'TEXTO';
+                    drawData.textSize = parseInt(document.getElementById('textSize').value) || 40;
+                    drawData.textFont = document.getElementById('textFont').value || 'Arial';
+                } else if (brushType === 'geometry') {
+                    drawData.polygonSides = parseInt(document.getElementById('polygonSides').value) || 5;
                 }
                 
                 // Guardar temporalmente las posiciones anteriores globales
@@ -305,6 +311,12 @@ class CursorServer {
                         socketData.rows = window.gridRows || 32;
                     } else if (brushType === 'art') {
                         socketData.particleCount = parseInt(document.getElementById('particleCount').value) || 10;
+                    } else if (brushType === 'text') {
+                        socketData.textContent = document.getElementById('textContent').value || 'TEXTO';
+                        socketData.textSize = parseInt(document.getElementById('textSize').value) || 40;
+                        socketData.textFont = document.getElementById('textFont').value || 'Arial';
+                    } else if (brushType === 'geometry') {
+                        socketData.polygonSides = parseInt(document.getElementById('polygonSides').value) || 5;
                     }
                     
                     // Si hay syncParams del art brush, normalizarlos antes de enviar

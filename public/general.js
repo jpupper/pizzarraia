@@ -68,7 +68,7 @@ function updateSliderValue(sliderId) {
 
 // Función para actualizar todos los valores numéricos
 function updateAllSliderValues() {
-    const sliderIds = ['alphaValue', 'size', 'gridCols', 'gridRows', 'particleCount', 'speedForce', 'maxSpeed', 'particleLife', 'particleMaxSize'];
+    const sliderIds = ['alphaValue', 'size', 'gridCols', 'gridRows', 'particleCount', 'speedForce', 'maxSpeed', 'particleLife', 'particleMaxSize', 'textSize', 'polygonSides'];
     sliderIds.forEach(sliderId => updateSliderValue(sliderId));
 }
 
@@ -163,6 +163,8 @@ function setupBrushTypeEvents() {
   const classicBrushParams = document.getElementById('classicBrushParams');
   const pixelBrushParams = document.getElementById('pixelBrushParams');
   const artBrushParams = document.getElementById('artBrushParams');
+  const textBrushParams = document.getElementById('textBrushParams');
+  const geometryBrushParams = document.getElementById('geometryBrushParams');
   
   // Get all brush parameter containers
   const allBrushParams = document.querySelectorAll('.brushParams');
@@ -189,6 +191,12 @@ function setupBrushTypeEvents() {
         break;
       case 'art':
         artBrushParams.style.display = 'block';
+        break;
+      case 'text':
+        textBrushParams.style.display = 'block';
+        break;
+      case 'geometry':
+        geometryBrushParams.style.display = 'block';
         break;
     }
   }
@@ -268,6 +276,20 @@ function setupBrushTypeEvents() {
     updateArtBrushParameters({ particleMaxSize: particleMaxSize });
     updateSliderValue('particleMaxSize');
   });
+  
+  // Add event listeners for text brush parameters
+  const textSizeInput = document.getElementById('textSize');
+  
+  textSizeInput.addEventListener('input', function() {
+    updateSliderValue('textSize');
+  });
+  
+  // Add event listeners for geometry brush parameters
+  const polygonSidesInput = document.getElementById('polygonSides');
+  
+  polygonSidesInput.addEventListener('input', function() {
+    updateSliderValue('polygonSides');
+  });
 }
 
 // Función para actualizar los parámetros del Art Brush
@@ -299,4 +321,32 @@ function updateArtBrushParameters(params) {
   if (params.particleMaxSize !== undefined) {
     window.artBrushParticleMaxSize = params.particleMaxSize;
   }
+}
+
+// Función para descargar la imagen del drawBuffer en alta calidad
+function downloadImage() {
+  if (!window.drawBuffer) {
+    console.error('drawBuffer no está disponible');
+    return;
+  }
+  
+  // Obtener el canvas del drawBuffer
+  const canvas = drawBuffer.canvas;
+  
+  // Crear un nombre de archivo con timestamp
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+  const filename = `pizarraia_${timestamp}.png`;
+  
+  // Convertir el canvas a blob y descargar
+  canvas.toBlob(function(blob) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    console.log(`Imagen descargada: ${filename}`);
+  }, 'image/png', 1.0); // Calidad máxima (1.0)
 }

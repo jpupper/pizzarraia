@@ -112,7 +112,8 @@ input[type="color"] {
     border: none;
 }
 
-input[type="text"] {
+input[type="text"],
+.jpinput {
     width: 100%;
     padding: 0.75rem;
     margin-bottom: 1rem;
@@ -122,6 +123,10 @@ input[type="text"] {
     color: var(--text);
     height: 45px;
     font-size: 1.1rem;
+}
+
+.jpinput::placeholder {
+    color: rgba(255, 255, 255, 0.5);
 }
 
 select {

@@ -306,6 +306,16 @@ function draw() {
             // Añadir parámetro de cantidad de partículas para art brush
             data.particleCount = parseInt(document.getElementById('particleCount').value);
             break;
+        case 'text':
+            // Añadir parámetros para text brush
+            data.textContent = document.getElementById('textContent').value;
+            data.textSize = parseInt(document.getElementById('textSize').value);
+            data.textFont = document.getElementById('textFont').value;
+            break;
+        case 'geometry':
+            // Añadir parámetros para geometry brush
+            data.polygonSides = parseInt(document.getElementById('polygonSides').value);
+            break;
     }
     
     // Enviar posición del cursor siempre (para que otros vean el cursor)
@@ -461,6 +471,23 @@ function dibujarCoso(buffer, x, y, data) {
             } else {
                 drawPixelBrush(buffer, x, y, brushSize, gridCols, gridRows, col);
             }
+            break;
+        case 'text':
+            // Text brush - dibuja texto
+            if (data.textContent && data.textSize && data.textFont) {
+                drawTextBrush(buffer, x, y, data.textContent, data.textSize, data.textFont, col);
+            } else {
+                // Valores por defecto si no se especifican
+                const textContent = data.textContent || 'TEXTO';
+                const textSize = data.textSize || 40;
+                const textFont = data.textFont || 'Arial';
+                drawTextBrush(buffer, x, y, textContent, textSize, textFont, col);
+            }
+            break;
+        case 'geometry':
+            // Geometry brush - dibuja polígonos
+            const sides = data.polygonSides || 5;
+            drawGeometryBrush(buffer, x, y, brushSize, sides, col);
             break;
         case 'classic':
         default:
