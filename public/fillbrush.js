@@ -45,7 +45,9 @@ function drawFillBrush(buffer, x, y, fillColor, tolerance = 0) {
     console.log(`Iniciando SCANLINE flood fill en (${x}, ${y})`);
     console.log('Color objetivo:', targetColor);
     console.log('Color de relleno:', fillColorArray);
+    console.log('Tolerance:', tolerance);
     console.log('Buffer size:', buffer.width, 'x', buffer.height);
+    console.log('¿Son iguales?', colorsMatch(targetColor, fillColorArray, 0));
     
     const startTime = Date.now();
     const maxTime = 15000; // 15 segundos máximo
