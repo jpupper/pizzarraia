@@ -193,6 +193,40 @@ function updateGridBuffer() {
     }
 }
 
+// Función para dibujar preview de la línea mientras se arrastra (Line Brush)
+function drawLinePreview() {
+    const brushType = document.getElementById('brushType').value;
+    
+    // Solo dibujar preview si es Line Brush y estamos arrastrando
+    if (brushType === 'line' && isMousePressed && !isOverGui && !isOverOpenButton && lineStartX !== null) {
+        // NO limpiar guiBuffer, solo dibujar encima
+        
+        // Configurar estilo de la línea preview
+        const brushSize = parseInt(document.getElementById('size').value);
+        const colorValue = document.getElementById('c1').value;
+        const alphaValue = parseInt(document.getElementById('alphaValue').value);
+        
+        const col = color(colorValue);
+        col.setAlpha(Math.min(alphaValue, 150)); // Más transparente para el preview
+        
+        // Dibujar directamente en el canvas principal (no en buffer)
+        push(); // Guardar estado
+        stroke(col);
+        strokeWeight(brushSize);
+        strokeCap(ROUND);
+        
+        // Dibujar línea desde el punto inicial hasta la posición actual del mouse
+        line(lineStartX, lineStartY, mouseX, mouseY);
+        
+        // Dibujar círculos en los extremos para mejor visualización
+        noStroke();
+        fill(col);
+        ellipse(lineStartX, lineStartY, brushSize * 0.5, brushSize * 0.5); // Punto inicial
+        ellipse(mouseX, mouseY, brushSize * 0.5, brushSize * 0.5); // Punto actual
+        pop(); // Restaurar estado
+    }
+}
+
 // Función para dibujar un puntero circular que muestra el tamaño del pincel actual
 function drawBrushCursor() {
     // Obtener el tamaño del pincel desde el slider
@@ -271,6 +305,9 @@ function draw() {
     
     // Dibujar el puntero circular que muestra el tamaño del pincel (local)
     drawBrushCursor();
+    
+    // Dibujar preview de línea si estamos usando Line Brush
+    drawLinePreview();
     
     // Mostrar el buffer GUI siempre
     image(guiBuffer, 0, 0);
@@ -432,26 +469,32 @@ function mouseReleased() {
     // Si es line brush, dibujar la línea y enviar por socket
     const brushType = document.getElementById('brushType').value;
     if (brushType === 'line' && !isOverGui && !isOverOpenButton && lineStartX !== null) {
-        // Preparar datos para dibujar
+        // Preparar color
+        const colorValue = document.getElementById('c1').value;
+        const alphaValue = parseInt(document.getElementById('alphaValue').value);
+        const col = color(colorValue);
+        col.setAlpha(alphaValue);
+        
+        // Dibujar localmente primero
+        const brushSize = parseInt(document.getElementById('size').value);
+        drawLineBrush(drawBuffer, mouseX, mouseY, lineStartX, lineStartY, brushSize, col);
+        
+        // Preparar datos para enviar por socket
         const data = {
-            x: map(mouseX, 0, windowWidth, 0, 1),
-            y: map(mouseY, 0, windowHeight, 0, 1),
-            pmouseX: map(lineStartX, 0, windowWidth, 0, 1),
-            pmouseY: map(lineStartY, 0, windowHeight, 0, 1),
-            c1: document.getElementById('c1').value,
-            av: parseInt(document.getElementById('alphaValue').value),
-            s: parseInt(document.getElementById('size').value),
+            x: mouseX / windowWidth,  // Normalizar coordenadas
+            y: mouseY / windowHeight,
+            pmouseX: lineStartX / windowWidth,
+            pmouseY: lineStartY / windowHeight,
+            c1: colorValue,
+            av: alphaValue,
+            s: brushSize,
             bt: 'line',
             bc: false,
             session: sessionId
         };
         
-        // Dibujar localmente
-        const col = color(data.c1);
-        col.setAlpha(data.av);
-        drawLineBrush(drawBuffer, mouseX, mouseY, lineStartX, lineStartY, data.s, col);
-        
         // Enviar por socket
+        console.log('ENVIANDO LINE POR SOCKET:', data);
         socket.emit('mouse', data);
         
         // Resetear
@@ -488,8 +531,13 @@ function dibujarCoso(buffer, x, y, data) {
     // Dibujar según el tipo de pincel
     switch (brushType) {
         case 'line':
-            // Line brush - dibuja una línea entre la posición anterior y actual
-            drawLineBrush(buffer, x, y, pmouseXGlobal, pmouseYGlobal, brushSize, col);
+            // Line brush - dibuja una línea entre dos puntos
+            // Calcular coordenadas de inicio
+            const startX = data.pmouseX * windowWidth;
+            const startY = data.pmouseY * windowHeight;
+            
+            console.log('RECIBIENDO LINE POR SOCKET:', startX, startY, 'to', x, y);
+            drawLineBrush(buffer, x, y, startX, startY, brushSize, col);
             break;
         case 'art':
             // Art brush - sistema de partículas
@@ -609,6 +657,13 @@ function newDrawing(data2) {
     } else {
         // No actualizar ninguna variable global, cada trazo es completamente independiente
         
+        // Log para debugging de Line Brush
+        if (data2.bt === 'line') {
+            console.log('RECIBIENDO LINE BRUSH EN NEWDRAWING:', data2);
+            console.log('sessionId:', sessionId);
+            console.log('socket.id:', socket.id);
+        }
+        
         // Convertir coordenadas normalizadas a coordenadas del canvas
         const canvasX = map(data2.x, 0, 1, 0, windowWidth);
         const canvasY = map(data2.y, 0, 1, 0, windowHeight);
@@ -683,12 +738,25 @@ function newDrawing(data2) {
         }
         
         // Dibujar en el buffer de dibujo usando los parámetros recibidos
-        dibujarCoso(
-            drawBuffer,
-            canvasX,
-            canvasY,
-            data2
-        );
+        if (data2.bt === 'line') {
+            // Manejo especial para Line Brush
+            const startX = data2.pmouseX * windowWidth;
+            const startY = data2.pmouseY * windowHeight;
+            const col = convertToP5Color(data2.c1);
+            col.setAlpha(parseInt(data2.av));
+            const brushSize = parseInt(data2.s);
+            
+            console.log('DIBUJANDO LINE BRUSH DIRECTAMENTE:', startX, startY, 'to', canvasX, canvasY);
+            drawLineBrush(drawBuffer, canvasX, canvasY, startX, startY, brushSize, col);
+        } else {
+            // Otros pinceles
+            dibujarCoso(
+                drawBuffer,
+                canvasX,
+                canvasY,
+                data2
+            );
+        }
         
         // Restaurar las posiciones anteriores globales
         window.pmouseXGlobal = tempPmouseX;
