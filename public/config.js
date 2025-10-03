@@ -35,7 +35,7 @@ const config = {
     alphaValue: {
       min: 0,
       max: 255,
-      default: 100,
+      default: 255,
       step: 1
     },
     size: {

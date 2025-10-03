@@ -17,7 +17,6 @@ function drawFillBrush(buffer, x, y, fillColor, tolerance = 0) {
     
     // Verificar que las coordenadas estén dentro del canvas
     if (x < 0 || x >= buffer.width || y < 0 || y >= buffer.height) {
-        console.log('Click fuera del canvas');
         return;
     }
     
@@ -37,17 +36,9 @@ function drawFillBrush(buffer, x, y, fillColor, tolerance = 0) {
     
     // Si el color objetivo es igual al color de relleno, no hacer nada
     if (colorsMatch(targetColor, fillColorArray, 0)) {
-        console.log('El color objetivo es igual al color de relleno');
         buffer.updatePixels();
         return;
     }
-    
-    console.log(`Iniciando SCANLINE flood fill en (${x}, ${y})`);
-    console.log('Color objetivo:', targetColor);
-    console.log('Color de relleno:', fillColorArray);
-    console.log('Tolerance:', tolerance);
-    console.log('Buffer size:', buffer.width, 'x', buffer.height);
-    console.log('¿Son iguales?', colorsMatch(targetColor, fillColorArray, 0));
     
     const startTime = Date.now();
     const maxTime = 15000; // 15 segundos máximo
@@ -66,7 +57,6 @@ function drawFillBrush(buffer, x, y, fillColor, tolerance = 0) {
         if (stack.length % 100 === 0) {
             const elapsed = Date.now() - startTime;
             if (elapsed > maxTime) {
-                console.warn(`Scanline fill timeout después de ${elapsed}ms`);
                 break;
             }
         }
@@ -133,10 +123,6 @@ function drawFillBrush(buffer, x, y, fillColor, tolerance = 0) {
     
     // Actualizar los píxeles del buffer
     buffer.updatePixels();
-    
-    const elapsed = Date.now() - startTime;
-    const percentage = (pixelsProcessed / (width * height) * 100).toFixed(2);
-    console.log(`SCANLINE fill completado en ${elapsed}ms. Píxeles: ${pixelsProcessed} (${percentage}%)`);
 }
 
 /**

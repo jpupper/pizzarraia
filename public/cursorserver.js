@@ -209,6 +209,45 @@ class CursorServer {
         for (let i = this.cursors.length - 1; i >= 0; i--) {
             if (this.cursors[i].socketId.startsWith('lidar_') && !newCursorIds.has(this.cursors[i].socketId)) {
                 const removedId = this.cursors[i].socketId;
+                
+                // Si es Line Brush y tenemos un punto inicial, dibujar la línea ahora
+                if (brushType === 'line' && this.lineStartPoints && this.lineStartPoints[removedId]) {
+                    const startPoint = this.lineStartPoints[removedId];
+                    const endPoint = this.previousPositions[removedId];
+                    
+                    if (endPoint && window.drawBuffer) {
+                        const col = color(colorValue);
+                        col.setAlpha(alphaValue);
+                        
+                        // Dibujar la línea localmente
+                        drawLineBrush(drawBuffer, endPoint.x, endPoint.y, startPoint.x, startPoint.y, brushSize, col);
+                        
+                        // Enviar por socket
+                        if (shouldBroadcast && window.socket && window.sessionId) {
+                            const socketData = {
+                                x: map(endPoint.x, 0, windowWidth, 0, 1),
+                                y: map(endPoint.y, 0, windowHeight, 0, 1),
+                                pmouseX: map(startPoint.x, 0, windowWidth, 0, 1),
+                                pmouseY: map(startPoint.y, 0, windowHeight, 0, 1),
+                                c1: colorValue,
+                                s: brushSize,
+                                av: alphaValue,
+                                bt: 'line',
+                                bc: false,
+                                session: sessionId,
+                                sourceType: 'lidar',
+                                pointId: removedId
+                            };
+                            socket.emit('mouse', socketData);
+                        }
+                        
+                        console.log(`Line Brush: Línea dibujada para ${removedId} desde (${startPoint.x}, ${startPoint.y}) hasta (${endPoint.x}, ${endPoint.y})`);
+                    }
+                    
+                    // Limpiar el punto inicial
+                    delete this.lineStartPoints[removedId];
+                }
+                
                 this.cursors.splice(i, 1);
                 // También eliminar la posición anterior guardada
                 delete this.previousPositions[removedId];
@@ -240,14 +279,23 @@ class CursorServer {
                 this.cursors.push(new CursorPoint(canvasX, canvasY, pointId, true, brushSize));
             }
             
-            // NO dibujar en el primer frame (necesitamos al menos 2 frames para calcular velocidad)
-            if (isFirstFrame) {
+            // Para Line Brush: guardar punto inicial cuando aparece
+            if (brushType === 'line' && isFirstFrame) {
+                // Guardar punto inicial para este cursor LIDAR
+                if (!this.lineStartPoints) this.lineStartPoints = {};
+                this.lineStartPoints[pointId] = { x: canvasX, y: canvasY };
+                console.log(`Line Brush: Punto inicial guardado para ${pointId}`);
+                return; // No dibujar aún
+            }
+            
+            // NO dibujar en el primer frame para otros brushes
+            if (isFirstFrame && brushType !== 'line') {
                 console.log(`Punto LIDAR ${pointId} detectado por primera vez, esperando siguiente frame para dibujar`);
                 return; // Salir del forEach para este punto
             }
             
-            // DIBUJAR localmente
-            if (window.drawBuffer && window.dibujarCoso) {
+            // DIBUJAR localmente (excepto line brush que dibuja al desaparecer)
+            if (window.drawBuffer && window.dibujarCoso && brushType !== 'line') {
                 const col = color(colorValue);
                 col.setAlpha(alphaValue);
                 
