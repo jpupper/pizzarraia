@@ -340,14 +340,18 @@ function draw() {
     if (isMousePressed && !isOverGui && !isOverOpenButton) {
         // Para el fill brush, solo ejecutar una vez por click
         const isFillBrush = brushType === 'fill';
+        let shouldSendSocket = false;
         
         if (!isFillBrush || (isFillBrush && !fillExecuted)) {
             // Primero dibujamos localmente para obtener los parámetros de sincronización si es necesario
             dibujarCoso(drawBuffer, mouseX, mouseY, data);
             
-            // Marcar que el fill se ejecutó
+            // Marcar que el fill se ejecutó y que debe enviarse por socket
             if (isFillBrush) {
                 fillExecuted = true;
+                shouldSendSocket = true; // Enviar por socket la primera vez
+            } else {
+                shouldSendSocket = true; // Otros brushes siempre envían
             }
         }
         
@@ -394,9 +398,9 @@ function draw() {
         }
         
         // Luego enviamos los datos por socket (con syncParams normalizados)
-        // Para fill brush, solo enviar una vez
-        if (!isFillBrush || (isFillBrush && !mouseFlag)) {
+        if (shouldSendSocket) {
             socket.emit('mouse', data);
+            console.log('Enviando por socket:', brushType, 'fillTolerance:', data.fillTolerance);
         }
         mouseFlag = false;
     }
@@ -570,6 +574,11 @@ function newDrawing(data2) {
         }
     } else {
         // No actualizar ninguna variable global, cada trazo es completamente independiente
+        
+        // Log para debugging (especialmente para fill brush)
+        if (data2.bt === 'fill') {
+            console.log('Recibiendo FILL por socket:', data2);
+        }
         
         // Convertir coordenadas normalizadas a coordenadas del canvas
         const canvasX = map(data2.x, 0, 1, 0, windowWidth);
