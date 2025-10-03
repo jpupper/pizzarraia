@@ -36,22 +36,37 @@
 		</button>
 		<label>Color</label><input type="color" value="#FFFFFF" id="c1">
 		<br>
-		<label>Alfa: <span id="alphaValue-value">100</span></label>
-		<input type="range" value="100" id="alphaValue" min="0" max ="255" step="1" class="jpslider" >
+		<label>Alfa: <span id="alphaValue-value">255</span></label>
+		<input type="range" value="255" id="alphaValue" min="0" max ="255" step="1" class="jpslider" >
 		<br>
 		<label>Size: <span id="size-value">50</span></label>
 		<input type="range" value="50" id="size" min="0" max ="100" step="0.1" class="jpslider" >
 		<br>
 		<label>Brush Type</label>
-		<select id="brushType" class="jpselect">
-			<option value="classic">Classic Circle</option>
-			<option value="line">Line Brush</option>
-			<option value="art">Art Brush</option>
-			<option value="pixel">Pixel Brush</option>
-			<option value="text">Text Brush</option>
-			<option value="geometry">Geometry Brush</option>
-			<option value="fill">Fill/Bucket Tool</option>
-		</select>
+		<div class="brush-selector">
+			<button class="brush-btn active" data-brush="classic" title="Classic Circle">
+				<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="currentColor"/></svg>
+			</button>
+			<button class="brush-btn" data-brush="line" title="Line Brush">
+				<svg viewBox="0 0 24 24"><line x1="4" y1="20" x2="20" y2="4" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+			</button>
+			<button class="brush-btn" data-brush="art" title="Art Brush">
+				<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/><circle cx="16" cy="8" r="1.5" fill="currentColor"/><circle cx="8" cy="16" r="1.5" fill="currentColor"/><circle cx="16" cy="16" r="1.5" fill="currentColor"/></svg>
+			</button>
+			<button class="brush-btn" data-brush="pixel" title="Pixel Brush">
+				<svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" fill="currentColor"/><rect x="14" y="4" width="6" height="6" fill="currentColor"/><rect x="4" y="14" width="6" height="6" fill="currentColor"/><rect x="14" y="14" width="6" height="6" fill="currentColor"/></svg>
+			</button>
+			<button class="brush-btn" data-brush="text" title="Text Brush">
+				<svg viewBox="0 0 24 24"><text x="12" y="18" text-anchor="middle" font-size="16" font-weight="bold" fill="currentColor">A</text></svg>
+			</button>
+			<button class="brush-btn" data-brush="geometry" title="Geometry Brush">
+				<svg viewBox="0 0 24 24"><polygon points="12,4 20,20 4,20" fill="currentColor"/></svg>
+			</button>
+			<button class="brush-btn" data-brush="fill" title="Fill/Bucket">
+				<svg viewBox="0 0 24 24"><path d="M19,11.5C19,11.5 17,13.67 17,15A2,2 0 0,0 19,17A2,2 0 0,0 21,15C21,13.67 19,11.5 19,11.5M5.21,10L10,5.21L14.79,10M16.56,8.94L7.62,0L6.21,1.41L8.59,3.79L3.44,8.94C2.85,9.53 2.85,10.5 3.44,11.09L8.94,16.59C9.23,16.88 9.62,17 10,17C10.38,17 10.77,16.88 11.06,16.59L16.56,11.09C17.15,10.5 17.15,9.53 16.56,8.94Z" fill="currentColor"/></svg>
+			</button>
+		</div>
+		<input type="hidden" id="brushType" value="classic">
 		<br>
 		<!-- Classic Brush Controls (default, no additional controls) -->
 		<div id="classicBrushParams" class="brushParams" style="display: none;">

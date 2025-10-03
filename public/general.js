@@ -10,6 +10,7 @@ window.onload = function() {
     setupButtonEvents();
     setupCloseButton();
     setupBrushTypeEvents();
+    setupBrushSelector();
 };
 
 // Función para inicializar sliders desde config.js
@@ -300,6 +301,30 @@ function setupBrushTypeEvents() {
   
   fillToleranceInput.addEventListener('input', function() {
     updateSliderValue('fillTolerance');
+  });
+}
+
+// Función para configurar el selector visual de pinceles
+function setupBrushSelector() {
+  const brushButtons = document.querySelectorAll('.brush-btn');
+  const brushTypeInput = document.getElementById('brushType');
+  
+  brushButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      // Remover clase active de todos los botones
+      brushButtons.forEach(btn => btn.classList.remove('active'));
+      
+      // Agregar clase active al botón clickeado
+      this.classList.add('active');
+      
+      // Actualizar el valor del input hidden
+      const brushValue = this.getAttribute('data-brush');
+      brushTypeInput.value = brushValue;
+      
+      // Disparar evento change para que se actualicen los parámetros
+      const event = new Event('change');
+      brushTypeInput.dispatchEvent(event);
+    });
   });
 }
 
