@@ -105,6 +105,14 @@ const config = {
       max: 10,
       default: 5,
       step: 1
+    },
+    
+    // Fill Brush
+    fillTolerance: {
+      min: 0,
+      max: 50,
+      default: 0,
+      step: 1
     }
   }
 };

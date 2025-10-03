@@ -271,6 +271,8 @@ class CursorServer {
                     drawData.textFont = document.getElementById('textFont').value || 'Arial';
                 } else if (brushType === 'geometry') {
                     drawData.polygonSides = parseInt(document.getElementById('polygonSides').value) || 5;
+                } else if (brushType === 'fill') {
+                    drawData.fillTolerance = parseInt(document.getElementById('fillTolerance').value) || 0;
                 }
                 
                 // Guardar temporalmente las posiciones anteriores globales
@@ -317,6 +319,8 @@ class CursorServer {
                         socketData.textFont = document.getElementById('textFont').value || 'Arial';
                     } else if (brushType === 'geometry') {
                         socketData.polygonSides = parseInt(document.getElementById('polygonSides').value) || 5;
+                    } else if (brushType === 'fill') {
+                        socketData.fillTolerance = parseInt(document.getElementById('fillTolerance').value) || 0;
                     }
                     
                     // Si hay syncParams del art brush, normalizarlos antes de enviar
