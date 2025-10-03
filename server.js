@@ -125,7 +125,17 @@ io.on('connection', (socket) => {
       });
     }
     
-    console.log(`Data from session ${sessionId}:`, data);
+    // Log especial para Line Brush
+    if (data.bt === 'line') {
+      console.log(`LINE BRUSH DATA from session ${sessionId}:`, data);
+      if (sessions[sessionId]) {
+        console.log('Broadcasting to:', sessions[sessionId].filter(id => id !== socket.id));
+      } else {
+        console.log('No hay sesiones para broadcast');
+      }
+    } else {
+      console.log(`Data from session ${sessionId}:`, data);
+    }
   }
   
   function cursorMsg(data){
