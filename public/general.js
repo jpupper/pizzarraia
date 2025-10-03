@@ -68,7 +68,7 @@ function updateSliderValue(sliderId) {
 
 // Función para actualizar todos los valores numéricos
 function updateAllSliderValues() {
-    const sliderIds = ['alphaValue', 'size', 'gridCols', 'gridRows', 'particleCount', 'speedForce', 'maxSpeed', 'particleLife', 'particleMaxSize', 'textSize', 'polygonSides'];
+    const sliderIds = ['alphaValue', 'size', 'gridCols', 'gridRows', 'particleCount', 'speedForce', 'maxSpeed', 'particleLife', 'particleMaxSize', 'textSize', 'polygonSides', 'fillTolerance'];
     sliderIds.forEach(sliderId => updateSliderValue(sliderId));
 }
 
@@ -165,6 +165,7 @@ function setupBrushTypeEvents() {
   const artBrushParams = document.getElementById('artBrushParams');
   const textBrushParams = document.getElementById('textBrushParams');
   const geometryBrushParams = document.getElementById('geometryBrushParams');
+  const fillBrushParams = document.getElementById('fillBrushParams');
   
   // Get all brush parameter containers
   const allBrushParams = document.querySelectorAll('.brushParams');
@@ -197,6 +198,9 @@ function setupBrushTypeEvents() {
         break;
       case 'geometry':
         geometryBrushParams.style.display = 'block';
+        break;
+      case 'fill':
+        fillBrushParams.style.display = 'block';
         break;
     }
   }
@@ -289,6 +293,13 @@ function setupBrushTypeEvents() {
   
   polygonSidesInput.addEventListener('input', function() {
     updateSliderValue('polygonSides');
+  });
+  
+  // Add event listeners for fill brush parameters
+  const fillToleranceInput = document.getElementById('fillTolerance');
+  
+  fillToleranceInput.addEventListener('input', function() {
+    updateSliderValue('fillTolerance');
   });
 }
 

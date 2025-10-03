@@ -21,6 +21,7 @@ var isRandomValues = true;
 var isMousePressed = false; 
 var isOverGui = false;
 var mouseFlag = true;
+var fillExecuted = false; // Flag para controlar que el fill solo se ejecute una vez por click
 
 // Sistema de cursores remotos (compatible con TouchDesigner)
 var PS; // Instancia de CursorServer (PointServer) para gestionar cursores de otros clientes
@@ -316,6 +317,10 @@ function draw() {
             // Añadir parámetros para geometry brush
             data.polygonSides = parseInt(document.getElementById('polygonSides').value);
             break;
+        case 'fill':
+            // Añadir parámetros para fill brush
+            data.fillTolerance = parseInt(document.getElementById('fillTolerance').value);
+            break;
     }
     
     // Enviar posición del cursor siempre (para que otros vean el cursor)
@@ -333,11 +338,21 @@ function draw() {
     
     // Dibujar si el mouse está presionado y no está sobre la GUI
     if (isMousePressed && !isOverGui && !isOverOpenButton) {
-        // Primero dibujamos localmente para obtener los parámetros de sincronización si es necesario
-        dibujarCoso(drawBuffer, mouseX, mouseY, data);
+        // Para el fill brush, solo ejecutar una vez por click
+        const isFillBrush = brushType === 'fill';
+        
+        if (!isFillBrush || (isFillBrush && !fillExecuted)) {
+            // Primero dibujamos localmente para obtener los parámetros de sincronización si es necesario
+            dibujarCoso(drawBuffer, mouseX, mouseY, data);
+            
+            // Marcar que el fill se ejecutó
+            if (isFillBrush) {
+                fillExecuted = true;
+            }
+        }
         
         // Si hay parámetros de sincronización, normalizarlos antes de enviarlos
-        if (data.syncParams) {
+        if (data.syncParams && !isFillBrush) {
             const syncParams = data.syncParams;
             // Normalizar las coordenadas del canvas a valores entre 0 y 1
             const normalizedSyncParams = {
@@ -379,12 +394,16 @@ function draw() {
         }
         
         // Luego enviamos los datos por socket (con syncParams normalizados)
-        socket.emit('mouse', data);
+        // Para fill brush, solo enviar una vez
+        if (!isFillBrush || (isFillBrush && !mouseFlag)) {
+            socket.emit('mouse', data);
+        }
         mouseFlag = false;
     }
     
     if (!isMousePressed) {
         mouseFlag = true;
+        fillExecuted = false; // Resetear el flag cuando se suelta el mouse
     }
     
     // Guardar la posición actual del mouse para el siguiente ciclo
@@ -488,6 +507,11 @@ function dibujarCoso(buffer, x, y, data) {
             // Geometry brush - dibuja polígonos
             const sides = data.polygonSides || 5;
             drawGeometryBrush(buffer, x, y, brushSize, sides, col);
+            break;
+        case 'fill':
+            // Fill brush - rellena área contigua
+            const tolerance = data.fillTolerance || 0;
+            drawFillBrush(buffer, x, y, col, tolerance);
             break;
         case 'classic':
         default:

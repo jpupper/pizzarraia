@@ -21,6 +21,7 @@
     <script src="linebrush.js"></script>
     <script src="textbrush.js"></script>
     <script src="geometrybrush.js"></script>
+    <script src="fillbrush.js"></script>
     <script src="cursorserver.js"></script>
     <script src="sketch.js"></script>
 	
@@ -49,6 +50,7 @@
 			<option value="pixel">Pixel Brush</option>
 			<option value="text">Text Brush</option>
 			<option value="geometry">Geometry Brush</option>
+			<option value="fill">Fill/Bucket Tool</option>
 		</select>
 		<br>
 		<!-- Classic Brush Controls (default, no additional controls) -->
@@ -123,6 +125,16 @@
 			<label>Polygon Sides: <span id="polygonSides-value">5</span></label>
 			<input type="range" value="5" id="polygonSides" min="2" max="10" step="1" class="jpslider">
 			<br>
+		</div>
+		
+		<!-- Fill Brush Controls -->
+		<div id="fillBrushParams" class="brushParams" style="display: none;">
+			<label>Tolerance: <span id="fillTolerance-value">0</span></label>
+			<input type="range" value="0" id="fillTolerance" min="0" max="50" step="1" class="jpslider">
+			<br>
+			<p style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-top: 5px;">
+				💡 Tolerance: 0 = solo color exacto, mayor = colores similares
+			</p>
 		</div>
 		
 		<input type="button" value="Close GUI" onClick="closeGui()" id="closegui" class="jpboton">
