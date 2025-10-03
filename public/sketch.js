@@ -569,10 +569,12 @@ function dibujarCoso(buffer, x, y, data) {
             }
             break;
         case 'pixel':
-            // Pixel brush - dibuja un cuadrado en la grilla
+            // Pixel brush - dibuja cuadrados en la grilla dentro del radio
             // Usar los valores de cols y rows del dato recibido
             if (data.cols && data.rows) {
+                // El nuevo drawPixelBrush dibuja todos los píxeles dentro del radio
                 drawPixelBrush(buffer, x, y, brushSize, data.cols, data.rows, col);
+                console.log('Dibujando pixel brush con size:', brushSize);
             } else {
                 drawPixelBrush(buffer, x, y, brushSize, gridCols, gridRows, col);
             }
@@ -799,8 +801,13 @@ function cleanBackground() {
 
 // Función para convertir objeto de color a color p5
 function convertToP5Color(colorObj) {
+    // Si es un objeto de color con levels
     if (colorObj && colorObj.levels) {
         return color(colorObj.levels[0], colorObj.levels[1], colorObj.levels[2], colorObj.levels[3]);
+    }
+    // Si es un string (hex color)
+    else if (typeof colorObj === 'string') {
+        return color(colorObj);
     }
     return color(255); // color por defecto si algo sale mal
 }

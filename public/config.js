@@ -41,7 +41,7 @@ const config = {
     size: {
       min: 0,
       max: 100,
-      default: 50,
+      default: 20,
       step: 0.1
     },
     
