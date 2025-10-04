@@ -1,6 +1,4 @@
 
-
-
 var GUI = document.getElementById("gui");
 var MODAL = document.getElementById("modal");
 var isModalOpen = true;
@@ -11,6 +9,8 @@ window.onload = function() {
     setupCloseButton();
     setupBrushTypeEvents();
     setupBrushSelector();
+    setupChat();
+    setupTabs();
 };
 
 // Función para inicializar sliders desde config.js
@@ -490,4 +490,150 @@ function setupSocketControls() {
   if (changeSessionBtn) {
     changeSessionBtn.style.display = 'none';
   }
+}
+
+// ============================================================
+// FUNCIONES DE CHAT
+// ============================================================
+
+// Función para generar un nombre de usuario basado en el hash de conexión
+function generateUsername(socketId) {
+  const adjectives = ['Rápido', 'Brillante', 'Creativo', 'Mágico', 'Épico', 'Salvaje', 'Cósmico', 'Eléctrico', 'Místico', 'Veloz'];
+  const nouns = ['Artista', 'Pintor', 'Dibujante', 'Creador', 'Maestro', 'Genio', 'Visionario', 'Soñador', 'Explorador', 'Aventurero'];
+  
+  // Usar el socketId como semilla para generar un nombre consistente
+  let hash = 0;
+  for (let i = 0; i < socketId.length; i++) {
+    hash = ((hash << 5) - hash) + socketId.charCodeAt(i);
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  
+  const adjIndex = Math.abs(hash) % adjectives.length;
+  const nounIndex = Math.abs(hash >> 8) % nouns.length;
+  const number = Math.abs(hash >> 16) % 100;
+  
+  return `${adjectives[adjIndex]}${nouns[nounIndex]}${number}`;
+}
+
+// Función para configurar el chat
+function setupChat() {
+  const chatInput = document.getElementById('chatInput');
+  const sendChatBtn = document.getElementById('sendChatBtn');
+  const chatMessages = document.getElementById('chatMessages');
+  const chatUsernameSpan = document.getElementById('chatUsername');
+  
+  if (!chatInput || !sendChatBtn || !chatMessages) {
+    console.warn('Elementos del chat no encontrados');
+    return;
+  }
+  
+  // Esperar a que el socket esté conectado para generar el nombre
+  let username = '';
+  
+  socket.on('connect', function() {
+    // Generar nombre de usuario para este cliente basado en el socket ID
+    username = generateUsername(socket.id);
+    console.log('Username generado:', username);
+    
+    // Mostrar el nombre de usuario en la interfaz
+    if (chatUsernameSpan) {
+      chatUsernameSpan.textContent = username;
+    }
+  });
+  
+  // Si ya está conectado, generar el nombre inmediatamente
+  if (socket.connected) {
+    username = generateUsername(socket.id);
+    console.log('Username generado (ya conectado):', username);
+    if (chatUsernameSpan) {
+      chatUsernameSpan.textContent = username;
+    }
+  }
+  
+  // Función para enviar mensaje
+  function sendMessage() {
+    const message = chatInput.value.trim();
+    if (message === '') return;
+    
+    // Enviar mensaje por socket
+    socket.emit('chat_message', {
+      username: username,
+      message: message,
+      session: sessionId,
+      timestamp: Date.now()
+    });
+    
+    // Limpiar input
+    chatInput.value = '';
+  }
+  
+  // Event listener para el botón de enviar
+  sendChatBtn.addEventListener('click', sendMessage);
+  
+  // Event listener para presionar Enter
+  chatInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      sendMessage();
+    }
+  });
+  
+  // Recibir mensajes de chat
+  socket.on('chat_message', function(data) {
+    // Verificar que el mensaje es de la misma sesión
+    if (data.session !== sessionId) return;
+    
+    // Crear elemento de mensaje
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'chat-message';
+    
+    const usernameSpan = document.createElement('span');
+    usernameSpan.className = 'chat-username';
+    usernameSpan.textContent = data.username + ':';
+    
+    const textSpan = document.createElement('span');
+    textSpan.className = 'chat-text';
+    textSpan.textContent = ' ' + data.message;
+    
+    messageDiv.appendChild(usernameSpan);
+    messageDiv.appendChild(textSpan);
+    
+    // Agregar mensaje al contenedor
+    chatMessages.appendChild(messageDiv);
+    
+    // Scroll automático al último mensaje
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  });
+}
+
+// ============================================================
+// FUNCIONES DE PESTAÑAS
+// ============================================================
+
+// Función para configurar el sistema de pestañas
+function setupTabs() {
+  const tabButtons = document.querySelectorAll('.tab-btn');
+  const tabContents = document.querySelectorAll('.tab-content');
+  
+  tabButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      const tabName = this.getAttribute('data-tab');
+      
+      // Remover clase active de todos los botones
+      tabButtons.forEach(btn => btn.classList.remove('active'));
+      
+      // Agregar clase active al botón clickeado
+      this.classList.add('active');
+      
+      // Ocultar todo el contenido de las pestañas
+      tabContents.forEach(content => content.classList.remove('active'));
+      
+      // Mostrar el contenido de la pestaña seleccionada
+      const selectedTab = document.getElementById('tab-' + tabName);
+      if (selectedTab) {
+        selectedTab.classList.add('active');
+      }
+      
+      console.log('Pestaña cambiada a:', tabName);
+    });
+  });
 }
