@@ -414,33 +414,33 @@ select option {
     font-style: italic;
     opacity: 0.9;
 }
-
 .close-button {
     position: absolute;
     top: 10px;
     right: 10px;
-    width: 30px;
-    height: 30px;
-    border: none;
-    background: none;
+    width: 40px;
+    height: 40px;
+    background-color: var(--primary-light);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
     cursor: pointer;
-    padding: 0;
+    z-index: 1001;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: all 0.3s ease;
     color: var(--text);
-    transition: transform 0.2s ease;
-    margin: 0px;
 }
 
 .close-button:hover {
-    transform: scale(1.1);
-    color: var(--accent);
+    background-color: rgba(255, 0, 0, 0.6);
+    border-color: rgba(255, 0, 0, 0.8);
+    transform: scale(1.08);
 }
 
 .close-button svg {
-    width: 300px;
-    height: 300px;
+    width: 24px;
+    height: 24px;
 }
 
 /* Brush Selector - Botones visuales para seleccionar pinceles */
@@ -574,12 +574,20 @@ select option {
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 0;
+}
+
+/* Estilo específico para el botón de download en socket-buttons */
+.socket-buttons #downloadButton {
+    width: 40px;
+    height: 40px;
     margin-bottom: 0;
+    padding: 0;
 }
 
 .socket-buttons #downloadButton svg {
-    width: 28px !important;
-    height: 28px !important;
+    width: 24px !important;
+    height: 24px !important;
 }
 
 /* Estilo para botones cuadrados */
@@ -688,28 +696,40 @@ select option {
 
 /* Estilos para la sección Chat */
 .chat-section {
-    margin: 15px 0;
-    padding: 15px;
-    background-color: rgba(0, 0, 0, 0.3);
-    border-radius: 8px;
-    border-left: 3px solid var(--accent);
+    margin: 0;
+    padding: 0;
+    background-color: transparent;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 .chat-section h4 {
     margin-top: 0;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
     color: var(--text);
     font-size: 1.1rem;
+    padding: 0 5px;
+}
+
+.chat-user-info {
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    background-color: rgba(138, 79, 191, 0.25);
+    border-radius: 8px;
+    border: 1px solid rgba(138, 79, 191, 0.4);
+    font-size: 0.9rem;
 }
 
 .chat-messages {
-    height: 200px;
+    height: 350px;
     overflow-y: auto;
-    background-color: rgba(0, 0, 0, 0.4);
-    border-radius: 5px;
-    padding: 10px;
-    margin-bottom: 10px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
     font-size: 0.85rem;
+    border: 1px solid rgba(138, 79, 191, 0.3);
 }
 
 .chat-messages::-webkit-scrollbar {
