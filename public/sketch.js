@@ -110,6 +110,9 @@ function setup() {
     
     // Configurar eventos de botones
     setupButtonEvents();
+    
+    // Configurar controles de sockets
+    setupSocketControls();
 }
 
 function windowResized() {
@@ -370,8 +373,10 @@ function draw() {
         isCursorOnly: true // Flag para indicar que es solo actualización de cursor
     };
     
-    // Enviar posición del cursor cada frame
-    socket.emit('cursor', cursorData);
+    // Enviar posición del cursor cada frame si el envío de sockets está habilitado
+    if (config.sockets.sendEnabled) {
+        socket.emit('cursor', cursorData);
+    }
     
     // Dibujar si el mouse está presionado y no está sobre la GUI
     if (isMousePressed && !isOverGui && !isOverOpenButton) {
@@ -434,8 +439,8 @@ function draw() {
             data.syncParams = normalizedSyncParams;
         }
         
-        // Luego enviamos los datos por socket (con syncParams normalizados)
-        if (shouldSendSocket) {
+        // Luego enviamos los datos por socket (con syncParams normalizados) si el envío está habilitado
+        if (shouldSendSocket && config.sockets.sendEnabled) {
             socket.emit('mouse', data);
         }
         mouseFlag = false;
@@ -493,9 +498,11 @@ function mouseReleased() {
             session: sessionId
         };
         
-        // Enviar por socket
+        // Enviar por socket si el envío está habilitado
         console.log('ENVIANDO LINE POR SOCKET:', data);
-        socket.emit('mouse', data);
+        if (config.sockets.sendEnabled) {
+            socket.emit('mouse', data);
+        }
         
         // Resetear
         resetLineBrush();
@@ -645,6 +652,12 @@ function gridToCanvas(cellX, cellY) {
 
 // Función para manejar nuevos dibujos recibidos por socket
 function newDrawing(data2) {
+    // Verificar si la recepción de sockets está habilitada
+    if (!config.sockets.receiveEnabled) {
+        console.log("Recepción de sockets desactivada. Ignorando datos recibidos.");
+        return;
+    }
+    
     if (data2.bc) {
         // Verificar si el LOCK está activado
         const isLocked = document.getElementById('lockBackground').checked;
@@ -768,6 +781,12 @@ function newDrawing(data2) {
 
 // Función para actualizar cursor remoto
 function updateRemoteCursor(data) {
+    // Verificar si la recepción de sockets está habilitada
+    if (!config.sockets.receiveEnabled) {
+        // No procesar cursores remotos si la recepción está desactivada
+        return;
+    }
+    
     // Procesar los datos del cursor usando CursorServer
     PS.processCursorData(data);
 }
@@ -786,12 +805,14 @@ function cleanBackground() {
     // Verificar si el checkbox de sincronización está activado
     const syncBackground = document.getElementById('syncBackground').checked;
     
-    // Si está activado, enviar mensaje a otros clientes
-    if (syncBackground) {
+    // Si está activado y el envío de sockets está habilitado, enviar mensaje a otros clientes
+    if (syncBackground && config.sockets.sendEnabled) {
         socket.emit('mouse', {bc: true, session: sessionId});
         console.log("ENVIANDO MENSAJE DE LIMPIEZA PARA SESIÓN:", sessionId);
-    } else {
+    } else if (!syncBackground) {
         console.log("LIMPIEZA LOCAL SOLAMENTE (SINCRONIZACIÓN DESACTIVADA)");
+    } else {
+        console.log("LIMPIEZA LOCAL SOLAMENTE (ENVÍO DE SOCKETS DESACTIVADO)");
     }
 }
 

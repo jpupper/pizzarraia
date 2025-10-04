@@ -74,6 +74,16 @@ class CursorServer {
      * Dibujar todos los cursores en el buffer especificado
      */
     display(buffer) {
+        // Verificar si la recepción de sockets está habilitada
+        if (!config.sockets.receiveEnabled) {
+            // Si la recepción está desactivada, mostrar 0 cursores
+            const cursorCountElement = document.getElementById('cursorCount');
+            if (cursorCountElement) {
+                cursorCountElement.textContent = `Cursores: 0 (recepción desactivada)`;
+            }
+            return; // No dibujar cursores
+        }
+        
         // Actualizar contador en la interfaz
         const cursorCountElement = document.getElementById('cursorCount');
         if (cursorCountElement) {

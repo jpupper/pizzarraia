@@ -29,6 +29,12 @@ const config = {
     }
   },
   
+  // Configuración para los controles de sockets
+  sockets: {
+    receiveEnabled: true,  // Por defecto, recibir sockets está activado
+    sendEnabled: true      // Por defecto, enviar sockets está activado
+  },
+  
   // Configuración de sliders - Valores mínimos, máximos y por defecto
   sliders: {
     // Sliders globales
