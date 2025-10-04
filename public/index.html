@@ -25,189 +25,181 @@
     <script src="fillbrush.js"></script>
     <script src="cursorserver.js"></script>
     <script src="sketch.js"></script>
-	
-	<div id="gui" >
-		<!-- El indicador de sesión se ha unificado con el selector de sesión -->
-		<br>
-		<button id="closeButton" class="close-button">
-			<svg viewBox="0 0 24 24">
-				<path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
-			</svg>
-		</button>
-		<label>Color</label><input type="color" value="#FFFFFF" id="c1">
-		<br>
-		<label>Alfa: <span id="alphaValue-value">255</span></label>
-		<input type="range" value="255" id="alphaValue" min="0" max ="255" step="1" class="jpslider" >
-		<br>
-		<label>Size: <span id="size-value">20</span></label>
-		<input type="range" value="20" id="size" min="0" max ="100" step="0.1" class="jpslider" >
-		<br>
-		<label>Efecto Kaleido: <span id="kaleidoSegments-value">1</span></label>
-		<input type="range" value="1" id="kaleidoSegments" min="1" max="16" step="1" class="jpslider">
-		<br>
-		<label>Brush Type</label>
-		<div class="brush-selector">
-			<button class="brush-btn active" data-brush="classic" title="Classic Circle">
-				<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="currentColor"/></svg>
-			</button>
-			<button class="brush-btn" data-brush="line" title="Line Brush">
-				<svg viewBox="0 0 24 24"><line x1="4" y1="20" x2="20" y2="4" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
-			</button>
-			<button class="brush-btn" data-brush="art" title="Art Brush">
-				<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/><circle cx="16" cy="8" r="1.5" fill="currentColor"/><circle cx="8" cy="16" r="1.5" fill="currentColor"/><circle cx="16" cy="16" r="1.5" fill="currentColor"/></svg>
-			</button>
-			<button class="brush-btn" data-brush="pixel" title="Pixel Brush">
-				<svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" fill="currentColor"/><rect x="14" y="4" width="6" height="6" fill="currentColor"/><rect x="4" y="14" width="6" height="6" fill="currentColor"/><rect x="14" y="14" width="6" height="6" fill="currentColor"/></svg>
-			</button>
-			<button class="brush-btn" data-brush="text" title="Text Brush">
-				<svg viewBox="0 0 24 24"><text x="12" y="18" text-anchor="middle" font-size="16" font-weight="bold" fill="currentColor">A</text></svg>
-			</button>
-			<button class="brush-btn" data-brush="geometry" title="Geometry Brush">
-				<svg viewBox="0 0 24 24"><polygon points="12,4 20,20 4,20" fill="currentColor"/></svg>
-			</button>
-			<button class="brush-btn" data-brush="fill" title="Fill/Bucket">
-				<svg viewBox="0 0 24 24"><path d="M19,11.5C19,11.5 17,13.67 17,15A2,2 0 0,0 19,17A2,2 0 0,0 21,15C21,13.67 19,11.5 19,11.5M5.21,10L10,5.21L14.79,10M16.56,8.94L7.62,0L6.21,1.41L8.59,3.79L3.44,8.94C2.85,9.53 2.85,10.5 3.44,11.09L8.94,16.59C9.23,16.88 9.62,17 10,17C10.38,17 10.77,16.88 11.06,16.59L16.56,11.09C17.15,10.5 17.15,9.53 16.56,8.94Z" fill="currentColor"/></svg>
-			</button>
-		</div>
-		<input type="hidden" id="brushType" value="classic">
-		<br>
-		<!-- Classic Brush Controls -->
-		<div id="classicBrushParams" class="brushParams" style="display: none;">
-			<!-- No additional controls for classic brush -->
-		</div>
-		
-		<!-- Pixel Brush Controls -->
-		<div id="pixelBrushParams" class="brushParams" style="display: none;">
-			<label>Grid Columns: <span id="gridCols-value">32</span></label>
-			<input type="range" value="32" id="gridCols" min="4" max="64" step="4" class="jpslider">
-			<br>
-			<label>Grid Rows: <span id="gridRows-value">32</span></label>
-			<input type="range" value="32" id="gridRows" min="4" max="64" step="4" class="jpslider">
-			<br>
-			<label>Show Grid</label>
-			<input type="checkbox" id="showGrid" class="jpcheckbox">
-			<br>
-		</div>
-		
-		<!-- Art Brush Controls -->
-		<div id="artBrushParams" class="brushParams" style="display: none;">
-			<label>Particle Count: <span id="particleCount-value">10</span></label>
-			<input type="range" value="10" id="particleCount" min="1" max="30" step="1" class="jpslider">
-			<br>
-			<label>Speed Force: <span id="speedForce-value">0.5</span></label>
-			<input type="range" value="0.5" id="speedForce" min="0.1" max="2.0" step="0.1" class="jpslider">
-			<br>
-			<label>Max Speed: <span id="maxSpeed-value">0.5</span></label>
-			<input type="range" value="0.5" id="maxSpeed" min="0.1" max="3.0" step="0.1" class="jpslider">
-			<br>
-			<label>Life: <span id="particleLife-value">255</span></label>
-			<input type="range" value="255" id="particleLife" min="50" max="500" step="10" class="jpslider">
-			<br>
-			<label>Particle Size: <span id="particleMaxSize-value">8</span></label>
-			<input type="range" value="8" id="particleMaxSize" min="1" max="20" step="1" class="jpslider">
-			<br>
-		</div>
-		
-		<!-- Text Brush Controls -->
-		<div id="textBrushParams" class="brushParams" style="display: none;">
-			<label>Text</label>
-			<input type="text" id="textContent" value="TEXTO" class="jpinput" style="width: 90%; padding: 5px; margin-bottom: 5px;">
-			<br>
-			<label>Font</label>
-			<select id="textFont" class="jpselect">
-				<option value="Arial">Arial</option>
-				<option value="Roboto">Roboto</option>
-				<option value="Montserrat">Montserrat</option>
-				<option value="Lato">Lato</option>
-				<option value="Open Sans">Open Sans</option>
-				<option value="Poppins">Poppins</option>
-				<option value="Dancing Script">Dancing Script</option>
-				<option value="Pacifico">Pacifico</option>
-				<option value="Indie Flower">Indie Flower</option>
-				<option value="Shadows Into Light">Shadows Into Light</option>
-				<option value="Permanent Marker">Permanent Marker</option>
-				<option value="Caveat">Caveat</option>
-				<option value="Satisfy">Satisfy</option>
-				<option value="Quicksand">Quicksand</option>
-				<option value="Comfortaa">Comfortaa</option>
-				<option value="Josefin Sans">Josefin Sans</option>
-			</select>
-			<br>
-			<label>Text Size: <span id="textSize-value">40</span></label>
-			<input type="range" value="40" id="textSize" min="10" max="200" step="5" class="jpslider">
-			<br>
-		</div>
-		
-		<!-- Geometry Brush Controls -->
-		<div id="geometryBrushParams" class="brushParams" style="display: none;">
-			<label>Polygon Sides: <span id="polygonSides-value">5</span></label>
-			<input type="range" value="5" id="polygonSides" min="2" max="10" step="1" class="jpslider">
-			<br>
-		</div>
-		
-		<!-- Fill Brush Controls -->
-		<div id="fillBrushParams" class="brushParams" style="display: none;">
-			<label>Tolerance: <span id="fillTolerance-value">0</span></label>
-			<input type="range" value="0" id="fillTolerance" min="0" max="50" step="1" class="jpslider">
-			<br>
-			<p style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-top: 5px;">
-				💡 Tolerance: 0 = solo color exacto, mayor = colores similares
-			</p>
-		</div>
-		
-		<input type="button" value="Close GUI" onClick="closeGui()" id="closegui" class="jpboton">
-		
-		<div class="control-group">
-			<input type="button" value="Background" onClick="cleanBackground()" id="resetbackground" class="jpboton">
-			<div class="sync-control">
-				<input type="checkbox" id="syncBackground" class="jpcheckbox" checked>
-				<label for="syncBackground" class="sync-label">Sync</label>
-			</div>
-			<div class="sync-control">
-				<input type="checkbox" id="lockBackground" class="jpcheckbox">
-				<label for="lockBackground" class="sync-label">Lock</label>
-			</div>
-		</div>
-		
-		<!-- Controles de Sockets -->
-		<div class="socket-controls">
-			<h4>Control de Sockets</h4>
-			
-			<!-- Contador de cursores -->
-			<div id="cursorCount" class="cursor-counter">Cursores: 0</div>
-			
-			<!-- Selector de sesión (unificado con el indicador) -->
-			<div class="session-selector">
-				<label for="sessionInput">Sesión:</label>
-				<input type="text" id="sessionInput" class="jpinput session-input">
-				<button id="changeSession" class="jpboton session-btn">Cambiar</button>
-			</div>
-			
-			<!-- Botones de control de sockets -->
-			<div class="socket-buttons">
-				<button id="toggleReceive" class="socket-btn square active" title="Recibir Sockets">
-					<svg viewBox="0 0 24 24">
-						<path fill="currentColor" d="M12,1C7,1 3,5 3,10V17A3,3 0 0,0 6,20H9V12H5V10A7,7 0 0,1 12,3A7,7 0 0,1 19,10V12H15V20H18A3,3 0 0,0 21,17V10C21,5 16.97,1 12,1Z" />
-					</svg>
-				</button>
-				<button id="toggleSend" class="socket-btn square active" title="Enviar Sockets">
-					<svg viewBox="0 0 24 24">
-						<path fill="currentColor" d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" />
-					</svg>
-				</button>
-			</div>
-		</div>
-		
-		<input type="button" value="Download Image" onClick="downloadImage()" id="downloadButton" class="jpboton">
-	</div>
-	
-	<button id="opengui" class="jpboton animated-button" onClick="openGui()">
-		<svg viewBox="0 0 24 24">
-			<path fill="currentColor" d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"/>
-		</svg>
-	</button>
-	
-	
+    
+    <div id="gui" >
+        <!-- El indicador de sesión se ha unificado con el selector de sesión -->
+        <br>
+        <button id="closeButton" class="close-button">
+            <svg viewBox="0 0 24 24">
+                <path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
+            </svg>
+        </button>
+        <label>Color</label><input type="color" value="#FFFFFF" id="c1">
+        <br>
+        <label>Alfa: <span id="alphaValue-value">255</span></label>
+        <input type="range" value="255" id="alphaValue" min="0" max ="255" step="1" class="jpslider" >
+        <br>
+        <label>Size: <span id="size-value">20</span></label>
+        <input type="range" value="20" id="size" min="0" max ="100" step="0.1" class="jpslider" >
+        <br>
+        <label>Efecto Kaleido: <span id="kaleidoSegments-value">1</span></label>
+        <input type="range" value="1" id="kaleidoSegments" min="1" max="16" step="1" class="jpslider">
+        <br>
+        <label>Brush Type</label>
+        <div class="brush-selector">
+            <button class="brush-btn active" data-brush="classic" title="Classic Circle">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="currentColor"/></svg>
+            </button>
+            <button class="brush-btn" data-brush="line" title="Line Brush">
+                <svg viewBox="0 0 24 24"><line x1="4" y1="20" x2="20" y2="4" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+            </button>
+            <button class="brush-btn" data-brush="art" title="Art Brush">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/><circle cx="16" cy="8" r="1.5" fill="currentColor"/><circle cx="8" cy="16" r="1.5" fill="currentColor"/><circle cx="16" cy="16" r="1.5" fill="currentColor"/></svg>
+            </button>
+            <button class="brush-btn" data-brush="pixel" title="Pixel Brush">
+                <svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" fill="currentColor"/><rect x="14" y="4" width="6" height="6" fill="currentColor"/><rect x="4" y="14" width="6" height="6" fill="currentColor"/><rect x="14" y="14" width="6" height="6" fill="currentColor"/></svg>
+            </button>
+            <button class="brush-btn" data-brush="text" title="Text Brush">
+                <svg viewBox="0 0 24 24"><text x="12" y="18" text-anchor="middle" font-size="16" font-weight="bold" fill="currentColor">A</text></svg>
+            </button>
+            <button class="brush-btn" data-brush="geometry" title="Geometry Brush">
+                <svg viewBox="0 0 24 24"><polygon points="12,4 20,20 4,20" fill="currentColor"/></svg>
+            </button>
+            <button class="brush-btn" data-brush="fill" title="Fill/Bucket">
+                <svg viewBox="0 0 24 24"><path d="M19,11.5C19,11.5 17,13.67 17,15A2,2 0 0,0 19,17A2,2 0 0,0 21,15C21,13.67 19,11.5 19,11.5M5.21,10L10,5.21L14.79,10M16.56,8.94L7.62,0L6.21,1.41L8.59,3.79L3.44,8.94C2.85,9.53 2.85,10.5 3.44,11.09L8.94,16.59C9.23,16.88 9.62,17 10,17C10.38,17 10.77,16.88 11.06,16.59L16.56,11.09C17.15,10.5 17.15,9.53 16.56,8.94Z" fill="currentColor"/></svg>
+            </button>
+            <button class="brush-btn" data-brush="background" onClick="cleanBackground()" title="Background">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M4,2H20A2,2 0 0,1 22,4V20A2,2 0 0,1 20,22H4A2,2 0 0,1 2,20V4A2,2 0 0,1 4,2M4,4V20H20V4H4Z" /></svg>
+            </button>
+            <button class="brush-btn" onClick="downloadImage()" id="downloadButton" title="Download Image">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z"/></svg>
+            </button>
+        </div>
+        <input type="hidden" id="brushType" value="classic">
+        <br>
+        <!-- Classic Brush Controls -->
+        <div id="classicBrushParams" class="brushParams" style="display: none;">
+            <!-- No additional controls for classic brush -->
+        </div>
+        
+        <!-- Pixel Brush Controls -->
+        <div id="pixelBrushParams" class="brushParams" style="display: none;">
+            <label>Grid Columns: <span id="gridCols-value">32</span></label>
+            <input type="range" value="32" id="gridCols" min="4" max="64" step="4" class="jpslider">
+            <br>
+            <label>Grid Rows: <span id="gridRows-value">32</span></label>
+            <input type="range" value="32" id="gridRows" min="4" max="64" step="4" class="jpslider">
+            <br>
+            <label>Show Grid</label>
+            <input type="checkbox" id="showGrid" class="jpcheckbox">
+            <br>
+        </div>
+        
+        <!-- Art Brush Controls -->
+        <div id="artBrushParams" class="brushParams" style="display: none;">
+            <label>Particle Count: <span id="particleCount-value">10</span></label>
+            <input type="range" value="10" id="particleCount" min="1" max="30" step="1" class="jpslider">
+            <br>
+            <label>Speed Force: <span id="speedForce-value">0.5</span></label>
+            <input type="range" value="0.5" id="speedForce" min="0.1" max="2.0" step="0.1" class="jpslider">
+            <br>
+            <label>Max Speed: <span id="maxSpeed-value">0.5</span></label>
+            <input type="range" value="0.5" id="maxSpeed" min="0.1" max="3.0" step="0.1" class="jpslider">
+            <br>
+            <label>Life: <span id="particleLife-value">255</span></label>
+            <input type="range" value="255" id="particleLife" min="50" max="500" step="10" class="jpslider">
+            <br>
+            <label>Particle Size: <span id="particleMaxSize-value">8</span></label>
+            <input type="range" value="8" id="particleMaxSize" min="1" max="20" step="1" class="jpslider">
+            <br>
+        </div>
+        
+        <!-- Text Brush Controls -->
+        <div id="textBrushParams" class="brushParams" style="display: none;">
+            <label>Text</label>
+            <input type="text" id="textContent" value="TEXTO" class="jpinput" style="width: 90%; padding: 5px; margin-bottom: 5px;">
+            <br>
+            <label>Font</label>
+            <select id="textFont" class="jpselect">
+                <option value="Arial">Arial</option>
+                <option value="Roboto">Roboto</option>
+                <option value="Montserrat">Montserrat</option>
+                <option value="Lato">Lato</option>
+                <option value="Open Sans">Open Sans</option>
+                <option value="Poppins">Poppins</option>
+                <option value="Dancing Script">Dancing Script</option>
+                <option value="Pacifico">Pacifico</option>
+                <option value="Indie Flower">Indie Flower</option>
+                <option value="Shadows Into Light">Shadows Into Light</option>
+                <option value="Permanent Marker">Permanent Marker</option>
+                <option value="Caveat">Caveat</option>
+                <option value="Satisfy">Satisfy</option>
+                <option value="Quicksand">Quicksand</option>
+                <option value="Comfortaa">Comfortaa</option>
+                <option value="Josefin Sans">Josefin Sans</option>
+            </select>
+            <br>
+            <label>Text Size: <span id="textSize-value">40</span></label>
+            <input type="range" value="40" id="textSize" min="10" max="200" step="5" class="jpslider">
+            <br>
+        </div>
+        
+        <!-- Geometry Brush Controls -->
+        <div id="geometryBrushParams" class="brushParams" style="display: none;">
+            <label>Polygon Sides: <span id="polygonSides-value">5</span></label>
+            <input type="range" value="5" id="polygonSides" min="2" max="10" step="1" class="jpslider">
+            <br>
+        </div>
+        
+        <!-- Fill Brush Controls -->
+        <div id="fillBrushParams" class="brushParams" style="display: none;">
+            <label>Tolerance: <span id="fillTolerance-value">0</span></label>
+            <input type="range" value="0" id="fillTolerance" min="0" max="50" step="1" class="jpslider">
+            <br>
+            <p style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-top: 5px;">
+                💡 Tolerance: 0 = solo color exacto, mayor = colores similares
+            </p>
+        </div>
+        
+        <input type="button" value="Close GUI" onClick="closeGui()" id="closegui" class="jpboton">
+        
+        <!-- Controles de Sockets -->
+        <div class="socket-controls">
+            <h4>Control de Sockets</h4>
+            
+            <!-- Contador de cursores -->
+            <div id="cursorCount" class="cursor-counter">Cursores: 0</div>
+            
+            <!-- Selector de sesión (unificado con el indicador) -->
+            <div class="session-selector">
+                <label for="sessionInput">Sesión:</label>
+                <input type="text" id="sessionInput" class="jpinput session-input">
+            </div>
+            
+            <!-- Botones de control de sockets -->
+            <div class="socket-buttons">
+                <button id="toggleReceive" class="socket-btn square active" title="Recibir Sockets">
+                    <svg viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M12,1C7,1 3,5 3,10V17A3,3 0 0,0 6,20H9V12H5V10A7,7 0 0,1 12,3A7,7 0 0,1 19,10V12H15V20H18A3,3 0 0,0 21,17V10C21,5 16.97,1 12,1Z" />
+                    </svg>
+                </button>
+                <button id="toggleSend" class="socket-btn square active" title="Enviar Sockets">
+                    <svg viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+    </div>
+    
+    <button id="opengui" class="jpboton animated-button" onClick="openGui()">
+        <svg viewBox="0 0 24 24">
+            <path fill="currentColor" d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"/>
+        </svg>
+    </button>
+    
+    
   <script src="general.js"></script>
   </body>
 </html>
