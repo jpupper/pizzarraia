@@ -386,3 +386,54 @@ function downloadImage() {
     console.log(`Imagen descargada: ${filename}`);
   }, 'image/png', 1.0); // Calidad máxima (1.0)
 }
+
+// Función para configurar los controles de sockets
+function setupSocketControls() {
+  const toggleReceiveBtn = document.getElementById('toggleReceive');
+  const toggleSendBtn = document.getElementById('toggleSend');
+  
+  // Inicializar los botones según la configuración actual
+  if (!config.sockets.receiveEnabled) {
+    toggleReceiveBtn.classList.remove('active');
+    toggleReceiveBtn.classList.add('inactive');
+  }
+  
+  if (!config.sockets.sendEnabled) {
+    toggleSendBtn.classList.remove('active');
+    toggleSendBtn.classList.add('inactive');
+  }
+  
+  // Configurar evento para el botón de recepción de sockets
+  toggleReceiveBtn.addEventListener('click', function() {
+    // Cambiar el estado
+    config.sockets.receiveEnabled = !config.sockets.receiveEnabled;
+    
+    // Actualizar la apariencia del botón
+    if (config.sockets.receiveEnabled) {
+      this.classList.remove('inactive');
+      this.classList.add('active');
+      console.log('Recepción de sockets activada');
+    } else {
+      this.classList.remove('active');
+      this.classList.add('inactive');
+      console.log('Recepción de sockets desactivada');
+    }
+  });
+  
+  // Configurar evento para el botón de envío de sockets
+  toggleSendBtn.addEventListener('click', function() {
+    // Cambiar el estado
+    config.sockets.sendEnabled = !config.sockets.sendEnabled;
+    
+    // Actualizar la apariencia del botón
+    if (config.sockets.sendEnabled) {
+      this.classList.remove('inactive');
+      this.classList.add('active');
+      console.log('Envío de sockets activado');
+    } else {
+      this.classList.remove('active');
+      this.classList.add('inactive');
+      console.log('Envío de sockets desactivado');
+    }
+  });
+}
