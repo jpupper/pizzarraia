@@ -391,6 +391,11 @@ function downloadImage() {
 function setupSocketControls() {
   const toggleReceiveBtn = document.getElementById('toggleReceive');
   const toggleSendBtn = document.getElementById('toggleSend');
+  const sessionInput = document.getElementById('sessionInput');
+  const changeSessionBtn = document.getElementById('changeSession');
+  
+  // Inicializar el campo de sesión con la sesión actual
+  sessionInput.value = config.getSessionId();
   
   // Inicializar los botones según la configuración actual
   if (!config.sockets.receiveEnabled) {
@@ -417,6 +422,12 @@ function setupSocketControls() {
       this.classList.remove('active');
       this.classList.add('inactive');
       console.log('Recepción de sockets desactivada');
+      
+      // Si se desactiva la recepción, actualizar el contador de cursores
+      const cursorCountElement = document.getElementById('cursorCount');
+      if (cursorCountElement) {
+        cursorCountElement.textContent = 'Cursores: 0 (recepción desactivada)';
+      }
     }
   });
   
@@ -434,6 +445,32 @@ function setupSocketControls() {
       this.classList.remove('active');
       this.classList.add('inactive');
       console.log('Envío de sockets desactivado');
+    }
+  });
+  
+  // Configurar evento para el cambio de sesión
+  changeSessionBtn.addEventListener('click', function() {
+    const newSession = sessionInput.value.trim();
+    if (newSession === '') {
+      alert('Por favor ingresa un número de sesión válido');
+      return;
+    }
+    
+    // Construir la nueva URL con el parámetro de sesión
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.set('sesion', newSession);
+    
+    // Confirmar el cambio de sesión
+    if (confirm(`¿Deseas cambiar a la sesión ${newSession}? Se recargará la página.`)) {
+      // Redirigir a la nueva URL
+      window.location.href = currentUrl.toString();
+    }
+  });
+  
+  // Permitir presionar Enter en el campo de sesión para cambiar
+  sessionInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      changeSessionBtn.click();
     }
   });
 }

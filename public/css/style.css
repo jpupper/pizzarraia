@@ -456,6 +456,39 @@ select option {
     text-align: center;
 }
 
+/* Estilos para el contador de cursores */
+.cursor-counter {
+    background-color: rgba(0, 0, 0, 0.5);
+    color: #00ff00;
+    padding: 8px 12px;
+    border-radius: 5px;
+    margin-bottom: 12px;
+    font-family: monospace;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+/* Estilos para el selector de sesión */
+.session-selector {
+    display: flex;
+    margin-bottom: 15px;
+    gap: 8px;
+}
+
+.session-selector input {
+    flex: 1;
+    margin-bottom: 0;
+    height: 36px;
+}
+
+.session-btn {
+    padding: 0 10px;
+    margin-bottom: 0;
+    height: 36px;
+    min-width: 120px;
+}
+
+/* Estilos para los botones de sockets */
 .socket-buttons {
     display: flex;
     justify-content: space-around;
@@ -467,7 +500,6 @@ select option {
     height: 60px;
     background-color: var(--primary-light);
     border: 3px solid transparent;
-    border-radius: 50%;
     cursor: pointer;
     transition: all 0.3s ease;
     display: flex;
@@ -475,6 +507,11 @@ select option {
     justify-content: center;
     color: var(--text);
     position: relative;
+}
+
+/* Estilo para botones cuadrados */
+.socket-btn.square {
+    border-radius: 10px;
 }
 
 .socket-btn svg {
@@ -512,5 +549,13 @@ select option {
     .socket-btn svg {
         width: 40px;
         height: 40px;
+    }
+    
+    .session-selector {
+        flex-direction: column;
+    }
+    
+    .session-btn {
+        width: 100%;
     }
 }
