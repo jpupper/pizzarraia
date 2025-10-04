@@ -450,34 +450,44 @@ function setupSocketControls() {
       console.log('Envío de sockets activado');
     } else {
       this.classList.remove('active');
-      this.classList.add('inactive');
       console.log('Envío de sockets desactivado');
     }
   });
   
-  // Configurar evento para el cambio de sesión
-  changeSessionBtn.addEventListener('click', function() {
-    const newSession = sessionInput.value.trim();
+  // Configurar evento para el cambio de sesión automático
+  sessionInput.addEventListener('input', function() {
+    const newSession = this.value.trim();
     if (newSession === '') {
-      alert('Por favor ingresa un número de sesión válido');
-      return;
+      return; // No hacer nada si está vacío
     }
     
-    // Construir la nueva URL con el parámetro de sesión
-    const currentUrl = new URL(window.location.href);
-    currentUrl.searchParams.set('sesion', newSession);
-    
-    // Confirmar el cambio de sesión
-    if (confirm(`¿Deseas cambiar a la sesión ${newSession}? Se recargará la página.`)) {
-      // Redirigir a la nueva URL
+    // Esperar un momento antes de cambiar la sesión para dar tiempo a que el usuario termine de escribir
+    clearTimeout(this.sessionChangeTimeout);
+    this.sessionChangeTimeout = setTimeout(function() {
+      // Construir la nueva URL con el parámetro de sesión
+      const currentUrl = new URL(window.location.href);
+      currentUrl.searchParams.set('sesion', newSession);
+      
+      // Cambiar la sesión sin alertas ni confirmaciones
       window.location.href = currentUrl.toString();
+    }, 1000); // Esperar 1 segundo después de que el usuario deje de escribir
+  });
+  
+  // Permitir presionar Enter para cambiar inmediatamente
+  sessionInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      clearTimeout(this.sessionChangeTimeout);
+      const newSession = this.value.trim();
+      if (newSession !== '') {
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set('sesion', newSession);
+        window.location.href = currentUrl.toString();
+      }
     }
   });
   
-  // Permitir presionar Enter en el campo de sesión para cambiar
-  sessionInput.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-      changeSessionBtn.click();
-    }
-  });
+  // Ocultar el botón de cambiar sesión ya que ahora es automático
+  if (changeSessionBtn) {
+    changeSessionBtn.style.display = 'none';
+  }
 }

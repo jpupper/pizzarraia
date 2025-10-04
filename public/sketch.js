@@ -12,21 +12,18 @@ var col1;
 var col2;
 var alphaVal; // Valor para el alpha del relleno
 var size; // Valor para el tamaño del pincel
-var texto1; 
-
 // Variables de estado
 var isOverOpenButton = false;
 var isBorder = true;
 var isRandomValues = true;
-var isMousePressed = false; 
 var isOverGui = false;
 var mouseFlag = true;
 var fillExecuted = false; // Flag para controlar que el fill solo se ejecute una vez por click
+var isMousePressed = false; // Flag para controlar si el mouse est  presionado
 
 // Variables para el punto central del caleidoscopio
 var kaleidoCenterX = null;
 var kaleidoCenterY = null;
-
 // Sistema de cursores remotos (compatible con TouchDesigner)
 var PS; // Instancia de CursorServer (PointServer) para gestionar cursores de otros clientes
 
@@ -675,7 +672,6 @@ function polygon(buffer, x, y, radius, npoints, fase) {
 // FUNCIONES DE CONVERSIÓN DE COORDENADAS
 // ============================================================
 
-
 // Convertir coordenadas de la grilla a coordenadas del canvas
 function gridToCanvas(cellX, cellY) {
     // Obtener el punto central de la celda de la grilla
@@ -702,16 +698,9 @@ function newDrawing(data2) {
     }
     
     if (data2.bc) {
-        // Verificar si el LOCK está activado
-        const isLocked = document.getElementById('lockBackground').checked;
-        
-        if (!isLocked) {
-            // Solo limpiar si NO está bloqueado
-            cleanBackgroundLocal(); // Usar la función local para evitar reemitir el mensaje
-            console.log("LIMPIEZA REMOTA APLICADA");
-        } else {
-            console.log("LIMPIEZA REMOTA BLOQUEADA POR LOCK");
-        }
+        // Limpiar el background cuando se recibe el mensaje
+        cleanBackgroundLocal();
+        console.log("LIMPIEZA REMOTA APLICADA");
     } else {
         // No actualizar ninguna variable global, cada trazo es completamente independiente
         
@@ -865,15 +854,10 @@ function cleanBackground() {
     // Limpiar el fondo localmente siempre
     cleanBackgroundLocal();
     
-    // Verificar si el checkbox de sincronización está activado
-    const syncBackground = document.getElementById('syncBackground').checked;
-    
-    // Si está activado y el envío de sockets está habilitado, enviar mensaje a otros clientes
-    if (syncBackground && config.sockets.sendEnabled) {
+    // Enviar mensaje a otros clientes si el envío de sockets está habilitado
+    if (config.sockets.sendEnabled) {
         socket.emit('mouse', {bc: true, session: sessionId});
         console.log("ENVIANDO MENSAJE DE LIMPIEZA PARA SESIÓN:", sessionId);
-    } else if (!syncBackground) {
-        console.log("LIMPIEZA LOCAL SOLAMENTE (SINCRONIZACIÓN DESACTIVADA)");
     } else {
         console.log("LIMPIEZA LOCAL SOLAMENTE (ENVÍO DE SOCKETS DESACTIVADO)");
     }
@@ -909,7 +893,6 @@ function toggleGuiButtonVisibility() {
 // ============================================================
 // CLASES
 // ============================================================
-
 
 // Sistema de palabras
 class PalabraSystem {
