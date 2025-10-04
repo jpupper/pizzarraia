@@ -160,8 +160,12 @@ io.on('connection', (socket) => {
       });
     }
   }
-
-  // Manejar la desconexión del cliente
+  socket.on('chat_message', function(data) {
+    // Reenviar el mensaje a todos los clientes de la misma sesión
+    io.emit('chat_message', data);
+    console.log('Chat message from', data.username, ':', data.message);
+  });
+  // Manejar la desccconexión del cliente
   socket.on('disconnect', () => {
     console.log('Cliente desconectado: ' + socket.id);
     

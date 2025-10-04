@@ -43,6 +43,33 @@ canvas {
     overflow-y: auto; /* Permite scroll solo en el GUI */
 }
 
+/* Estilos personalizados para la barra de desplazamiento del GUI */
+#gui::-webkit-scrollbar {
+    width: 12px;
+}
+
+#gui::-webkit-scrollbar-track {
+    background: var(--primary-dark);
+    border-radius: 10px;
+    margin: 5px;
+}
+
+#gui::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 10px;
+    border: 2px solid var(--primary-dark);
+}
+
+#gui::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-light);
+}
+
+/* Para Firefox */
+#gui {
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent) var(--primary-dark);
+}
+
 #opengui {
     position: fixed;
     top: 1rem;
@@ -201,7 +228,7 @@ select:focus {
     pointer-events: none;
 }
 
-/* Estilos base para mÃ³vil */
+/* Estilos base para mÃƒÂ³vil */
 @media screen and (max-width: 768px) {
   #gui {
     width: 90%;
@@ -278,7 +305,7 @@ select:focus {
     height: 30px;
   }
 
-  /* Estilos para el scrollbar personalizado en móvil */
+  /* Estilos para el scrollbar personalizado en mÃ³vil */
   #gui::-webkit-scrollbar {
     width: 8px;
   }
@@ -353,7 +380,7 @@ select option {
     accent-color: var(--accent);
 }
 
-/* Estilos para el grupo de control de sincronizaciÃ³n */
+/* Estilos para el grupo de control de sincronizaciÃƒÂ³n */
 .control-group {
     display: flex;
     align-items: center;
@@ -368,8 +395,8 @@ select option {
     background-color: var(--primary-light);
     padding: 5px 10px;
     border-radius: 4px;
-    min-width: 80px; /* Ancho mÃ­nimo para evitar que se corte el texto */
-    height: 36px; /* Altura fija para alinearse con el botÃ³n */
+    min-width: 80px; /* Ancho mÃƒÂ­nimo para evitar que se corte el texto */
+    height: 36px; /* Altura fija para alinearse con el botÃƒÂ³n */
 }
 
 .sync-label {
@@ -492,7 +519,7 @@ select option {
     text-align: center;
 }
 
-/* Estilos para el selector de sesión */
+/* Estilos para el selector de sesiÃ³n */
 .session-selector {
     display: flex;
     margin-bottom: 15px;
@@ -532,6 +559,7 @@ select option {
 .socket-buttons {
     display: flex;
     justify-content: flex-start;
+    align-items: center;
     margin-bottom: 10px;
     gap: 15px;
 }
@@ -546,9 +574,12 @@ select option {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--text);
-    position: relative;
-    padding: 0;
+    margin-bottom: 0;
+}
+
+.socket-buttons #downloadButton svg {
+    width: 28px !important;
+    height: 28px !important;
 }
 
 /* Estilo para botones cuadrados */
@@ -581,13 +612,182 @@ select option {
     box-shadow: none;
 }
 
+/* Estilos para el menú de pestañas */
+.tab-menu {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 15px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 10px 15px;
+    background-color: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.tab-btn:hover {
+    color: var(--text);
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    background-color: rgba(138, 79, 191, 0.1);
+}
+
+/* Estilos para el contenido de las pestañas */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Estilos para la sección About */
+.about-section {
+    margin: 15px 0;
+    padding: 15px;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    border-left: 3px solid var(--accent);
+}
+
+.about-section h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: var(--text);
+    font-size: 1.1rem;
+}
+
+.about-link {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 8px 15px;
+    background-color: var(--accent);
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.about-link:hover {
+    background-color: var(--primary-light);
+    transform: scale(1.05);
+}
+
+/* Estilos para la sección Chat */
+.chat-section {
+    margin: 15px 0;
+    padding: 15px;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    border-left: 3px solid var(--accent);
+}
+
+.chat-section h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: var(--text);
+    font-size: 1.1rem;
+}
+
+.chat-messages {
+    height: 200px;
+    overflow-y: auto;
+    background-color: rgba(0, 0, 0, 0.4);
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 10px;
+    font-size: 0.85rem;
+}
+
+.chat-messages::-webkit-scrollbar {
+    width: 8px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+    background: var(--primary-dark);
+    border-radius: 10px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 10px;
+}
+
+.chat-message {
+    margin-bottom: 8px;
+    padding: 6px 10px;
+    background-color: rgba(138, 79, 191, 0.2);
+    border-radius: 5px;
+    line-height: 1.4;
+}
+
+.chat-username {
+    font-weight: bold;
+    color: var(--accent);
+    margin-right: 5px;
+}
+
+.chat-text {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.chat-input-container {
+    display: flex;
+    gap: 8px;
+}
+
+.chat-input {
+    flex: 1;
+    padding: 8px 12px;
+    background-color: var(--primary-light);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    color: var(--text);
+    font-size: 0.9rem;
+}
+
+.chat-input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.chat-send-btn {
+    width: 40px;
+    height: 40px;
+    background-color: var(--accent);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.chat-send-btn:hover {
+    background-color: var(--primary-light);
+    transform: scale(1.05);
+}
+
 /* Estilos para dispositivos móviles */
 @media screen and (max-width: 768px) {
     .socket-btn {
         width: 50px;
         height: 50px;
     }
-    
     .socket-btn svg {
         width: 30px;
         height: 30px;

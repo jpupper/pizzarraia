@@ -27,13 +27,49 @@
     <script src="sketch.js"></script>
     
     <div id="gui" >
-        <!-- El indicador de sesión se ha unificado con el selector de sesión -->
+        <!-- Menú de pestañas -->
+        <div class="tab-menu">
+            <button class="tab-btn active" data-tab="drawing">Draw</button>
+            <button class="tab-btn" data-tab="about">Read</button>
+            <button class="tab-btn" data-tab="chat">Chat</button>
+        </div>
+        
+        <!-- Contenido de la pestaña: Interfaz de dibujo -->
+        <div id="tab-drawing" class="tab-content active">
+         <!-- Controles de Sockets -->
+         <div class="socket-controls">
+            <h4>Control de Sockets</h4>
+            
+            <!-- Contador de cursores -->
+            <div id="cursorCount" class="cursor-counter">Cursores: 0</div>
+            
+            <!-- Selector de sesión (unificado con el indicador) -->
+            <div class="session-selector">
+                <label for="sessionInput">Sesión:</label>
+                <input type="text" id="sessionInput" class="jpinput session-input">
+            </div>
+            
+            <!-- Botones de control de sockets -->
+            <div class="socket-buttons">
+                <button id="toggleReceive" class="socket-btn square active" title="Recibir Sockets">
+                    <svg viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M12,1C7,1 3,5 3,10V17A3,3 0 0,0 6,20H9V12H5V10A7,7 0 0,1 12,3A7,7 0 0,1 19,10V12H15V20H18A3,3 0 0,0 21,17V10C21,5 16.97,1 12,1Z" />
+                    </svg>
+                </button>
+                <button id="toggleSend" class="socket-btn square active" title="Enviar Sockets">
+                    <svg viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" />
+                    </svg>
+                </button>
+                <button id="downloadButton" class="socket-btn square active" onClick="downloadImage()" title="Download Image">
+                    <svg viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+        
         <br>
-        <button id="closeButton" class="close-button">
-            <svg viewBox="0 0 24 24">
-                <path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
-            </svg>
-        </button>
         <label>Color</label><input type="color" value="#FFFFFF" id="c1">
         <br>
         <label>Alfa: <span id="alphaValue-value">255</span></label>
@@ -70,9 +106,6 @@
             </button>
             <button class="brush-btn" data-brush="background" onClick="cleanBackground()" title="Background">
                 <svg viewBox="0 0 24 24"><path fill="currentColor" d="M4,2H20A2,2 0 0,1 22,4V20A2,2 0 0,1 20,22H4A2,2 0 0,1 2,20V4A2,2 0 0,1 4,2M4,4V20H20V4H4Z" /></svg>
-            </button>
-            <button class="brush-btn" onClick="downloadImage()" id="downloadButton" title="Download Image">
-                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z"/></svg>
             </button>
         </div>
         <input type="hidden" id="brushType" value="classic">
@@ -160,37 +193,48 @@
                 💡 Tolerance: 0 = solo color exacto, mayor = colores similares
             </p>
         </div>
+        </div>
         
-        <input type="button" value="Close GUI" onClick="closeGui()" id="closegui" class="jpboton">
+        <!-- Contenido de la pestaña: About -->
+        <div id="tab-about" class="tab-content">
+        <div class="about-section">
+            <h4>About Pizzarr.IA</h4>
+            <p style="font-size: 0.85rem; line-height: 1.4; color: rgba(255,255,255,0.85);">
+                Pizzarr.IA es una pizarra colaborativa en tiempo real que permite a múltiples usuarios dibujar juntos desde cualquier lugar del mundo. 
+                Creado por <strong>JPupper</strong>, este proyecto combina arte, tecnología y colaboración.
+            </p>
+            <a href="https://jeyder.com.ar/jpupper/" target="_blank" class="about-link">
+                🌐 Visitar sitio web
+            </a>
+        </div>
+        </div>
         
-        <!-- Controles de Sockets -->
-        <div class="socket-controls">
-            <h4>Control de Sockets</h4>
-            
-            <!-- Contador de cursores -->
-            <div id="cursorCount" class="cursor-counter">Cursores: 0</div>
-            
-            <!-- Selector de sesión (unificado con el indicador) -->
-            <div class="session-selector">
-                <label for="sessionInput">Sesión:</label>
-                <input type="text" id="sessionInput" class="jpinput session-input">
+        <!-- Contenido de la pestaña: Chat -->
+        <div id="tab-chat" class="tab-content">
+        <div class="chat-section">
+            <h4>Chat en Vivo</h4>
+            <div class="chat-user-info" style="margin-bottom: 10px; padding: 8px; background-color: rgba(138, 79, 191, 0.2); border-radius: 5px;">
+                <span style="color: rgba(255,255,255,0.7);">Tu nombre: </span>
+                <span id="chatUsername" style="color: var(--accent); font-weight: bold;">Cargando...</span>
             </div>
-            
-            <!-- Botones de control de sockets -->
-            <div class="socket-buttons">
-                <button id="toggleReceive" class="socket-btn square active" title="Recibir Sockets">
-                    <svg viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M12,1C7,1 3,5 3,10V17A3,3 0 0,0 6,20H9V12H5V10A7,7 0 0,1 12,3A7,7 0 0,1 19,10V12H15V20H18A3,3 0 0,0 21,17V10C21,5 16.97,1 12,1Z" />
-                    </svg>
-                </button>
-                <button id="toggleSend" class="socket-btn square active" title="Enviar Sockets">
-                    <svg viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" />
+            <div id="chatMessages" class="chat-messages"></div>
+            <div class="chat-input-container">
+                <input type="text" id="chatInput" class="chat-input" placeholder="Escribe un mensaje...">
+                <button id="sendChatBtn" class="chat-send-btn">
+                    <svg viewBox="0 0 24 24" width="20" height="20">
+                        <path fill="currentColor" d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/>
                     </svg>
                 </button>
             </div>
         </div>
-
+        </div>
+        
+        <!-- Botón de cerrar (fuera de las pestañas) -->
+        <button id="closeButton" class="close-button">
+            <svg viewBox="0 0 24 24">
+                <path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
+            </svg>
+        </button>
     </div>
     
     <button id="opengui" class="jpboton animated-button" onClick="openGui()">
@@ -199,7 +243,8 @@
         </svg>
     </button>
     
-    
+    <input type="button" value="Close GUI" onClick="closeGui()" id="closegui" class="jpboton">
+            
   <script src="general.js"></script>
   </body>
 </html>
