@@ -1,7 +1,7 @@
 // pixelbrush.js - Implementación del pincel de píxeles
 
 /**
- * Dibuja píxeles en la grilla dentro del radio del pincel
+ * Función básica para dibujar píxeles en la grilla
  * @param {p5.Graphics} buffer - Buffer donde dibujar
  * @param {number} x - Posición X del mouse
  * @param {number} y - Posición Y del mouse
@@ -9,8 +9,9 @@
  * @param {number} cols - Número de columnas en la grilla
  * @param {number} rows - Número de filas en la grilla
  * @param {p5.Color} color - Color del pincel
+ * @returns {Object} - Información sobre los píxeles afectados
  */
-function drawPixelBrush(buffer, x, y, size, cols, rows, color) {
+function drawBasicPixelBrush(buffer, x, y, size, cols, rows, color) {
     // Convertir coordenadas del mouse a coordenadas de la grilla
     const gridPos = canvasToGridWithParams(x, y, cols, rows);
     
@@ -60,6 +61,60 @@ function drawPixelBrush(buffer, x, y, size, cols, rows, color) {
         centerCell: gridPos,
         radiusInCells: radiusInCells
     };
+}
+
+/**
+ * Dibuja píxeles en la grilla dentro del radio del pincel con posible efecto caleidoscopio
+ * @param {p5.Graphics} buffer - Buffer donde dibujar
+ * @param {number} x - Posición X del mouse
+ * @param {number} y - Posición Y del mouse
+ * @param {number} size - Tamaño del pincel (radio)
+ * @param {number} cols - Número de columnas en la grilla
+ * @param {number} rows - Número de filas en la grilla
+ * @param {p5.Color} color - Color del pincel
+ * @param {number} segments - Número de segmentos para el efecto caleidoscopio
+ * @returns {Object} - Información sobre los píxeles afectados
+ */
+function drawPixelBrush(buffer, x, y, size, cols, rows, color, segments = 1) {
+    // Obtener el número de segmentos para el efecto caleidoscopio
+    segments = segments || 1;
+    
+    if (segments <= 1) {
+        // Sin efecto caleidoscopio, dibujar normalmente
+        return drawBasicPixelBrush(buffer, x, y, size, cols, rows, color);
+    } else {
+        // Con efecto caleidoscopio
+        const centerX = windowWidth / 2;
+        const centerY = windowHeight / 2;
+        
+        // Calcular la distancia y ángulo desde el centro
+        const dx = x - centerX;
+        const dy = y - centerY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const angle = Math.atan2(dy, dx);
+        
+        // Calcular el ángulo entre cada segmento
+        const angleStep = (Math.PI * 2) / segments;
+        
+        // Crear un array para almacenar los resultados de cada segmento
+        let results = [];
+        
+        // Dibujar en cada segmento
+        for (let i = 0; i < segments; i++) {
+            const segmentAngle = angleStep * i;
+            
+            // Calcular nueva posición
+            const newX = centerX + Math.cos(angle + segmentAngle) * distance;
+            const newY = centerY + Math.sin(angle + segmentAngle) * distance;
+            
+            // Dibujar los píxeles en la nueva posición
+            const result = drawBasicPixelBrush(buffer, newX, newY, size, cols, rows, color);
+            results.push(result);
+        }
+        
+        // Devolver el resultado del primer segmento (para sincronización)
+        return results.length > 0 ? results[0] : null;
+    }
 }
 
 /**
