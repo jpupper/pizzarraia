@@ -72,9 +72,6 @@ function setup() {
     // Obtener ID de sesión desde URL
     sessionId = config.getSessionId();
     
-    // Actualizar indicador de sesión en GUI
-    document.getElementById('sessionIndicator').innerText = `Sesión: ${sessionId}`;
-    
     // Configurar socket
     const socketConfig = config.getSocketConfig();
     socket = io(socketConfig.url, socketConfig.options);
