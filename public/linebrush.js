@@ -14,18 +14,45 @@ function startLineBrush(x, y) {
 }
 
 /**
- * Dibuja una línea recta entre dos puntos
+ * Función básica para dibujar una línea recta
  */
-function drawLineBrush(buffer, x, y, startX, startY, size, color) {
+function drawBasicLine(buffer, x1, y1, x2, y2, size, color) {
     // Configurar estilo
     buffer.stroke(color);
     buffer.strokeWeight(size);
     buffer.strokeCap(ROUND);
     
     // Dibujar línea
-    buffer.line(startX, startY, x, y);
+    buffer.line(x1, y1, x2, y2);
+}
+
+/**
+ * Dibuja una línea recta entre dos puntos con posible efecto caleidoscopio
+ */
+function drawLineBrush(buffer, x, y, startX, startY, size, color, segments = 1) {
+    // Obtener el número de segmentos para el efecto caleidoscopio
+    segments = segments || 1;
     
-    console.log('Line drawn:', startX, startY, 'to', x, y);
+    if (segments <= 1) {
+        // Sin efecto caleidoscopio, dibujar normalmente
+        drawBasicLine(buffer, startX, startY, x, y, size, color);
+    } else {
+        // Con efecto caleidoscopio
+        const centerX = windowWidth / 2;
+        const centerY = windowHeight / 2;
+        
+        drawLineKaleidoscope(
+            buffer, 
+            startX, startY, 
+            x, y, 
+            centerX, centerY, 
+            segments, 
+            drawBasicLine, 
+            size, color
+        );
+    }
+    
+    console.log('Line drawn:', startX, startY, 'to', x, y, 'with', segments, 'segments');
 }
 
 /**

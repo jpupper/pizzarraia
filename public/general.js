@@ -69,7 +69,7 @@ function updateSliderValue(sliderId) {
 
 // Función para actualizar todos los valores numéricos
 function updateAllSliderValues() {
-    const sliderIds = ['alphaValue', 'size', 'gridCols', 'gridRows', 'particleCount', 'speedForce', 'maxSpeed', 'particleLife', 'particleMaxSize', 'textSize', 'polygonSides', 'fillTolerance'];
+    const sliderIds = ['alphaValue', 'size', 'kaleidoSegments', 'gridCols', 'gridRows', 'particleCount', 'speedForce', 'maxSpeed', 'particleLife', 'particleMaxSize', 'textSize', 'polygonSides', 'fillTolerance'];
     sliderIds.forEach(sliderId => updateSliderValue(sliderId));
 }
 
@@ -147,6 +147,7 @@ function setupBrushTypeEvents() {
   // Event listeners para sliders globales
   const alphaValueInput = document.getElementById('alphaValue');
   const sizeInput = document.getElementById('size');
+  const kaleidoSegmentsInput = document.getElementById('kaleidoSegments');
   
   if (alphaValueInput) {
     alphaValueInput.addEventListener('input', function() {
@@ -157,6 +158,12 @@ function setupBrushTypeEvents() {
   if (sizeInput) {
     sizeInput.addEventListener('input', function() {
       updateSliderValue('size');
+    });
+  }
+  
+  if (kaleidoSegmentsInput) {
+    kaleidoSegmentsInput.addEventListener('input', function() {
+      updateSliderValue('kaleidoSegments');
     });
   }
   
