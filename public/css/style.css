@@ -472,34 +472,51 @@ select option {
 .session-selector {
     display: flex;
     margin-bottom: 15px;
-    gap: 8px;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.session-selector label {
+    margin-bottom: 0;
+    white-space: nowrap;
+    font-weight: bold;
+    font-size: 1rem;
+    min-width: 60px;
+    overflow: visible;
 }
 
 .session-selector input {
-    flex: 1;
+    flex: 2;
     margin-bottom: 0;
     height: 36px;
+    color: white;
+    font-weight: bold;
+    font-size: 1rem;
+    min-width: 100px;
 }
 
 .session-btn {
-    padding: 0 10px;
+    padding: 0 15px;
     margin-bottom: 0;
     height: 36px;
-    min-width: 120px;
+    min-width: 90px;
+    flex: 1;
 }
 
 /* Estilos para los botones de sockets */
 .socket-buttons {
     display: flex;
-    justify-content: space-around;
+    justify-content: flex-start;
     margin-bottom: 10px;
+    gap: 15px;
 }
 
 .socket-btn {
-    width: 60px;
-    height: 60px;
+    width: 40px;
+    height: 40px;
     background-color: var(--primary-light);
-    border: 3px solid transparent;
+    border: 2px solid transparent;
     cursor: pointer;
     transition: all 0.3s ease;
     display: flex;
@@ -507,16 +524,17 @@ select option {
     justify-content: center;
     color: var(--text);
     position: relative;
+    padding: 0;
 }
 
 /* Estilo para botones cuadrados */
 .socket-btn.square {
-    border-radius: 10px;
+    border-radius: 6px;
 }
 
 .socket-btn svg {
-    width: 32px;
-    height: 32px;
+    width: 24px;
+    height: 24px;
     pointer-events: none;
 }
 
@@ -542,20 +560,25 @@ select option {
 /* Estilos para dispositivos móviles */
 @media screen and (max-width: 768px) {
     .socket-btn {
-        width: 70px;
-        height: 70px;
+        width: 50px;
+        height: 50px;
     }
     
     .socket-btn svg {
-        width: 40px;
-        height: 40px;
+        width: 30px;
+        height: 30px;
     }
     
     .session-selector {
         flex-direction: column;
     }
     
+    .session-selector label {
+        margin-bottom: 5px;
+    }
+    
     .session-btn {
         width: 100%;
+        margin-top: 5px;
     }
 }
