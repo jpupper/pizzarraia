@@ -42,6 +42,9 @@
 		<label>Size: <span id="size-value">20</span></label>
 		<input type="range" value="20" id="size" min="0" max ="100" step="0.1" class="jpslider" >
 		<br>
+		<label>Efecto Kaleido: <span id="kaleidoSegments-value">1</span></label>
+		<input type="range" value="1" id="kaleidoSegments" min="1" max="16" step="1" class="jpslider">
+		<br>
 		<label>Brush Type</label>
 		<div class="brush-selector">
 			<button class="brush-btn active" data-brush="classic" title="Classic Circle">
@@ -70,9 +73,7 @@
 		<br>
 		<!-- Classic Brush Controls -->
 		<div id="classicBrushParams" class="brushParams" style="display: none;">
-			<label>Efecto Kaleido: <span id="kaleidoSegments-value">1</span></label>
-			<input type="range" value="1" id="kaleidoSegments" min="1" max="16" step="1" class="jpslider">
-			<br>
+			<!-- No additional controls for classic brush -->
 		</div>
 		
 		<!-- Pixel Brush Controls -->

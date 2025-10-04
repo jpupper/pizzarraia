@@ -299,7 +299,7 @@ class ParticleSystem {
 let artBrushParticleSystem = new ParticleSystem();
 
 /**
- * Dibuja el pincel artístico usando el sistema de partículas
+ * Función básica para dibujar el pincel artístico
  * @param {p5.Graphics} buffer - Buffer donde dibujar
  * @param {number} x - Posición X del mouse
  * @param {number} y - Posición Y del mouse
@@ -311,7 +311,7 @@ let artBrushParticleSystem = new ParticleSystem();
  * @param {Object} syncParams - Parámetros para sincronización (opcional)
  * @returns {Object} Parámetros usados para la generación de partículas
  */
-function drawArtBrush(buffer, x, y, pmouseX, pmouseY, particleCount, size, color, syncParams = null) {
+function drawBasicArtBrush(buffer, x, y, pmouseX, pmouseY, particleCount, size, color, syncParams = null) {
     // Si no hay movimiento significativo, usar una posición ligeramente desplazada
     if (dist(x, y, pmouseX, pmouseY) < 1) {
         pmouseX = x - 1;
@@ -345,6 +345,87 @@ function drawArtBrush(buffer, x, y, pmouseX, pmouseY, particleCount, size, color
             color,            // Color
             size              // Tamaño
         );
+    }
+}
+
+/**
+ * Dibuja el pincel artístico usando el sistema de partículas con posible efecto caleidoscopio
+ * @param {p5.Graphics} buffer - Buffer donde dibujar
+ * @param {number} x - Posición X del mouse
+ * @param {number} y - Posición Y del mouse
+ * @param {number} pmouseX - Posición X anterior del mouse
+ * @param {number} pmouseY - Posición Y anterior del mouse
+ * @param {number} particleCount - Número de partículas a emitir
+ * @param {number} size - Tamaño del pincel
+ * @param {p5.Color} color - Color del pincel
+ * @param {Object} syncParams - Parámetros para sincronización (opcional)
+ * @param {number} segments - Número de segmentos para el efecto caleidoscopio
+ * @returns {Object} Parámetros usados para la generación de partículas
+ */
+function drawArtBrush(buffer, x, y, pmouseX, pmouseY, particleCount, size, color, syncParams = null, segments = 1) {
+    // Obtener el número de segmentos para el efecto caleidoscopio
+    segments = segments || 1;
+    
+    if (segments <= 1) {
+        // Sin efecto caleidoscopio, dibujar normalmente
+        return drawBasicArtBrush(buffer, x, y, pmouseX, pmouseY, particleCount, size, color, syncParams);
+    } else {
+        // Con efecto caleidoscopio
+        const centerX = windowWidth / 2;
+        const centerY = windowHeight / 2;
+        
+        // Calcular el ángulo entre cada segmento
+        const angleStep = (Math.PI * 2) / segments;
+        
+        // Calcular la distancia y ángulo desde el centro para ambos puntos
+        const dx = x - centerX;
+        const dy = y - centerY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const angle = Math.atan2(dy, dx);
+        
+        const dxPrev = pmouseX - centerX;
+        const dyPrev = pmouseY - centerY;
+        const distancePrev = Math.sqrt(dxPrev * dxPrev + dyPrev * dyPrev);
+        const anglePrev = Math.atan2(dyPrev, dyPrev);
+        
+        // Crear un array para almacenar los parámetros de sincronización de todos los segmentos
+        let allSyncParams = [];
+        
+        // Dibujar en cada segmento
+        for (let i = 0; i < segments; i++) {
+            const segmentAngle = angleStep * i;
+            
+            // Calcular nuevas posiciones para ambos puntos
+            const newX = centerX + Math.cos(angle + segmentAngle) * distance;
+            const newY = centerY + Math.sin(angle + segmentAngle) * distance;
+            
+            const newPmouseX = centerX + Math.cos(anglePrev + segmentAngle) * distancePrev;
+            const newPmouseY = centerY + Math.sin(anglePrev + segmentAngle) * distancePrev;
+            
+            // Dibujar el pincel artístico en la nueva posición
+            const segmentSyncParams = drawBasicArtBrush(
+                buffer, 
+                newX, newY, 
+                newPmouseX, newPmouseY, 
+                particleCount, 
+                size, 
+                color, 
+                syncParams
+            );
+            
+            // Guardar los parámetros de sincronización
+            if (segmentSyncParams) {
+                allSyncParams.push(segmentSyncParams);
+            }
+        }
+        
+        // Devolver los parámetros del primer segmento (para sincronización)
+        // Incluir el número de segmentos para que se sincronice correctamente
+        const syncResult = allSyncParams.length > 0 ? allSyncParams[0] : null;
+        if (syncResult) {
+            syncResult.kaleidoSegments = segments;
+        }
+        return syncResult;
     }
 }
 

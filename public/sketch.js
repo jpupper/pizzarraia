@@ -553,6 +553,9 @@ function dibujarCoso(buffer, x, y, data) {
             break;
         case 'art':
             // Art brush - sistema de partículas
+            // Obtener el número de segmentos para el efecto caleidoscopio
+            const artKaleidoSegments = data.kaleidoSegments || 1;
+            
             // Usar el valor de particleCount del dato recibido
             // Si hay parámetros de sincronización, usarlos
             if (data.syncParams) {
@@ -563,7 +566,8 @@ function dibujarCoso(buffer, x, y, data) {
                     data.particleCount, 
                     brushSize, 
                     col,
-                    data.syncParams
+                    data.syncParams,
+                    artKaleidoSegments
                 );
             } else {
                 // Generar nuevas partículas y obtener los parámetros para sincronización
@@ -573,7 +577,9 @@ function dibujarCoso(buffer, x, y, data) {
                     pmouseXGlobal, pmouseYGlobal, 
                     data.particleCount, 
                     brushSize, 
-                    col
+                    col,
+                    null,
+                    artKaleidoSegments
                 );
                 
                 // Guardar los parámetros de sincronización para enviarlos por socket
@@ -582,31 +588,40 @@ function dibujarCoso(buffer, x, y, data) {
             break;
         case 'pixel':
             // Pixel brush - dibuja cuadrados en la grilla dentro del radio
+            // Obtener el número de segmentos para el efecto caleidoscopio
+            const pixelKaleidoSegments = data.kaleidoSegments || 1;
+            
             // Usar los valores de cols y rows del dato recibido
             if (data.cols && data.rows) {
                 // El nuevo drawPixelBrush dibuja todos los píxeles dentro del radio
-                drawPixelBrush(buffer, x, y, brushSize, data.cols, data.rows, col);
-                console.log('Dibujando pixel brush con size:', brushSize);
+                drawPixelBrush(buffer, x, y, brushSize, data.cols, data.rows, col, pixelKaleidoSegments);
+                console.log('Dibujando pixel brush con size:', brushSize, 'y segmentos:', pixelKaleidoSegments);
             } else {
-                drawPixelBrush(buffer, x, y, brushSize, gridCols, gridRows, col);
+                drawPixelBrush(buffer, x, y, brushSize, gridCols, gridRows, col, pixelKaleidoSegments);
             }
             break;
         case 'text':
             // Text brush - dibuja texto
+            // Obtener el número de segmentos para el efecto caleidoscopio
+            const textKaleidoSegments = data.kaleidoSegments || 1;
+            
             if (data.textContent && data.textSize && data.textFont) {
-                drawTextBrush(buffer, x, y, data.textContent, data.textSize, data.textFont, col);
+                drawTextBrush(buffer, x, y, data.textContent, data.textSize, data.textFont, col, textKaleidoSegments);
             } else {
                 // Valores por defecto si no se especifican
                 const textContent = data.textContent || 'TEXTO';
                 const textSize = data.textSize || 40;
                 const textFont = data.textFont || 'Arial';
-                drawTextBrush(buffer, x, y, textContent, textSize, textFont, col);
+                drawTextBrush(buffer, x, y, textContent, textSize, textFont, col, textKaleidoSegments);
             }
             break;
         case 'geometry':
             // Geometry brush - dibuja polígonos
+            // Obtener el número de segmentos para el efecto caleidoscopio
+            const geoKaleidoSegments = data.kaleidoSegments || 1;
+            
             const sides = data.polygonSides || 5;
-            drawGeometryBrush(buffer, x, y, brushSize, sides, col);
+            drawGeometryBrush(buffer, x, y, brushSize, sides, col, geoKaleidoSegments);
             break;
         case 'fill':
             // Fill brush - rellena área contigua
@@ -716,6 +731,11 @@ function newDrawing(data2) {
             const syncPmouseX = map(syncParams.pmouseX, 0, 1, 0, windowWidth);
             const syncPmouseY = map(syncParams.pmouseY, 0, 1, 0, windowHeight);
             
+            // Asegurarse de que el parámetro kaleidoSegments esté presente
+            // Usar el valor de kaleidoSegments de los parámetros de sincronización si está presente,
+            // o el valor de data2.kaleidoSegments, o 1 como valor predeterminado
+            const kaleidoSegments = syncParams.kaleidoSegments || data2.kaleidoSegments || 1;
+            
             // Crear un objeto de parámetros de sincronización con coordenadas del canvas
             const localSyncParams = {
                 x: syncX,
@@ -726,7 +746,8 @@ function newDrawing(data2) {
                 size: syncParams.size,
                 baseSeed: syncParams.baseSeed,
                 mouseDirection: syncParams.mouseDirection,
-                mouseSpeed: syncParams.mouseSpeed
+                mouseSpeed: syncParams.mouseSpeed,
+                kaleidoSegments: kaleidoSegments // Incluir el parámetro kaleidoSegments
             };
             
             // NO modificar los valores de los sliders locales
@@ -767,8 +788,11 @@ function newDrawing(data2) {
             col.setAlpha(parseInt(data2.av));
             const brushSize = parseInt(data2.s);
             
-            console.log('DIBUJANDO LINE BRUSH DIRECTAMENTE:', startX, startY, 'to', canvasX, canvasY);
-            drawLineBrush(drawBuffer, canvasX, canvasY, startX, startY, brushSize, col);
+            // Obtener el número de segmentos para el efecto caleidoscopio
+            const kaleidoSegments = data2.kaleidoSegments || 1;
+            
+            console.log('DIBUJANDO LINE BRUSH DIRECTAMENTE:', startX, startY, 'to', canvasX, canvasY, 'con', kaleidoSegments, 'segmentos');
+            drawLineBrush(drawBuffer, canvasX, canvasY, startX, startY, brushSize, col, kaleidoSegments);
         } else {
             // Otros pinceles
             dibujarCoso(
