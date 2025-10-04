@@ -50,6 +50,12 @@ const config = {
       default: 20,
       step: 0.1
     },
+    kaleidoSegments: {
+      min: 1,
+      max: 16,
+      default: 1,
+      step: 1
+    },
     
     // Pixel Brush
     gridCols: {

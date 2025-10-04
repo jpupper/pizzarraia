@@ -329,7 +329,8 @@ function draw() {
         av: document.getElementById("alphaValue").value,
         bt: brushType,
         bc: false,
-        session: sessionId
+        session: sessionId,
+        kaleidoSegments: parseInt(document.getElementById("kaleidoSegments").value) || 1
     };
     
     // Añadir parámetros específicos según el tipo de pincel
@@ -477,9 +478,12 @@ function mouseReleased() {
         const col = color(colorValue);
         col.setAlpha(alphaValue);
         
+        // Obtener el número de segmentos para el efecto caleidoscopio
+        const kaleidoSegments = parseInt(document.getElementById('kaleidoSegments').value) || 1;
+        
         // Dibujar localmente primero
         const brushSize = parseInt(document.getElementById('size').value);
-        drawLineBrush(drawBuffer, mouseX, mouseY, lineStartX, lineStartY, brushSize, col);
+        drawLineBrush(drawBuffer, mouseX, mouseY, lineStartX, lineStartY, brushSize, col, kaleidoSegments);
         
         // Preparar datos para enviar por socket
         const data = {
@@ -492,7 +496,8 @@ function mouseReleased() {
             s: brushSize,
             bt: 'line',
             bc: false,
-            session: sessionId
+            session: sessionId,
+            kaleidoSegments: kaleidoSegments
         };
         
         // Enviar por socket si el envío está habilitado
@@ -540,8 +545,11 @@ function dibujarCoso(buffer, x, y, data) {
             const startX = data.pmouseX * windowWidth;
             const startY = data.pmouseY * windowHeight;
             
-            console.log('RECIBIENDO LINE POR SOCKET:', startX, startY, 'to', x, y);
-            drawLineBrush(buffer, x, y, startX, startY, brushSize, col);
+            // Obtener el número de segmentos para el efecto caleidoscopio
+            const lineKaleidoSegments = data.kaleidoSegments || 1;
+            
+            console.log('RECIBIENDO LINE POR SOCKET:', startX, startY, 'to', x, y, 'con', lineKaleidoSegments, 'segmentos');
+            drawLineBrush(buffer, x, y, startX, startY, brushSize, col, lineKaleidoSegments);
             break;
         case 'art':
             // Art brush - sistema de partículas
@@ -607,8 +615,9 @@ function dibujarCoso(buffer, x, y, data) {
             break;
         case 'classic':
         default:
-            // Classic circle brush
-            drawStandardBrush(buffer, x, y, brushSize, col);
+            // Classic circle brush with kaleidoscope effect
+            const kaleidoSegments = data.kaleidoSegments || 1;
+            drawStandardBrush(buffer, x, y, brushSize, col, kaleidoSegments);
             break;
     }
 }
