@@ -23,6 +23,10 @@ var isOverGui = false;
 var mouseFlag = true;
 var fillExecuted = false; // Flag para controlar que el fill solo se ejecute una vez por click
 
+// Variables para el punto central del caleidoscopio
+var kaleidoCenterX = null;
+var kaleidoCenterY = null;
+
 // Sistema de cursores remotos (compatible con TouchDesigner)
 var PS; // Instancia de CursorServer (PointServer) para gestionar cursores de otros clientes
 
@@ -330,7 +334,10 @@ function draw() {
         bt: brushType,
         bc: false,
         session: sessionId,
-        kaleidoSegments: parseInt(document.getElementById("kaleidoSegments").value) || 1
+        kaleidoSegments: parseInt(document.getElementById("kaleidoSegments").value) || 1,
+        // Incluir las coordenadas del punto central del caleidoscopio si están definidas
+        kaleidoCenterX: kaleidoCenterX !== null ? map(kaleidoCenterX, 0, windowWidth, 0, 1) : null,
+        kaleidoCenterY: kaleidoCenterY !== null ? map(kaleidoCenterY, 0, windowHeight, 0, 1) : null
     };
     
     // Añadir parámetros específicos según el tipo de pincel
@@ -461,6 +468,14 @@ function draw() {
 function mousePressed() {
     isMousePressed = true;
     
+    // Establecer el punto central del caleidoscopio en la posición inicial del clic
+    // Solo si no estamos sobre la GUI o el botón de cerrar
+    if (!isOverGui && !isOverOpenButton) {
+        kaleidoCenterX = mouseX;
+        kaleidoCenterY = mouseY;
+        console.log('Punto central del caleidoscopio establecido en:', kaleidoCenterX, kaleidoCenterY);
+    }
+    
     // Si es line brush, guardar el punto inicial
     const brushType = document.getElementById('brushType').value;
     if (brushType === 'line' && !isOverGui && !isOverOpenButton) {
@@ -497,7 +512,10 @@ function mouseReleased() {
             bt: 'line',
             bc: false,
             session: sessionId,
-            kaleidoSegments: kaleidoSegments
+            kaleidoSegments: kaleidoSegments,
+            // Incluir las coordenadas del punto central del caleidoscopio si están definidas
+            kaleidoCenterX: kaleidoCenterX !== null ? kaleidoCenterX / windowWidth : null,
+            kaleidoCenterY: kaleidoCenterY !== null ? kaleidoCenterY / windowHeight : null
         };
         
         // Enviar por socket si el envío está habilitado
@@ -512,6 +530,10 @@ function mouseReleased() {
     
     asignarValores();
     isMousePressed = false;
+    
+    // Resetear el punto central del caleidoscopio después de dibujar
+    kaleidoCenterX = null;
+    kaleidoCenterY = null;
 }
 
 function keyPressed() {
@@ -712,6 +734,13 @@ function newDrawing(data2) {
             remotePmouseY = map(data2.pmouseY, 0, 1, 0, windowHeight);
         }
         
+        // Establecer el punto central del caleidoscopio si se recibió en los datos
+        if (data2.kaleidoCenterX !== null && data2.kaleidoCenterY !== null) {
+            kaleidoCenterX = map(data2.kaleidoCenterX, 0, 1, 0, windowWidth);
+            kaleidoCenterY = map(data2.kaleidoCenterY, 0, 1, 0, windowHeight);
+            console.log('Punto central del caleidoscopio recibido:', kaleidoCenterX, kaleidoCenterY);
+        }
+        
         // Guardar temporalmente las posiciones anteriores globales
         const tempPmouseX = window.pmouseXGlobal;
         const tempPmouseY = window.pmouseYGlobal;
@@ -806,6 +835,10 @@ function newDrawing(data2) {
         // Restaurar las posiciones anteriores globales
         window.pmouseXGlobal = tempPmouseX;
         window.pmouseYGlobal = tempPmouseY;
+        
+        // Resetear el punto central del caleidoscopio después de dibujar
+        kaleidoCenterX = null;
+        kaleidoCenterY = null;
     }
 }
 

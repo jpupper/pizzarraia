@@ -371,8 +371,8 @@ function drawArtBrush(buffer, x, y, pmouseX, pmouseY, particleCount, size, color
         return drawBasicArtBrush(buffer, x, y, pmouseX, pmouseY, particleCount, size, color, syncParams);
     } else {
         // Con efecto caleidoscopio
-        const centerX = windowWidth / 2;
-        const centerY = windowHeight / 2;
+        const centerX = kaleidoCenterX !== null ? kaleidoCenterX : windowWidth / 2;
+        const centerY = kaleidoCenterY !== null ? kaleidoCenterY : windowHeight / 2;
         
         // Calcular el ángulo entre cada segmento
         const angleStep = (Math.PI * 2) / segments;

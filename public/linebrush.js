@@ -38,8 +38,8 @@ function drawLineBrush(buffer, x, y, startX, startY, size, color, segments = 1) 
         drawBasicLine(buffer, startX, startY, x, y, size, color);
     } else {
         // Con efecto caleidoscopio
-        const centerX = windowWidth / 2;
-        const centerY = windowHeight / 2;
+        const centerX = kaleidoCenterX !== null ? kaleidoCenterX : windowWidth / 2;
+        const centerY = kaleidoCenterY !== null ? kaleidoCenterY : windowHeight / 2;
         
         drawLineKaleidoscope(
             buffer, 
