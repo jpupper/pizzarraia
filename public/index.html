@@ -56,7 +56,10 @@
                         <!-- Auriculares (siempre visibles) -->
                         <path fill="white" d="M12,1C7,1 3,5 3,10V17A3,3 0 0,0 6,20H9V12H5V10A7,7 0 0,1 12,3A7,7 0 0,1 19,10V12H15V20H18A3,3 0 0,0 21,17V10C21,5 16.97,1 12,1Z" />
                         <!-- Rayita diagonal (visible cuando está inactivo) -->
-                        <path class="headphone-disabled" fill="white" d="M2,5.27L3.28,4L20,20.72L18.73,22L12.73,16H9V12.27L7.73,11H5V10C5,9.79 5.04,9.58 5.05,9.37L2,6.32V5.27M19,11V15H16.82L5.82,4H12C16.97,4 21,8.3 21,13V15H19V11M15,13V14.18L14.82,14H15V13M9,16H12V19H9V16Z" style="display:none;" />
+                        <g class="headphone-disabled" style="display:none;">
+                            <path fill="white" d="M12,1C7,1 3,5 3,10V17A3,3 0 0,0 6,20H9V12H5V10A7,7 0 0,1 12,3A7,7 0 0,1 19,10V12H15V20H18A3,3 0 0,0 21,17V10C21,5 16.97,1 12,1Z" />
+                            <path fill="none" d="M2,4L22,22" stroke="white" stroke-width="2.5" />
+                        </g>
                     </svg>
                 </button>
                 <button id="toggleSend" class="socket-btn square active" title="Enviar Sockets">
@@ -75,7 +78,6 @@
             </div>
         </div>
         
-        <br>
         <label>Color</label><input type="color" value="#FFFFFF" id="c1">
         <br>
         <label>Alfa: <span id="alphaValue-value">255</span></label>
@@ -86,7 +88,7 @@
         <br>
         <label>Efecto Kaleido: <span id="kaleidoSegments-value">1</span></label>
         <input type="range" value="1" id="kaleidoSegments" min="1" max="16" step="1" class="jpslider">
-        <br>
+        <div style="margin-top: 15px;"></div>
         <label>Brush Type</label>
         <div class="brush-selector">
             <button class="brush-btn active" data-brush="classic" title="Classic Circle">
