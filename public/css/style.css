@@ -516,7 +516,7 @@ select option {
     margin-bottom: 12px;
     font-family: monospace;
     font-size: 0.9rem;
-    text-align: center;
+    text-align: left;
 }
 
 /* Estilos para el selector de sesiÃ³n */
@@ -797,6 +797,8 @@ select option {
     border-radius: 5px;
     color: var(--text);
     font-size: 0.9rem;
+    height: 40px;
+    box-sizing: border-box;
 }
 
 .chat-input:focus {
@@ -815,6 +817,7 @@ select option {
     align-items: center;
     justify-content: center;
     transition: all 0.3s ease;
+    box-sizing: border-box;
 }
 
 .chat-send-btn:hover {

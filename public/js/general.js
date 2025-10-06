@@ -433,7 +433,7 @@ function setupSocketControls() {
       // Si se desactiva la recepción, actualizar el contador de cursores
       const cursorCountElement = document.getElementById('cursorCount');
       if (cursorCountElement) {
-        cursorCountElement.textContent = 'Cursores: 0 (recepción desactivada)';
+        cursorCountElement.textContent = 'Cursores: 0';
       }
     }
   });
