@@ -415,7 +415,7 @@ function setupSocketControls() {
     toggleSendBtn.classList.add('inactive');
   }
   
-  // Configurar evento para el botón de recepción de sockets
+  // Configurar evento para el botón de recepción de sockets (auriculares)
   toggleReceiveBtn.addEventListener('click', function() {
     // Cambiar el estado
     config.sockets.receiveEnabled = !config.sockets.receiveEnabled;
@@ -438,7 +438,7 @@ function setupSocketControls() {
     }
   });
   
-  // Configurar evento para el botón de envío de sockets
+  // Configurar evento para el botón de envío de sockets (ojo)
   toggleSendBtn.addEventListener('click', function() {
     // Cambiar el estado
     config.sockets.sendEnabled = !config.sockets.sendEnabled;
@@ -450,6 +450,7 @@ function setupSocketControls() {
       console.log('Envío de sockets activado');
     } else {
       this.classList.remove('active');
+      this.classList.add('inactive');
       console.log('Envío de sockets desactivado');
     }
   });
