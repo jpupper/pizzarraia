@@ -465,6 +465,11 @@ function draw() {
 function mousePressed() {
     isMousePressed = true;
     
+    // Actualizar pmouseXGlobal y pmouseYGlobal al inicio del trazo
+    // Esto previene líneas no deseadas cuando se hace clic en un nuevo lugar
+    pmouseXGlobal = mouseX;
+    pmouseYGlobal = mouseY;
+    
     // Establecer el punto central del caleidoscopio en la posición inicial del clic
     // Solo si no estamos sobre la GUI o el botón de cerrar
     if (!isOverGui && !isOverOpenButton) {
