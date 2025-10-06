@@ -613,19 +613,39 @@ select option {
     box-shadow: 0 0 15px rgba(138, 79, 191, 0.8);
 }
 
+/* Ocultar la rayita diagonal cuando el botón de auriculares está activo */
+.socket-btn.active .headphone-disabled {
+    display: none !important;
+}
+
+/* Mostrar la rayita diagonal cuando el botón de auriculares está inactivo */
+.socket-btn.inactive .headphone-disabled {
+    display: block !important;
+}
+
+/* Mostrar el ojo abierto cuando el botón de ojo está activo */
+.socket-btn.active .eye-open {
+    display: block;
+}
+
+.socket-btn.active .eye-closed {
+    display: none;
+}
+
+/* Mostrar el ojo cerrado cuando el botón de ojo está inactivo */
+.socket-btn.inactive .eye-open {
+    display: none;
+}
+
+.socket-btn.inactive .eye-closed {
+    display: block !important;
+}
+
 .socket-btn.inactive {
-    background-color: #444;
+    background-color: #2a5e2a;
     color: #888;
     border-color: transparent;
     box-shadow: none;
-}
-
-/* Estilos para el menú de pestañas */
-.tab-menu {
-    display: flex;
-    gap: 5px;
-    margin-bottom: 15px;
-    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
 }
 
 .tab-btn {
