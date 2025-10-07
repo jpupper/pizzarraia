@@ -89,6 +89,9 @@ function setup() {
     // Configurar evento para recibir posiciones de cursor de otros clientes
     socket.on("cursor", updateRemoteCursor);
     
+    // Configurar evento para recibir sincronización de flowfield
+    socket.on("flowfield_sync", receiveFlowfieldSync);
+    
     // Inicializar valores
     asignarValores();
     drawBuffer.background(0);
@@ -939,6 +942,40 @@ function updateRemoteCursor(data) {
     
     // Procesar los datos del cursor usando CursorServer
     PS.processCursorData(data);
+}
+
+// Función para enviar sincronización de flowfield
+function sendFlowfieldSync() {
+    if (!config.sockets.sendEnabled) return;
+    
+    const system = getParticleSystem();
+    const data = {
+        seed: system.flowfieldSeed,
+        noiseZ: system.noiseZ,
+        noiseScale: system.noiseScale,
+        noiseZSpeed: system.noiseZSpeed
+    };
+    
+    socket.emit('flowfield_sync', data);
+    console.log('Enviando sincronización de flowfield:', data);
+}
+
+// Función para recibir sincronización de flowfield
+function receiveFlowfieldSync(data) {
+    if (!config.sockets.receiveEnabled) return;
+    
+    const system = getParticleSystem();
+    system.syncFlowfield(data.seed, data.noiseZ);
+    
+    // Actualizar también otros parámetros si están presentes
+    if (data.noiseScale !== undefined) {
+        system.noiseScale = data.noiseScale;
+    }
+    if (data.noiseZSpeed !== undefined) {
+        system.noiseZSpeed = data.noiseZSpeed;
+    }
+    
+    console.log('Recibida sincronización de flowfield:', data);
 }
 
 // Función para limpiar el fondo localmente

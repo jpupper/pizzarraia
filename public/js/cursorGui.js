@@ -620,12 +620,12 @@ class CursorGUI {
         buffer.rect(barX, this.hueBarY, this.sizeBarWidth, this.sizeBarHeight, 15);
         
         // Gradiente de tono (arcoíris)
-        for (let i = 0; i <= 20; i++) {
-            const hue = (i / 20) * 360;
+        for (let i = 0; i <= 100; i++) {
+            const hue = (i / 100) * 360;
             const rgb = this.hsbToRgb(hue, 100, 100);
             buffer.fill(rgb.r, rgb.g, rgb.b);
             buffer.noStroke();
-            buffer.rect(barX + (this.sizeBarWidth / 20) * i, this.hueBarY + 5, this.sizeBarWidth / 20, this.sizeBarHeight - 10);
+            buffer.rect(barX + (this.sizeBarWidth / 100) * i, this.hueBarY + 5, this.sizeBarWidth / 100 + 1, this.sizeBarHeight - 10);
         }
         
         // Indicador de tono actual
@@ -649,12 +649,12 @@ class CursorGUI {
         buffer.rect(barX, this.saturationBarY, this.sizeBarWidth, this.sizeBarHeight, 15);
         
         // Gradiente de saturación (gris a color)
-        for (let i = 0; i <= 20; i++) {
-            const sat = (i / 20) * 100;
+        for (let i = 0; i <= 100; i++) {
+            const sat = (i / 100) * 100;
             const rgb = this.hsbToRgb(currentHSB.h, sat, currentHSB.b);
             buffer.fill(rgb.r, rgb.g, rgb.b);
             buffer.noStroke();
-            buffer.rect(barX + (this.sizeBarWidth / 20) * i, this.saturationBarY + 5, this.sizeBarWidth / 20, this.sizeBarHeight - 10);
+            buffer.rect(barX + (this.sizeBarWidth / 100) * i, this.saturationBarY + 5, this.sizeBarWidth / 100 + 1, this.sizeBarHeight - 10);
         }
         
         // Indicador de saturación actual
@@ -678,12 +678,12 @@ class CursorGUI {
         buffer.rect(barX, this.brightnessBarY, this.sizeBarWidth, this.sizeBarHeight, 15);
         
         // Gradiente de brillo (negro a color)
-        for (let i = 0; i <= 20; i++) {
-            const bright = (i / 20) * 100;
+        for (let i = 0; i <= 100; i++) {
+            const bright = (i / 100) * 100;
             const rgb = this.hsbToRgb(currentHSB.h, currentHSB.s, bright);
             buffer.fill(rgb.r, rgb.g, rgb.b);
             buffer.noStroke();
-            buffer.rect(barX + (this.sizeBarWidth / 20) * i, this.brightnessBarY + 5, this.sizeBarWidth / 20, this.sizeBarHeight - 10);
+            buffer.rect(barX + (this.sizeBarWidth / 100) * i, this.brightnessBarY + 5, this.sizeBarWidth / 100 + 1, this.sizeBarHeight - 10);
         }
         
         // Indicador de brillo actual

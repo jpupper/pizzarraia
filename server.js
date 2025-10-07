@@ -282,6 +282,25 @@ io.on('connection', (socket) => {
   
   socket.on('mouse', mouseMsg);
   socket.on('cursor', cursorMsg);
+  socket.on('flowfield_sync', flowfieldMsg);
+  
+  function flowfieldMsg(data){
+    // Broadcast flowfield sync to all clients in the same session
+    const sessionId = socket.sessionId || '0';
+    
+    if (sessions[sessionId]) {
+      const sessionSockets = sessions[sessionId];
+      
+      // Broadcast to all sockets in the same session except the sender
+      sessionSockets.forEach(socketId => {
+        if (socketId !== socket.id) {
+          io.to(socketId).emit('flowfield_sync', data);
+        }
+      });
+    }
+    
+    console.log(`Flowfield sync from session ${sessionId}:`, data);
+  }
   
   function mouseMsg(data){
     // Only broadcast to clients in the same session
