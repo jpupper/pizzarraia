@@ -180,25 +180,30 @@
             <input type="range" value="8" id="particleMaxSize" min="1" max="20" step="1" class="jpslider">
             <br>
             <h4 style="margin-top: 15px; margin-bottom: 10px; color: var(--text); font-size: 0.95rem;">Flowfield</h4>
-            <label>Show Flowfield</label>
-            <input type="checkbox" id="showFlowfield" class="jpcheckbox" onchange="updateFlowfieldConfig()">
+            <label>Activate Flowfield</label>
+            <input type="checkbox" id="activateFlowfield" class="jpcheckbox" onchange="toggleFlowfield()">
             <br>
-            <label>Flowfield Cols: <span id="flowfieldCols-value">20</span></label>
-            <input type="range" value="20" id="flowfieldCols" min="5" max="50" step="1" class="jpslider" oninput="updateFlowfieldConfig()">
-            <br>
-            <label>Flowfield Rows: <span id="flowfieldRows-value">20</span></label>
-            <input type="range" value="20" id="flowfieldRows" min="5" max="50" step="1" class="jpslider" oninput="updateFlowfieldConfig()">
-            <br>
-            <label>Flowfield Strength: <span id="flowfieldStrength-value">0.1</span></label>
-            <input type="range" value="0.1" id="flowfieldStrength" min="0" max="1" step="0.05" class="jpslider" oninput="updateFlowfieldConfig()">
-            <br>
-            <label>Flowfield Speed: <span id="flowfieldSpeed-value">0.003</span></label>
-            <input type="range" value="0.003" id="flowfieldSpeed" min="0" max="0.02" step="0.001" class="jpslider" oninput="updateFlowfieldConfig()">
-            <br>
-            <button onclick="sendFlowfieldSync()" style="margin-top: 10px; padding: 8px 15px; background: var(--accent); color: var(--bg); border: none; border-radius: 5px; cursor: pointer; font-size: 0.9rem;">
-                Sincronizar Flowfield
-            </button>
-            <br>
+            <div id="flowfieldControls" style="display: none;">
+                <label>Show Flowfield</label>
+                <input type="checkbox" id="showFlowfield" class="jpcheckbox" onchange="updateFlowfieldConfig(false)">
+                <br>
+                <label>Flowfield Cols: <span id="flowfieldCols-value">20</span></label>
+                <input type="range" value="20" id="flowfieldCols" min="5" max="50" step="1" class="jpslider" oninput="updateFlowfieldConfig()">
+                <br>
+                <label>Flowfield Rows: <span id="flowfieldRows-value">20</span></label>
+                <input type="range" value="20" id="flowfieldRows" min="5" max="50" step="1" class="jpslider" oninput="updateFlowfieldConfig()">
+                <br>
+                <label>Flowfield Strength: <span id="flowfieldStrength-value">0.1</span></label>
+                <input type="range" value="0.1" id="flowfieldStrength" min="0" max="1" step="0.05" class="jpslider" oninput="updateFlowfieldConfig()">
+                <br>
+                <label>Flowfield Speed: <span id="flowfieldSpeed-value">0.003</span></label>
+                <input type="range" value="0.003" id="flowfieldSpeed" min="0" max="0.02" step="0.001" class="jpslider" oninput="updateFlowfieldConfig()">
+                <br>
+                <button onclick="sendFlowfieldSync()" style="margin-top: 10px; padding: 8px 15px; background: var(--accent); color: var(--bg); border: none; border-radius: 5px; cursor: pointer; font-size: 0.9rem;">
+                    Sincronizar Flowfield
+                </button>
+                <br>
+            </div>
         </div>
         
         <!-- Text Brush Controls -->

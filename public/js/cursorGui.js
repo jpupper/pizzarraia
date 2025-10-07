@@ -343,10 +343,10 @@ class CursorGUI {
         if (x >= brightBarX && x <= brightBarX + this.sizeBarWidth &&
             y >= this.brightnessBarY && y <= this.brightnessBarY + this.sizeBarHeight) {
             
-            // Calcular el brillo basado en la posición X (0-200, siendo 100 el valor neutro)
+            // Calcular el brillo basado en la posición X (0-100)
             const relativeX = x - brightBarX;
             const percentage = relativeX / this.sizeBarWidth;
-            return Math.round(percentage * 200);
+            return Math.round(percentage * 100);
         }
         
         return null;
@@ -358,16 +358,27 @@ class CursorGUI {
     handleClick(x, y) {
         if (!this.isVisible) return false;
         
-        // Verificar si hizo click en la barra de tamaño
-        const size = this.getSizeAt(x, y);
-        if (size !== null) {
-            const sizeInput = document.getElementById('size');
-            if (sizeInput) {
-                sizeInput.value = size;
-                const event = new Event('input');
-                sizeInput.dispatchEvent(event);
-                console.log('Tamaño seleccionado:', size);
-            }
+        // Debug: log de la posición Y del click
+        console.log('Click en Y:', y, 'Barras - Hue:', this.hueBarY, 'Sat:', this.saturationBarY, 'Bright:', this.brightnessBarY, 'Alpha:', this.alphaBarY, 'Size:', this.sizeBarY);
+        
+        // Verificar si hizo click en la barra de tono (primero)
+        const hue = this.getHueAt(x, y);
+        if (hue !== null) {
+            this.applyHue(hue);
+            return true;
+        }
+        
+        // Verificar si hizo click en la barra de saturación (segundo)
+        const saturation = this.getSaturationAt(x, y);
+        if (saturation !== null) {
+            this.applySaturation(saturation);
+            return true;
+        }
+        
+        // Verificar si hizo click en la barra de brillo (tercero)
+        const brightness = this.getBrightnessAt(x, y);
+        if (brightness !== null) {
+            this.applyBrightness(brightness);
             return true;
         }
         
@@ -384,24 +395,16 @@ class CursorGUI {
             return true;
         }
         
-        // Verificar si hizo click en la barra de tono
-        const hue = this.getHueAt(x, y);
-        if (hue !== null) {
-            this.applyHue(hue);
-            return true;
-        }
-        
-        // Verificar si hizo click en la barra de saturación
-        const saturation = this.getSaturationAt(x, y);
-        if (saturation !== null) {
-            this.applySaturation(saturation);
-            return true;
-        }
-        
-        // Verificar si hizo click en la barra de brillo
-        const brightness = this.getBrightnessAt(x, y);
-        if (brightness !== null) {
-            this.applyBrightness(brightness);
+        // Verificar si hizo click en la barra de tamaño
+        const size = this.getSizeAt(x, y);
+        if (size !== null) {
+            const sizeInput = document.getElementById('size');
+            if (sizeInput) {
+                sizeInput.value = size;
+                const event = new Event('input');
+                sizeInput.dispatchEvent(event);
+                console.log('Tamaño seleccionado:', size);
+            }
             return true;
         }
         
@@ -536,12 +539,15 @@ class CursorGUI {
         
         // Convertir a HSB
         const hsb = this.rgbToHsb(r, g, b);
+        console.log('HSB antes:', hsb);
         
         // Cambiar la saturación
         hsb.s = saturation;
+        console.log('HSB después (saturación=' + saturation + '):', hsb);
         
         // Convertir de vuelta a RGB
         const rgb = this.hsbToRgb(hsb.h, hsb.s, hsb.b);
+        console.log('RGB resultado:', rgb);
         
         const newColor = '#' + 
             rgb.r.toString(16).padStart(2, '0') + 
@@ -550,7 +556,10 @@ class CursorGUI {
         
         colorInput.value = newColor;
         this.updateActivePaletteSlot(newColor);
-        console.log('Saturación aplicada:', saturation, '% ->', newColor);
+        
+        // Verificar el HSB del nuevo color
+        const verifyHSB = this.rgbToHsb(rgb.r, rgb.g, rgb.b);
+        console.log('Saturación aplicada:', saturation, '% -> Color:', newColor, '-> HSB verificado:', verifyHSB);
     }
     
     /**
