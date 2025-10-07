@@ -119,6 +119,9 @@ class ParticleSystem {
         this.noiseScale = 0.1; // Aumentado para más variación (era 0.01)
         this.noiseZ = 0;
         this.noiseZSpeed = 0.003; // Velocidad de cambio del flowfield
+        // Seed fija para sincronizar el flowfield entre clientes
+        this.flowfieldSeed = 12345; // Seed compartida por defecto
+        this.syncedNoiseZ = false; // Flag para saber si noiseZ está sincronizado
         // No inicializar el flowfield aquí porque noise() no está disponible aún
         // Se inicializará en la primera llamada a update()
         this.flowfieldInitialized = false;
@@ -132,6 +135,11 @@ class ParticleSystem {
             return;
         }
         
+        // Establecer la seed para sincronizar entre clientes
+        if (typeof noiseSeed !== 'undefined') {
+            noiseSeed(this.flowfieldSeed);
+        }
+        
         this.flowfield = [];
         for (let y = 0; y < this.flowfieldRows; y++) {
             this.flowfield[y] = [];
@@ -141,10 +149,16 @@ class ParticleSystem {
             }
         }
         this.flowfieldInitialized = true;
+        console.log('Flowfield inicializado con seed:', this.flowfieldSeed);
     }
     
     // Actualizar el flowfield
     updateFlowfield() {
+        // Establecer la seed para mantener sincronización
+        if (typeof noiseSeed !== 'undefined') {
+            noiseSeed(this.flowfieldSeed);
+        }
+        
         this.noiseZ += this.noiseZSpeed;
         for (let y = 0; y < this.flowfieldRows; y++) {
             for (let x = 0; x < this.flowfieldCols; x++) {
@@ -365,6 +379,18 @@ class ParticleSystem {
             mouseDirection: mouseDirection,
             mouseSpeed: mouseSpeed
         });
+    }
+    
+    // Sincronizar noiseZ con otros clientes (llamar desde socket)
+    syncFlowfield(seed, noiseZ) {
+        this.flowfieldSeed = seed;
+        this.noiseZ = noiseZ;
+        this.syncedNoiseZ = true;
+        // Reinicializar el flowfield con la nueva seed
+        if (this.flowfieldInitialized) {
+            this.initFlowfield();
+        }
+        console.log('Flowfield sincronizado - Seed:', seed, 'NoiseZ:', noiseZ);
     }
     
     // Actualizar todas las partículas
