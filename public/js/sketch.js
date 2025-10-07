@@ -310,9 +310,9 @@ function draw() {
     // Dibujar preview de línea si estamos usando Line Brush
     drawLinePreview();
     
-    // Dibujar el color picker si está visible
-    if (window.colorPicker) {
-        colorPicker.display(guiBuffer);
+    // Dibujar el cursor GUI si está visible
+    if (window.cursorGUI) {
+        cursorGUI.display(guiBuffer);
     }
     
     // Mostrar el buffer GUI siempre
@@ -386,18 +386,18 @@ function draw() {
         socket.emit('cursor', cursorData);
     }
     
-    // Actualizar posición del color picker (para detectar movimiento)
-    if (window.colorPicker) {
-        if (colorPicker.isVisible) {
-            colorPicker.updateHover(mouseX, mouseY);
-        } else if (colorPicker.isPressing) {
+    // Actualizar posición del cursor GUI (para detectar movimiento)
+    if (window.cursorGUI) {
+        if (cursorGUI.isVisible) {
+            cursorGUI.updateHover(mouseX, mouseY);
+        } else if (cursorGUI.isPressing) {
             // Actualizar posición para detectar si se está moviendo
-            colorPicker.updatePosition(mouseX, mouseY);
+            cursorGUI.updatePosition(mouseX, mouseY);
         }
     }
     
-    // Si el color picker está visible, no dibujar
-    if (window.colorPicker && colorPicker.isVisible) {
+    // Si el cursor GUI está visible, no dibujar
+    if (window.cursorGUI && cursorGUI.isVisible) {
         return; // Salir del draw early
     }
     
@@ -484,9 +484,9 @@ function draw() {
 // ============================================================
 
 function mousePressed() {
-    // Si el color picker está visible, manejar el click
-    if (window.colorPicker && colorPicker.isVisible) {
-        const handled = colorPicker.handleClick(mouseX, mouseY);
+    // Si el cursor GUI está visible, manejar el click
+    if (window.cursorGUI && cursorGUI.isVisible) {
+        const handled = cursorGUI.handleClick(mouseX, mouseY);
         if (handled) {
             return; // No procesar más eventos
         }
@@ -495,8 +495,8 @@ function mousePressed() {
     isMousePressed = true;
     
     // Iniciar temporizador de long press si no está sobre la GUI
-    if (!isOverGui && !isOverOpenButton && window.colorPicker) {
-        colorPicker.startLongPress(mouseX, mouseY);
+    if (!isOverGui && !isOverOpenButton && window.cursorGUI) {
+        cursorGUI.startLongPress(mouseX, mouseY);
     }
     
     // Actualizar pmouseXGlobal y pmouseYGlobal al inicio del trazo
@@ -521,8 +521,8 @@ function mousePressed() {
 
 function mouseReleased() {
     // Cancelar el temporizador de long press
-    if (window.colorPicker) {
-        colorPicker.cancelLongPress();
+    if (window.cursorGUI) {
+        cursorGUI.cancelLongPress();
     }
     
     // Si es line brush, dibujar la línea y enviar por socket
@@ -585,9 +585,9 @@ function keyPressed() {
     if (key == 'g' || key == 'G') {
         toggleGuiButtonVisibility();
     }
-    // Cerrar color picker con ESC
-    if (keyCode === ESCAPE && window.colorPicker) {
-        colorPicker.hide();
+    // Cerrar cursor GUI con ESC
+    if (keyCode === ESCAPE && window.cursorGUI) {
+        cursorGUI.hide();
     }
 }
 
@@ -596,17 +596,17 @@ function keyPressed() {
 // ============================================================
 
 function touchStarted() {
-    // Si el color picker está visible, manejar el touch
-    if (window.colorPicker && colorPicker.isVisible) {
-        const handled = colorPicker.handleClick(mouseX, mouseY);
+    // Si el cursor GUI está visible, manejar el touch
+    if (window.cursorGUI && cursorGUI.isVisible) {
+        const handled = cursorGUI.handleClick(mouseX, mouseY);
         if (handled) {
             return false; // Prevenir comportamiento por defecto
         }
     }
     
     // Iniciar temporizador de long press si no está sobre la GUI
-    if (!isOverGui && !isOverOpenButton && window.colorPicker) {
-        colorPicker.startLongPress(mouseX, mouseY);
+    if (!isOverGui && !isOverOpenButton && window.cursorGUI) {
+        cursorGUI.startLongPress(mouseX, mouseY);
     }
     
     // Llamar a mousePressed para mantener compatibilidad
@@ -616,8 +616,8 @@ function touchStarted() {
 
 function touchEnded() {
     // Cancelar el temporizador de long press
-    if (window.colorPicker) {
-        colorPicker.cancelLongPress();
+    if (window.cursorGUI) {
+        cursorGUI.cancelLongPress();
     }
     
     // Llamar a mouseReleased para mantener compatibilidad
@@ -626,9 +626,9 @@ function touchEnded() {
 }
 
 function touchMoved() {
-    // Actualizar hover del color picker
-    if (window.colorPicker && colorPicker.isVisible) {
-        colorPicker.updateHover(mouseX, mouseY);
+    // Actualizar hover del cursor GUI
+    if (window.cursorGUI && cursorGUI.isVisible) {
+        cursorGUI.updateHover(mouseX, mouseY);
     }
     return false; // Prevenir scroll en móviles
 }
