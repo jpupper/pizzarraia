@@ -372,6 +372,7 @@ function draw() {
         isDrawing: isMousePressed && !isOverGui && !isOverOpenButton,
         brushSize: parseInt(document.getElementById('size').value),
         session: sessionId,
+        username: typeof getCurrentChatUsername === 'function' ? getCurrentChatUsername() : '',
         isCursorOnly: true // Flag para indicar que es solo actualización de cursor
     };
     
