@@ -8,6 +8,7 @@ window.onload = function() {
     setupCloseButton();
     setupBrushTypeEvents();
     setupBrushSelector();
+    setupColorPalette();
     setupChat();
     setupTabs();
     checkUserAuthentication();
@@ -308,6 +309,7 @@ function setupBrushTypeEvents() {
   
   fillToleranceInput.addEventListener('input', function() {
     updateSliderValue('fillTolerance');
+    updateArtBrushParameters({ fillTolerance: parseInt(this.value) });
   });
 }
 
@@ -331,6 +333,62 @@ function setupBrushSelector() {
       // Disparar evento change para que se actualicen los parámetros
       const event = new Event('change');
       brushTypeInput.dispatchEvent(event);
+    });
+  });
+}
+
+// Función para configurar la paleta de colores
+function setupColorPalette() {
+  const paletteSlots = document.querySelectorAll('.palette-slot');
+  const colorInput = document.getElementById('c1');
+  
+  if (!paletteSlots || !colorInput) return;
+  
+  // Event listener para cuando cambia el color picker
+  colorInput.addEventListener('input', function() {
+    // Actualizar el color del slot activo en el GUI
+    const activeSlot = document.querySelector('.palette-slot.active');
+    if (activeSlot) {
+      activeSlot.style.backgroundColor = this.value;
+    }
+    
+    // Actualizar el color del slot activo en cursorGUI
+    if (window.cursorGUI) {
+      window.cursorGUI.updateActivePaletteSlot(this.value);
+    }
+  });
+  
+  // Event listeners para los slots
+  paletteSlots.forEach((slot, index) => {
+    slot.addEventListener('click', function() {
+      // Remover clase active de todos los slots
+      paletteSlots.forEach(s => {
+        s.classList.remove('active');
+        s.style.border = '2px solid rgba(255,255,255,0.3)';
+      });
+      
+      // Agregar clase active al slot clickeado
+      this.classList.add('active');
+      this.style.border = '3px solid white';
+      
+      // Actualizar el color picker con el color del slot
+      const slotColor = this.style.backgroundColor;
+      // Convertir rgb a hex
+      const rgb = slotColor.match(/\d+/g);
+      if (rgb) {
+        const hex = '#' + rgb.map(x => {
+          const hex = parseInt(x).toString(16);
+          return hex.length === 1 ? '0' + hex : hex;
+        }).join('');
+        colorInput.value = hex;
+      }
+      
+      // Actualizar el slot activo en cursorGUI
+      if (window.cursorGUI) {
+        window.cursorGUI.selectPaletteSlot(index);
+      }
+      
+      console.log('Slot de paleta seleccionado:', index);
     });
   });
 }
