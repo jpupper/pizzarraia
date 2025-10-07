@@ -58,13 +58,10 @@
             </div>
         </div>
         <label>Color Picker</label><input type="color" value="#FF0000" id="c1">
-        <br>
         <label>Alfa: <span id="alphaValue-value">255</span></label>
         <input type="range" value="255" id="alphaValue" min="0" max ="255" step="1" class="jpslider" >
-        <br>
         <label>Size: <span id="size-value">20</span></label>
         <input type="range" value="20" id="size" min="0" max ="100" step="0.1" class="jpslider" >
-        <br>
         <label>Efecto Kaleido: <span id="kaleidoSegments-value">1</span></label>
         <input type="range" value="1" id="kaleidoSegments" min="1" max="16" step="1" class="jpslider">
         <div style="margin-top: 15px;"></div>
@@ -211,68 +208,78 @@
             <label style="margin-bottom: 10px;">Sistema de Capas</label>
             
             <!-- Capa 0 -->
-            <div class="layer-item" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 8px; background: rgba(138, 79, 191, 0.15); border-radius: 8px;">
-                <button class="layer-btn active" data-layer="0" style="width: 35px; height: 35px; margin: 0;">0</button>
+            <div class="layer-item" style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px; padding: 6px; background: rgba(138, 79, 191, 0.15); border-radius: 8px;">
+                <div style="display: flex; flex-direction: column; gap: 3px;">
+                    <button class="layer-btn active" data-layer="0" style="width: 35px; height: 28px; margin: 0; font-size: 0.9rem;">0</button>
+                    <button class="layer-visibility-btn active" data-layer="0" title="Mostrar/Ocultar Capa" style="width: 35px; height: 28px; background: rgba(138, 79, 191, 0.3); border: 2px solid var(--accent); border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;">
+                        <svg viewBox="0 0 24 24" width="16" height="16" class="eye-icon">
+                            <path class="eye-open" fill="white" d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" />
+                            <path class="eye-closed" fill="white" d="M11.83,9L15,12.16C15,12.11 15,12.05 15,12A3,3 0 0,0 12,9C11.94,9 11.89,9 11.83,9M7.53,9.8L9.08,11.35C9.03,11.56 9,11.77 9,12A3,3 0 0,0 12,15C12.22,15 12.44,14.97 12.65,14.92L14.2,16.47C13.53,16.8 12.79,17 12,17A5,5 0 0,1 7,12C7,11.21 7.2,10.47 7.53,9.8M2,4.27L4.28,6.55L4.73,7C3.08,8.3 1.78,10 1,12C2.73,16.39 7,19.5 12,19.5C13.55,19.5 15.03,19.2 16.38,18.66L16.81,19.08L19.73,22L21,20.73L3.27,3M12,7A5,5 0 0,1 17,12C17,12.64 16.87,13.26 16.64,13.82L19.57,16.75C21.07,15.5 22.27,13.86 23,12C21.27,7.61 17,4.5 12,4.5C10.6,4.5 9.26,4.75 8,5.2L10.17,7.35C10.74,7.13 11.35,7 12,7Z" style="display:none;" />
+                        </svg>
+                    </button>
+                </div>
                 <canvas id="layerPreview0" width="80" height="60" style="border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; cursor: pointer;"></canvas>
-                <button class="layer-visibility-btn active" data-layer="0" title="Mostrar/Ocultar Capa" style="width: 35px; height: 35px; background: rgba(138, 79, 191, 0.3); border: 2px solid var(--accent); border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
-                    <svg viewBox="0 0 24 24" width="20" height="20" class="eye-icon">
-                        <path class="eye-open" fill="white" d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" />
-                        <path class="eye-closed" fill="white" d="M11.83,9L15,12.16C15,12.11 15,12.05 15,12A3,3 0 0,0 12,9C11.94,9 11.89,9 11.83,9M7.53,9.8L9.08,11.35C9.03,11.56 9,11.77 9,12A3,3 0 0,0 12,15C12.22,15 12.44,14.97 12.65,14.92L14.2,16.47C13.53,16.8 12.79,17 12,17A5,5 0 0,1 7,12C7,11.21 7.2,10.47 7.53,9.8M2,4.27L4.28,6.55L4.73,7C3.08,8.3 1.78,10 1,12C2.73,16.39 7,19.5 12,19.5C13.55,19.5 15.03,19.2 16.38,18.66L16.81,19.08L19.73,22L21,20.73L3.27,3M12,7A5,5 0 0,1 17,12C17,12.64 16.87,13.26 16.64,13.82L19.57,16.75C21.07,15.5 22.27,13.86 23,12C21.27,7.61 17,4.5 12,4.5C10.6,4.5 9.26,4.75 8,5.2L10.17,7.35C10.74,7.13 11.35,7 12,7Z" style="display:none;" />
-                    </svg>
-                </button>
-                <span style="color: rgba(255,255,255,0.7); font-size: 0.85rem; flex: 1;">Fondo</span>
+                <span style="color: rgba(255,255,255,0.7); font-size: 0.8rem; flex: 1;">Fondo</span>
             </div>
             
             <!-- Capa 1 -->
-            <div class="layer-item" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 8px; background: rgba(138, 79, 191, 0.15); border-radius: 8px;">
-                <button class="layer-btn" data-layer="1" style="width: 35px; height: 35px; margin: 0;">1</button>
+            <div class="layer-item" style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px; padding: 6px; background: rgba(138, 79, 191, 0.15); border-radius: 8px;">
+                <div style="display: flex; flex-direction: column; gap: 3px;">
+                    <button class="layer-btn" data-layer="1" style="width: 35px; height: 28px; margin: 0; font-size: 0.9rem;">1</button>
+                    <button class="layer-visibility-btn active" data-layer="1" title="Mostrar/Ocultar Capa" style="width: 35px; height: 28px; background: rgba(138, 79, 191, 0.3); border: 2px solid var(--accent); border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;">
+                        <svg viewBox="0 0 24 24" width="16" height="16" class="eye-icon">
+                            <path class="eye-open" fill="white" d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" />
+                            <path class="eye-closed" fill="white" d="M11.83,9L15,12.16C15,12.11 15,12.05 15,12A3,3 0 0,0 12,9C11.94,9 11.89,9 11.83,9M7.53,9.8L9.08,11.35C9.03,11.56 9,11.77 9,12A3,3 0 0,0 12,15C12.22,15 12.44,14.97 12.65,14.92L14.2,16.47C13.53,16.8 12.79,17 12,17A5,5 0 0,1 7,12C7,11.21 7.2,10.47 7.53,9.8M2,4.27L4.28,6.55L4.73,7C3.08,8.3 1.78,10 1,12C2.73,16.39 7,19.5 12,19.5C13.55,19.5 15.03,19.2 16.38,18.66L16.81,19.08L19.73,22L21,20.73L3.27,3M12,7A5,5 0 0,1 17,12C17,12.64 16.87,13.26 16.64,13.82L19.57,16.75C21.07,15.5 22.27,13.86 23,12C21.27,7.61 17,4.5 12,4.5C10.6,4.5 9.26,4.75 8,5.2L10.17,7.35C10.74,7.13 11.35,7 12,7Z" style="display:none;" />
+                        </svg>
+                    </button>
+                </div>
                 <canvas id="layerPreview1" width="80" height="60" style="border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; cursor: pointer;"></canvas>
-                <button class="layer-visibility-btn active" data-layer="1" title="Mostrar/Ocultar Capa" style="width: 35px; height: 35px; background: rgba(138, 79, 191, 0.3); border: 2px solid var(--accent); border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
-                    <svg viewBox="0 0 24 24" width="20" height="20" class="eye-icon">
-                        <path class="eye-open" fill="white" d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" />
-                        <path class="eye-closed" fill="white" d="M11.83,9L15,12.16C15,12.11 15,12.05 15,12A3,3 0 0,0 12,9C11.94,9 11.89,9 11.83,9M7.53,9.8L9.08,11.35C9.03,11.56 9,11.77 9,12A3,3 0 0,0 12,15C12.22,15 12.44,14.97 12.65,14.92L14.2,16.47C13.53,16.8 12.79,17 12,17A5,5 0 0,1 7,12C7,11.21 7.2,10.47 7.53,9.8M2,4.27L4.28,6.55L4.73,7C3.08,8.3 1.78,10 1,12C2.73,16.39 7,19.5 12,19.5C13.55,19.5 15.03,19.2 16.38,18.66L16.81,19.08L19.73,22L21,20.73L3.27,3M12,7A5,5 0 0,1 17,12C17,12.64 16.87,13.26 16.64,13.82L19.57,16.75C21.07,15.5 22.27,13.86 23,12C21.27,7.61 17,4.5 12,4.5C10.6,4.5 9.26,4.75 8,5.2L10.17,7.35C10.74,7.13 11.35,7 12,7Z" style="display:none;" />
-                    </svg>
-                </button>
-                <span style="color: rgba(255,255,255,0.7); font-size: 0.85rem; flex: 1;">Capa 1</span>
+                <span style="color: rgba(255,255,255,0.7); font-size: 0.8rem; flex: 1;">Capa 1</span>
             </div>
             
             <!-- Capa 2 -->
-            <div class="layer-item" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 8px; background: rgba(138, 79, 191, 0.15); border-radius: 8px;">
-                <button class="layer-btn" data-layer="2" style="width: 35px; height: 35px; margin: 0;">2</button>
+            <div class="layer-item" style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px; padding: 6px; background: rgba(138, 79, 191, 0.15); border-radius: 8px;">
+                <div style="display: flex; flex-direction: column; gap: 3px;">
+                    <button class="layer-btn" data-layer="2" style="width: 35px; height: 28px; margin: 0; font-size: 0.9rem;">2</button>
+                    <button class="layer-visibility-btn active" data-layer="2" title="Mostrar/Ocultar Capa" style="width: 35px; height: 28px; background: rgba(138, 79, 191, 0.3); border: 2px solid var(--accent); border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;">
+                        <svg viewBox="0 0 24 24" width="16" height="16" class="eye-icon">
+                            <path class="eye-open" fill="white" d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" />
+                            <path class="eye-closed" fill="white" d="M11.83,9L15,12.16C15,12.11 15,12.05 15,12A3,3 0 0,0 12,9C11.94,9 11.89,9 11.83,9M7.53,9.8L9.08,11.35C9.03,11.56 9,11.77 9,12A3,3 0 0,0 12,15C12.22,15 12.44,14.97 12.65,14.92L14.2,16.47C13.53,16.8 12.79,17 12,17A5,5 0 0,1 7,12C7,11.21 7.2,10.47 7.53,9.8M2,4.27L4.28,6.55L4.73,7C3.08,8.3 1.78,10 1,12C2.73,16.39 7,19.5 12,19.5C13.55,19.5 15.03,19.2 16.38,18.66L16.81,19.08L19.73,22L21,20.73L3.27,3M12,7A5,5 0 0,1 17,12C17,12.64 16.87,13.26 16.64,13.82L19.57,16.75C21.07,15.5 22.27,13.86 23,12C21.27,7.61 17,4.5 12,4.5C10.6,4.5 9.26,4.75 8,5.2L10.17,7.35C10.74,7.13 11.35,7 12,7Z" style="display:none;" />
+                        </svg>
+                    </button>
+                </div>
                 <canvas id="layerPreview2" width="80" height="60" style="border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; cursor: pointer;"></canvas>
-                <button class="layer-visibility-btn active" data-layer="2" title="Mostrar/Ocultar Capa" style="width: 35px; height: 35px; background: rgba(138, 79, 191, 0.3); border: 2px solid var(--accent); border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
-                    <svg viewBox="0 0 24 24" width="20" height="20" class="eye-icon">
-                        <path class="eye-open" fill="white" d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" />
-                        <path class="eye-closed" fill="white" d="M11.83,9L15,12.16C15,12.11 15,12.05 15,12A3,3 0 0,0 12,9C11.94,9 11.89,9 11.83,9M7.53,9.8L9.08,11.35C9.03,11.56 9,11.77 9,12A3,3 0 0,0 12,15C12.22,15 12.44,14.97 12.65,14.92L14.2,16.47C13.53,16.8 12.79,17 12,17A5,5 0 0,1 7,12C7,11.21 7.2,10.47 7.53,9.8M2,4.27L4.28,6.55L4.73,7C3.08,8.3 1.78,10 1,12C2.73,16.39 7,19.5 12,19.5C13.55,19.5 15.03,19.2 16.38,18.66L16.81,19.08L19.73,22L21,20.73L3.27,3M12,7A5,5 0 0,1 17,12C17,12.64 16.87,13.26 16.64,13.82L19.57,16.75C21.07,15.5 22.27,13.86 23,12C21.27,7.61 17,4.5 12,4.5C10.6,4.5 9.26,4.75 8,5.2L10.17,7.35C10.74,7.13 11.35,7 12,7Z" style="display:none;" />
-                    </svg>
-                </button>
-                <span style="color: rgba(255,255,255,0.7); font-size: 0.85rem; flex: 1;">Capa 2</span>
+                <span style="color: rgba(255,255,255,0.7); font-size: 0.8rem; flex: 1;">Capa 2</span>
             </div>
             
             <!-- Capa 3 -->
-            <div class="layer-item" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 8px; background: rgba(138, 79, 191, 0.15); border-radius: 8px;">
-                <button class="layer-btn" data-layer="3" style="width: 35px; height: 35px; margin: 0;">3</button>
+            <div class="layer-item" style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px; padding: 6px; background: rgba(138, 79, 191, 0.15); border-radius: 8px;">
+                <div style="display: flex; flex-direction: column; gap: 3px;">
+                    <button class="layer-btn" data-layer="3" style="width: 35px; height: 28px; margin: 0; font-size: 0.9rem;">3</button>
+                    <button class="layer-visibility-btn active" data-layer="3" title="Mostrar/Ocultar Capa" style="width: 35px; height: 28px; background: rgba(138, 79, 191, 0.3); border: 2px solid var(--accent); border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;">
+                        <svg viewBox="0 0 24 24" width="16" height="16" class="eye-icon">
+                            <path class="eye-open" fill="white" d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" />
+                            <path class="eye-closed" fill="white" d="M11.83,9L15,12.16C15,12.11 15,12.05 15,12A3,3 0 0,0 12,9C11.94,9 11.89,9 11.83,9M7.53,9.8L9.08,11.35C9.03,11.56 9,11.77 9,12A3,3 0 0,0 12,15C12.22,15 12.44,14.97 12.65,14.92L14.2,16.47C13.53,16.8 12.79,17 12,17A5,5 0 0,1 7,12C7,11.21 7.2,10.47 7.53,9.8M2,4.27L4.28,6.55L4.73,7C3.08,8.3 1.78,10 1,12C2.73,16.39 7,19.5 12,19.5C13.55,19.5 15.03,19.2 16.38,18.66L16.81,19.08L19.73,22L21,20.73L3.27,3M12,7A5,5 0 0,1 17,12C17,12.64 16.87,13.26 16.64,13.82L19.57,16.75C21.07,15.5 22.27,13.86 23,12C21.27,7.61 17,4.5 12,4.5C10.6,4.5 9.26,4.75 8,5.2L10.17,7.35C10.74,7.13 11.35,7 12,7Z" style="display:none;" />
+                        </svg>
+                    </button>
+                </div>
                 <canvas id="layerPreview3" width="80" height="60" style="border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; cursor: pointer;"></canvas>
-                <button class="layer-visibility-btn active" data-layer="3" title="Mostrar/Ocultar Capa" style="width: 35px; height: 35px; background: rgba(138, 79, 191, 0.3); border: 2px solid var(--accent); border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
-                    <svg viewBox="0 0 24 24" width="20" height="20" class="eye-icon">
-                        <path class="eye-open" fill="white" d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" />
-                        <path class="eye-closed" fill="white" d="M11.83,9L15,12.16C15,12.11 15,12.05 15,12A3,3 0 0,0 12,9C11.94,9 11.89,9 11.83,9M7.53,9.8L9.08,11.35C9.03,11.56 9,11.77 9,12A3,3 0 0,0 12,15C12.22,15 12.44,14.97 12.65,14.92L14.2,16.47C13.53,16.8 12.79,17 12,17A5,5 0 0,1 7,12C7,11.21 7.2,10.47 7.53,9.8M2,4.27L4.28,6.55L4.73,7C3.08,8.3 1.78,10 1,12C2.73,16.39 7,19.5 12,19.5C13.55,19.5 15.03,19.2 16.38,18.66L16.81,19.08L19.73,22L21,20.73L3.27,3M12,7A5,5 0 0,1 17,12C17,12.64 16.87,13.26 16.64,13.82L19.57,16.75C21.07,15.5 22.27,13.86 23,12C21.27,7.61 17,4.5 12,4.5C10.6,4.5 9.26,4.75 8,5.2L10.17,7.35C10.74,7.13 11.35,7 12,7Z" style="display:none;" />
-                    </svg>
-                </button>
-                <span style="color: rgba(255,255,255,0.7); font-size: 0.85rem; flex: 1;">Capa 3</span>
+                <span style="color: rgba(255,255,255,0.7); font-size: 0.8rem; flex: 1;">Capa 3</span>
             </div>
             
             <!-- Capa 4 -->
-            <div class="layer-item" style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px; padding: 8px; background: rgba(138, 79, 191, 0.15); border-radius: 8px;">
-                <button class="layer-btn" data-layer="4" style="width: 35px; height: 35px; margin: 0;">4</button>
+            <div class="layer-item" style="display: flex; align-items: center; gap: 6px; margin-bottom: 10px; padding: 6px; background: rgba(138, 79, 191, 0.15); border-radius: 8px;">
+                <div style="display: flex; flex-direction: column; gap: 3px;">
+                    <button class="layer-btn" data-layer="4" style="width: 35px; height: 28px; margin: 0; font-size: 0.9rem;">4</button>
+                    <button class="layer-visibility-btn active" data-layer="4" title="Mostrar/Ocultar Capa" style="width: 35px; height: 28px; background: rgba(138, 79, 191, 0.3); border: 2px solid var(--accent); border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;">
+                        <svg viewBox="0 0 24 24" width="16" height="16" class="eye-icon">
+                            <path class="eye-open" fill="white" d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" />
+                            <path class="eye-closed" fill="white" d="M11.83,9L15,12.16C15,12.11 15,12.05 15,12A3,3 0 0,0 12,9C11.94,9 11.89,9 11.83,9M7.53,9.8L9.08,11.35C9.03,11.56 9,11.77 9,12A3,3 0 0,0 12,15C12.22,15 12.44,14.97 12.65,14.92L14.2,16.47C13.53,16.8 12.79,17 12,17A5,5 0 0,1 7,12C7,11.21 7.2,10.47 7.53,9.8M2,4.27L4.28,6.55L4.73,7C3.08,8.3 1.78,10 1,12C2.73,16.39 7,19.5 12,19.5C13.55,19.5 15.03,19.2 16.38,18.66L16.81,19.08L19.73,22L21,20.73L3.27,3M12,7A5,5 0 0,1 17,12C17,12.64 16.87,13.26 16.64,13.82L19.57,16.75C21.07,15.5 22.27,13.86 23,12C21.27,7.61 17,4.5 12,4.5C10.6,4.5 9.26,4.75 8,5.2L10.17,7.35C10.74,7.13 11.35,7 12,7Z" style="display:none;" />
+                        </svg>
+                    </button>
+                </div>
                 <canvas id="layerPreview4" width="80" height="60" style="border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; cursor: pointer;"></canvas>
-                <button class="layer-visibility-btn active" data-layer="4" title="Mostrar/Ocultar Capa" style="width: 35px; height: 35px; background: rgba(138, 79, 191, 0.3); border: 2px solid var(--accent); border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
-                    <svg viewBox="0 0 24 24" width="20" height="20" class="eye-icon">
-                        <path class="eye-open" fill="white" d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" />
-                        <path class="eye-closed" fill="white" d="M11.83,9L15,12.16C15,12.11 15,12.05 15,12A3,3 0 0,0 12,9C11.94,9 11.89,9 11.83,9M7.53,9.8L9.08,11.35C9.03,11.56 9,11.77 9,12A3,3 0 0,0 12,15C12.22,15 12.44,14.97 12.65,14.92L14.2,16.47C13.53,16.8 12.79,17 12,17A5,5 0 0,1 7,12C7,11.21 7.2,10.47 7.53,9.8M2,4.27L4.28,6.55L4.73,7C3.08,8.3 1.78,10 1,12C2.73,16.39 7,19.5 12,19.5C13.55,19.5 15.03,19.2 16.38,18.66L16.81,19.08L19.73,22L21,20.73L3.27,3M12,7A5,5 0 0,1 17,12C17,12.64 16.87,13.26 16.64,13.82L19.57,16.75C21.07,15.5 22.27,13.86 23,12C21.27,7.61 17,4.5 12,4.5C10.6,4.5 9.26,4.75 8,5.2L10.17,7.35C10.74,7.13 11.35,7 12,7Z" style="display:none;" />
-                    </svg>
-                </button>
-                <span style="color: rgba(255,255,255,0.7); font-size: 0.85rem; flex: 1;">Capa 4</span>
+                <span style="color: rgba(255,255,255,0.7); font-size: 0.8rem; flex: 1;">Capa 4</span>
             </div>
         </div>
         
