@@ -1,15 +1,18 @@
 // ============================================================
-// SELECTOR DE COLOR RADIAL
+// CURSOR GUI - SELECTOR DE COLOR RADIAL
 // Se activa al mantener presionado el mouse/touch por 2+ segundos
 // ============================================================
 
-class ColorPicker {
+class CursorGUI {
     constructor() {
         this.isVisible = false;
         this.centerX = 0;
         this.centerY = 0;
         this.radius = 120; // Radio del círculo de colores
         this.innerRadius = 30; // Radio del círculo central
+        this.sizeBarWidth = 200; // Ancho de la barra de tamaño
+        this.sizeBarHeight = 30; // Alto de la barra de tamaño
+        this.sizeBarY = 0; // Posición Y de la barra (se calcula dinámicamente)
         
         // Timer para detectar long press
         this.pressStartTime = 0;
@@ -53,6 +56,11 @@ class ColorPicker {
         
         this.selectedColor = null;
         this.hoveredColor = null;
+        this.hoveredSize = null;
+        
+        // Configuración de tamaño
+        this.minSize = 1;
+        this.maxSize = 100;
     }
     
     /**
@@ -119,7 +127,9 @@ class ColorPicker {
         this.isVisible = true;
         this.centerX = x;
         this.centerY = y;
-        console.log('Color picker mostrado en:', x, y);
+        // Calcular posición de la barra de tamaño (debajo del círculo)
+        this.sizeBarY = y + this.radius + 60;
+        console.log('Cursor GUI mostrado en:', x, y);
     }
     
     /**
@@ -136,11 +146,22 @@ class ColorPicker {
      */
     isPointInside(x, y) {
         if (!this.isVisible) return false;
+        
+        // Verificar si está en el círculo de colores
         const dist = Math.sqrt(
             Math.pow(x - this.centerX, 2) + 
             Math.pow(y - this.centerY, 2)
         );
-        return dist <= this.radius + 40; // Margen extra
+        if (dist <= this.radius + 40) return true;
+        
+        // Verificar si está en la barra de tamaño
+        const sizeBarX = this.centerX - this.sizeBarWidth / 2;
+        if (x >= sizeBarX && x <= sizeBarX + this.sizeBarWidth &&
+            y >= this.sizeBarY && y <= this.sizeBarY + this.sizeBarHeight) {
+            return true;
+        }
+        
+        return false;
     }
     
     /**
@@ -177,11 +198,50 @@ class ColorPicker {
     }
     
     /**
+     * Obtener el tamaño en una posición específica de la barra
+     */
+    getSizeAt(x, y) {
+        if (!this.isVisible) return null;
+        
+        const sizeBarX = this.centerX - this.sizeBarWidth / 2;
+        
+        // Verificar si está en la barra de tamaño
+        if (x >= sizeBarX && x <= sizeBarX + this.sizeBarWidth &&
+            y >= this.sizeBarY && y <= this.sizeBarY + this.sizeBarHeight) {
+            
+            // Calcular el tamaño basado en la posición X
+            const relativeX = x - sizeBarX;
+            const percentage = relativeX / this.sizeBarWidth;
+            const size = this.minSize + (this.maxSize - this.minSize) * percentage;
+            return Math.round(size);
+        }
+        
+        return null;
+    }
+    
+    /**
      * Manejar click en el selector
      */
     handleClick(x, y) {
         if (!this.isVisible) return false;
         
+        // Verificar si hizo click en la barra de tamaño
+        const size = this.getSizeAt(x, y);
+        if (size !== null) {
+            // Actualizar el slider de tamaño
+            const sizeInput = document.getElementById('size');
+            if (sizeInput) {
+                sizeInput.value = size;
+                // Disparar evento para actualizar el valor mostrado
+                const event = new Event('input');
+                sizeInput.dispatchEvent(event);
+                console.log('Tamaño seleccionado:', size);
+            }
+            // No cerrar, permitir ajustar más
+            return true;
+        }
+        
+        // Verificar si hizo click en un color
         const color = this.getColorAt(x, y);
         if (color && color !== 'current') {
             this.selectedColor = color;
@@ -212,6 +272,7 @@ class ColorPicker {
     updateHover(x, y) {
         if (!this.isVisible) return;
         this.hoveredColor = this.getColorAt(x, y);
+        this.hoveredSize = this.getSizeAt(x, y);
     }
     
     /**
@@ -313,12 +374,49 @@ class ColorPicker {
         buffer.strokeWeight(3);
         buffer.ellipse(this.centerX, this.centerY, this.innerRadius * 2);
         
+        // Dibujar barra de tamaño
+        const sizeBarX = this.centerX - this.sizeBarWidth / 2;
+        
+        // Fondo de la barra
+        buffer.noStroke();
+        buffer.fill(50, 50, 50, 200);
+        buffer.rect(sizeBarX, this.sizeBarY, this.sizeBarWidth, this.sizeBarHeight, 15);
+        
+        // Gradiente visual de tamaño (círculos de diferentes tamaños)
+        for (let i = 0; i <= 10; i++) {
+            const x = sizeBarX + (this.sizeBarWidth / 10) * i;
+            const size = this.minSize + (this.maxSize - this.minSize) * (i / 10);
+            buffer.fill(150, 150, 150, 150);
+            buffer.noStroke();
+            buffer.ellipse(x, this.sizeBarY + this.sizeBarHeight / 2, size * 0.3, size * 0.3);
+        }
+        
+        // Indicador del tamaño actual
+        const currentSize = parseInt(document.getElementById('size') ? document.getElementById('size').value : 20);
+        const currentSizePercentage = (currentSize - this.minSize) / (this.maxSize - this.minSize);
+        const indicatorX = sizeBarX + this.sizeBarWidth * currentSizePercentage;
+        
+        buffer.fill(100, 200, 255);
+        buffer.stroke(255, 255, 255, 200);
+        buffer.strokeWeight(2);
+        buffer.ellipse(indicatorX, this.sizeBarY + this.sizeBarHeight / 2, 20, 20);
+        
+        // Mostrar valor del tamaño en hover
+        if (this.hoveredSize !== null) {
+            buffer.fill(255, 255, 255, 230);
+            buffer.noStroke();
+            buffer.textAlign(CENTER, CENTER);
+            buffer.textSize(14);
+            buffer.text(this.hoveredSize, this.centerX, this.sizeBarY - 15);
+        }
+        
         // Texto de instrucción
         buffer.fill(255);
         buffer.noStroke();
         buffer.textAlign(CENTER, CENTER);
         buffer.textSize(12);
-        buffer.text('Selecciona un color', this.centerX, this.centerY + this.radius + 50);
+        buffer.text('Color', this.centerX, this.centerY + this.radius + 50);
+        buffer.text('Tamaño', this.centerX, this.sizeBarY + this.sizeBarHeight + 20);
         
         // Mostrar indicador de progreso si está presionando Y quieto
         if (this.isPressing && !this.isVisible && this.checkIfStill()) {
@@ -358,13 +456,13 @@ class ColorPicker {
 }
 
 // Crear instancia global
-let colorPicker = null;
+let cursorGUI = null;
 
 // Inicializar cuando el DOM esté listo
 if (typeof window !== 'undefined') {
     window.addEventListener('load', function() {
-        colorPicker = new ColorPicker();
-        window.colorPicker = colorPicker;
-        console.log('Color Picker inicializado');
+        cursorGUI = new CursorGUI();
+        window.cursorGUI = cursorGUI;
+        console.log('Cursor GUI inicializado');
     });
 }
