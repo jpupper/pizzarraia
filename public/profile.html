@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil - Pizzarr.IA</title>
+    <link rel='stylesheet' href='css/style.css' />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .profile-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .profile-header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            color: white;
+            font-weight: bold;
+        }
+
+        .user-details h1 {
+            margin: 0 0 5px 0;
+            color: #333;
+            font-size: 1.8rem;
+        }
+
+        .user-details p {
+            margin: 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #d32f2f;
+        }
+
+        .gallery-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .gallery-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .gallery-header h2 {
+            margin: 0;
+            color: #333;
+            font-size: 1.5rem;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .gallery-item {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .gallery-item-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background: #f5f5f5;
+        }
+
+        .gallery-item-info {
+            padding: 15px;
+        }
+
+        .gallery-item-title {
+            margin: 0 0 5px 0;
+            color: #333;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .gallery-item-date {
+            margin: 0 0 10px 0;
+            color: #888;
+            font-size: 0.85rem;
+        }
+
+        .gallery-item-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            border-radius: 6px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #888;
+        }
+
+        .empty-state svg {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .empty-state h3 {
+            margin: 0 0 10px 0;
+            color: #666;
+        }
+
+        .empty-state p {
+            margin: 0 0 20px 0;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow: auto;
+            position: relative;
+        }
+
+        .modal-image {
+            width: 100%;
+            display: block;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @media (max-width: 768px) {
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .user-info {
+                flex-direction: column;
+            }
+
+            .gallery-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="profile-container">
+        <div class="profile-header">
+            <div class="user-info">
+                <div class="user-avatar" id="userAvatar">?</div>
+                <div class="user-details">
+                    <h1 id="username">Cargando...</h1>
+                    <p id="userStats">Miembro desde <span id="memberSince">...</span></p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <a href="index.html" class="btn btn-primary">🎨 Ir a Dibujar</a>
+                <button class="btn btn-danger" onclick="logout()">Cerrar Sesión</button>
+            </div>
+        </div>
+
+        <div class="gallery-section">
+            <div class="gallery-header">
+                <h2>Mis Dibujos (<span id="imageCount">0</span>)</h2>
+            </div>
+            <div id="galleryContent" class="loading">
+                Cargando galería...
+            </div>
+        </div>
+    </div>
+
+    <div id="imageModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <img id="modalImage" class="modal-image" src="" alt="Imagen">
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let userImages = [];
+
+        // Check authentication
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/check-session');
+                const data = await response.json();
+                
+                if (!data.authenticated) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
+                currentUser = data.user;
+                loadUserProfile();
+                loadUserImages();
+            } catch (error) {
+                console.error('Error checking auth:', error);
+                window.location.href = 'login.html';
+            }
+        }
+
+        function loadUserProfile() {
+            document.getElementById('username').textContent = currentUser.username;
+            document.getElementById('userAvatar').textContent = currentUser.username.charAt(0).toUpperCase();
+            
+            // Get user details for member since date
+            fetch('/api/user')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.user && data.user.createdAt) {
+                        const date = new Date(data.user.createdAt);
+                        document.getElementById('memberSince').textContent = date.toLocaleDateString('es-ES', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                        });
+                    }
+                })
+                .catch(err => console.error('Error loading user details:', err));
+        }
+
+        async function loadUserImages() {
+            try {
+                const response = await fetch('/api/images');
+                const data = await response.json();
+                
+                userImages = data.images || [];
+                document.getElementById('imageCount').textContent = userImages.length;
+                
+                renderGallery();
+            } catch (error) {
+                console.error('Error loading images:', error);
+                document.getElementById('galleryContent').innerHTML = `
+                    <div class="empty-state">
+                        <p style="color: #f44336;">Error al cargar las imágenes</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderGallery() {
+            const galleryContent = document.getElementById('galleryContent');
+            
+            if (userImages.length === 0) {
+                galleryContent.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" />
+                        </svg>
+                        <h3>No tienes dibujos guardados</h3>
+                        <p>Comienza a crear y guarda tus obras de arte</p>
+                        <a href="index.html" class="btn btn-primary">Crear mi primer dibujo</a>
+                    </div>
+                `;
+                return;
+            }
+            
+            galleryContent.innerHTML = `<div class="gallery-grid" id="galleryGrid"></div>`;
+            const galleryGrid = document.getElementById('galleryGrid');
+            
+            userImages.forEach(image => {
+                const date = new Date(image.createdAt);
+                const formattedDate = date.toLocaleDateString('es-ES', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+                
+                const item = document.createElement('div');
+                item.className = 'gallery-item';
+                item.innerHTML = `
+                    <div class="gallery-item-image" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 3rem;">
+                        🎨
+                    </div>
+                    <div class="gallery-item-info">
+                        <h3 class="gallery-item-title">${escapeHtml(image.title)}</h3>
+                        <p class="gallery-item-date">${formattedDate}</p>
+                        <div class="gallery-item-actions">
+                            <button class="btn btn-primary btn-small" onclick="viewImage('${image._id}')">Ver</button>
+                            <button class="btn btn-danger btn-small" onclick="deleteImage('${image._id}')">Eliminar</button>
+                        </div>
+                    </div>
+                `;
+                galleryGrid.appendChild(item);
+            });
+        }
+
+        async function viewImage(imageId) {
+            try {
+                const response = await fetch(`/api/images/${imageId}`);
+                const data = await response.json();
+                
+                if (data.image) {
+                    document.getElementById('modalImage').src = data.image.imageData;
+                    document.getElementById('imageModal').classList.add('active');
+                }
+            } catch (error) {
+                console.error('Error loading image:', error);
+                alert('Error al cargar la imagen');
+            }
+        }
+
+        async function deleteImage(imageId) {
+            if (!confirm('¿Estás seguro de que quieres eliminar este dibujo?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/images/${imageId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    loadUserImages();
+                } else {
+                    alert('Error al eliminar la imagen');
+                }
+            } catch (error) {
+                console.error('Error deleting image:', error);
+                alert('Error al eliminar la imagen');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('imageModal').classList.remove('active');
+        }
+
+        async function logout() {
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Error logging out:', error);
+                window.location.href = 'login.html';
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Close modal on background click
+        document.getElementById('imageModal').addEventListener('click', (e) => {
+            if (e.target.id === 'imageModal') {
+                closeModal();
+            }
+        });
+
+        // Initialize
+        checkAuth();
+    </script>
+</body>
+</html>

@@ -1,70 +1,244 @@
+const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
-const fs = require('fs');
 const path = require('path');
-const url = require('url');
+const mongoose = require('mongoose');
+const session = require('express-session');
+const MongoStore = require('connect-mongo');
 
+const User = require('./models/User');
+const Image = require('./models/Image');
+
+const app = express();
 const hostname = '0.0.0.0';
 const port = 3025;
-const APP_PATH = 'pizarraia';  // Nueva variable global
+const APP_PATH = 'pizarraia';
 
-// Create HTTP server with proper file serving
-const server = http.createServer((req, res) => {
-  let pathname = req.url;
-  
-  // Parse the URL to extract query parameters
-  const parsedUrl = url.parse(pathname, true);
-  pathname = parsedUrl.pathname;
-  
-  if (pathname === '/' || pathname === `/${APP_PATH}/`) {
-    pathname = '/index.html';
+// MongoDB connection
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/pizzarraia';
+mongoose.connect(MONGODB_URI)
+  .then(() => console.log('MongoDB connected successfully'))
+  .catch(err => console.error('MongoDB connection error:', err));
+
+// Middleware
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Session configuration
+app.use(session({
+  secret: 'pizzarraia-secret-key-change-in-production',
+  resave: false,
+  saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: MONGODB_URI,
+    touchAfter: 24 * 3600
+  }),
+  cookie: {
+    maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
   }
-  
-  if (pathname.startsWith(`/${APP_PATH}/socket.io/`)) {
-    return;
+}));
+
+// Serve static files
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Authentication middleware
+const isAuthenticated = (req, res, next) => {
+  if (req.session.userId) {
+    next();
+  } else {
+    res.status(401).json({ error: 'No autenticado' });
   }
-  
-  if (pathname.startsWith(`/${APP_PATH}/`)) {
-    pathname = pathname.substring(APP_PATH.length + 1);
-  }
-  
-  // Ok what's our file extension
-  const ext = path.extname(pathname);
-  
-  // Map extension to file type
-  const typeExt = {
-    '.html': 'text/html',
-    '.js': 'text/javascript',
-    '.css': 'text/css',
-    '.json': 'application/json',
-    '.png': 'image/png',
-    '.jpg': 'image/jpg',
-    '.gif': 'image/gif'
-  };
-  
-  // What is it? Default to plain text
-  const contentType = typeExt[ext] || 'text/plain';
-  
-  // Now read and write back the file with the appropriate content type
-  // Use the public directory as the root for serving files
-  fs.readFile(path.join(__dirname, 'public', pathname), (err, data) => {
-    if (err) {
-      if (err.code === 'ENOENT') {
-        // File not found
-        res.writeHead(404);
-        return res.end(`File ${pathname} not found!`);
-      } else {
-        // Server error
-        res.writeHead(500);
-        return res.end(`Error loading ${pathname}: ${err.code}`);
-      }
+};
+
+// API Routes
+// Register
+app.post('/api/register', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Usuario y contraseña requeridos' });
     }
     
-    // Dynamically setting content type
-    res.writeHead(200, { 'Content-Type': contentType });
-    res.end(data);
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return res.status(400).json({ error: 'El usuario ya existe' });
+    }
+    
+    const user = new User({ username, password });
+    await user.save();
+    
+    req.session.userId = user._id;
+    req.session.username = user.username;
+    
+    res.json({ 
+      success: true, 
+      user: { 
+        id: user._id, 
+        username: user.username 
+      } 
+    });
+  } catch (error) {
+    console.error('Error en registro:', error);
+    res.status(500).json({ error: 'Error en el servidor' });
+  }
+});
+
+// Login
+app.post('/api/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Usuario y contraseña requeridos' });
+    }
+    
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
+    }
+    
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
+    }
+    
+    req.session.userId = user._id;
+    req.session.username = user.username;
+    
+    res.json({ 
+      success: true, 
+      user: { 
+        id: user._id, 
+        username: user.username 
+      } 
+    });
+  } catch (error) {
+    console.error('Error en login:', error);
+    res.status(500).json({ error: 'Error en el servidor' });
+  }
+});
+
+// Logout
+app.post('/api/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).json({ error: 'Error al cerrar sesión' });
+    }
+    res.json({ success: true });
   });
 });
+
+// Get current user
+app.get('/api/user', isAuthenticated, async (req, res) => {
+  try {
+    const user = await User.findById(req.session.userId).select('-password');
+    res.json({ user });
+  } catch (error) {
+    res.status(500).json({ error: 'Error en el servidor' });
+  }
+});
+
+// Check session
+app.get('/api/check-session', (req, res) => {
+  if (req.session.userId) {
+    res.json({ 
+      authenticated: true, 
+      user: { 
+        id: req.session.userId, 
+        username: req.session.username 
+      } 
+    });
+  } else {
+    res.json({ authenticated: false });
+  }
+});
+
+// Save image
+app.post('/api/images', isAuthenticated, async (req, res) => {
+  try {
+    const { title, imageData } = req.body;
+    
+    if (!imageData) {
+      return res.status(400).json({ error: 'Datos de imagen requeridos' });
+    }
+    
+    const image = new Image({
+      userId: req.session.userId,
+      username: req.session.username,
+      title: title || 'Sin título',
+      imageData
+    });
+    
+    await image.save();
+    
+    res.json({ 
+      success: true, 
+      image: {
+        id: image._id,
+        title: image.title,
+        createdAt: image.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('Error guardando imagen:', error);
+    res.status(500).json({ error: 'Error al guardar la imagen' });
+  }
+});
+
+// Get user's images
+app.get('/api/images', isAuthenticated, async (req, res) => {
+  try {
+    const images = await Image.find({ userId: req.session.userId })
+      .sort({ createdAt: -1 })
+      .select('-imageData'); // Don't send image data in list
+    
+    res.json({ images });
+  } catch (error) {
+    console.error('Error obteniendo imágenes:', error);
+    res.status(500).json({ error: 'Error al obtener imágenes' });
+  }
+});
+
+// Get specific image
+app.get('/api/images/:id', isAuthenticated, async (req, res) => {
+  try {
+    const image = await Image.findOne({ 
+      _id: req.params.id, 
+      userId: req.session.userId 
+    });
+    
+    if (!image) {
+      return res.status(404).json({ error: 'Imagen no encontrada' });
+    }
+    
+    res.json({ image });
+  } catch (error) {
+    console.error('Error obteniendo imagen:', error);
+    res.status(500).json({ error: 'Error al obtener la imagen' });
+  }
+});
+
+// Delete image
+app.delete('/api/images/:id', isAuthenticated, async (req, res) => {
+  try {
+    const image = await Image.findOneAndDelete({ 
+      _id: req.params.id, 
+      userId: req.session.userId 
+    });
+    
+    if (!image) {
+      return res.status(404).json({ error: 'Imagen no encontrada' });
+    }
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error eliminando imagen:', error);
+    res.status(500).json({ error: 'Error al eliminar la imagen' });
+  }
+});
+
+const server = http.createServer(app);
 
 // Adjuntar socket.io al servidor HTTP
 const io = socketIo(server, {

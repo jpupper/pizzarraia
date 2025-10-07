@@ -32,6 +32,7 @@
             <button class="tab-btn active" data-tab="drawing">Draw</button>
             <button class="tab-btn" data-tab="about">Read</button>
             <button class="tab-btn" data-tab="chat">Chat</button>
+            <button class="tab-btn" data-tab="user">User</button>
         </div>
         
         <!-- Contenido de la pestaña: Interfaz de dibujo -->
@@ -73,6 +74,11 @@
                 <button id="downloadButton" class="socket-btn square active" onClick="downloadImage()" title="Download Image">
                     <svg viewBox="0 0 24 24">
                         <path fill="white" d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z" />
+                    </svg>
+                </button>
+                <button id="saveButton" class="socket-btn square active" onClick="saveImageToServer()" title="Save to Gallery">
+                    <svg viewBox="0 0 24 24">
+                        <path fill="white" d="M15,9H5V5H15M12,19A3,3 0 0,1 9,16A3,3 0 0,1 12,13A3,3 0 0,1 15,16A3,3 0 0,1 12,19M17,3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V7L17,3Z" />
                     </svg>
                 </button>
             </div>
@@ -232,6 +238,36 @@
                     <svg viewBox="0 0 24 24" width="20" height="20">
                         <path fill="white" d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/>
                     </svg>
+                </button>
+            </div>
+        </div>
+        </div>
+        
+        <!-- Contenido de la pestaña: User -->
+        <div id="tab-user" class="tab-content">
+        <div class="user-section">
+            <h4>Mi Cuenta</h4>
+            <div id="userNotLoggedIn" style="display: none;">
+                <p style="color: rgba(255,255,255,0.8); margin-bottom: 15px;">
+                    Inicia sesión para guardar tus dibujos
+                </p>
+                <a href="login.html" class="btn-user-action" style="display: inline-block; padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; margin-right: 10px;">
+                    Iniciar Sesión
+                </a>
+                <a href="register.html" class="btn-user-action" style="display: inline-block; padding: 10px 20px; background: rgba(255,255,255,0.1); color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                    Registrarse
+                </a>
+            </div>
+            <div id="userLoggedIn" style="display: none;">
+                <div style="background: rgba(138, 79, 191, 0.2); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <p style="color: rgba(255,255,255,0.7); margin: 0 0 5px 0;">Usuario:</p>
+                    <p id="loggedUsername" style="color: var(--accent); font-weight: bold; font-size: 1.2rem; margin: 0;">Cargando...</p>
+                </div>
+                <a href="profile.html" class="btn-user-action" style="display: inline-block; padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; margin-bottom: 10px; width: 100%; text-align: center; box-sizing: border-box;">
+                    Ver Mi Galería
+                </a>
+                <button onclick="logoutUser()" class="btn-user-action" style="display: block; padding: 10px 20px; background: rgba(244, 67, 54, 0.8); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%;">
+                    Cerrar Sesión
                 </button>
             </div>
         </div>
