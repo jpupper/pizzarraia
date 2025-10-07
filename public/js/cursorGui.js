@@ -119,23 +119,23 @@ class CursorGUI {
         this.centerY = y;
         
         // Calcular posiciones de las barras (de arriba hacia abajo)
-        let currentY = y - 200; // Empezar arriba
+        let currentY = y - 250; // Empezar más arriba para dar más espacio
         
         this.hueBarY = currentY;
-        currentY += 50;
+        currentY += 60; // Aumentado de 50 a 60
         
         this.saturationBarY = currentY;
-        currentY += 50;
+        currentY += 60; // Aumentado de 50 a 60
         
         this.brightnessBarY = currentY;
-        currentY += 50;
+        currentY += 60; // Aumentado de 50 a 60
         
         this.alphaBarY = currentY;
-        currentY += 60;
+        currentY += 70; // Aumentado de 60 a 70
         
         // Slots de paleta en el centro
         this.paletteY = currentY;
-        currentY += 70;
+        currentY += 80; // Aumentado de 70 a 80
         
         // Barra de tamaño abajo
         this.sizeBarY = currentY;
