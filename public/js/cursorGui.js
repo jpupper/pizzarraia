@@ -36,14 +36,8 @@ class CursorGUI {
         this.hoveredBrightness = null;
         this.hoveredPaletteSlot = null;
         
-        // Sistema de paleta de colores
-        this.colorPalette = [
-            '#FF0000', // Slot 1: Rojo
-            '#00FF00', // Slot 2: Verde
-            '#0000FF', // Slot 3: Azul
-            '#FFFF00', // Slot 4: Amarillo
-            '#FF00FF'  // Slot 5: Magenta
-        ];
+        // Sistema de paleta de colores - sincronizar con HTML
+        this.colorPalette = this.loadPaletteFromHTML();
         this.activePaletteSlot = 0; // Índice del slot activo (0-4)
         this.paletteSlotSize = 35;
         this.paletteSlotSpacing = 10;
@@ -51,6 +45,36 @@ class CursorGUI {
         // Configuración de tamaño
         this.minSize = 1;
         this.maxSize = 100;
+    }
+    
+    /**
+     * Cargar paleta de colores desde el HTML
+     */
+    loadPaletteFromHTML() {
+        const paletteSlots = document.querySelectorAll('.palette-slot');
+        const colors = [];
+        
+        paletteSlots.forEach(slot => {
+            const bgColor = slot.style.backgroundColor;
+            if (bgColor) {
+                // Convertir rgb a hex
+                const rgb = bgColor.match(/\d+/g);
+                if (rgb) {
+                    const hex = '#' + rgb.map(x => {
+                        const h = parseInt(x).toString(16);
+                        return h.length === 1 ? '0' + h : h;
+                    }).join('');
+                    colors.push(hex);
+                }
+            }
+        });
+        
+        // Si no se encontraron colores, usar valores por defecto
+        if (colors.length === 0) {
+            return ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF'];
+        }
+        
+        return colors;
     }
     
     /**
@@ -196,12 +220,26 @@ class CursorGUI {
     selectPaletteSlot(index) {
         if (index >= 0 && index < 5) {
             this.activePaletteSlot = index;
+            
             // Actualizar el color actual al del slot seleccionado
             const colorInput = document.getElementById('c1');
             if (colorInput) {
                 colorInput.value = this.colorPalette[index];
-                console.log('Slot de paleta seleccionado:', index, '->', this.colorPalette[index]);
             }
+            
+            // Sincronizar con la paleta HTML
+            const paletteSlots = document.querySelectorAll('.palette-slot');
+            paletteSlots.forEach((slot, i) => {
+                slot.classList.remove('active');
+                slot.style.border = '2px solid rgba(255,255,255,0.3)';
+            });
+            
+            if (paletteSlots[index]) {
+                paletteSlots[index].classList.add('active');
+                paletteSlots[index].style.border = '3px solid white';
+            }
+            
+            console.log('Slot de paleta seleccionado:', index, '->', this.colorPalette[index]);
         }
     }
     
@@ -210,6 +248,13 @@ class CursorGUI {
      */
     updateActivePaletteSlot(color) {
         this.colorPalette[this.activePaletteSlot] = color;
+        
+        // Sincronizar con la paleta HTML
+        const paletteSlots = document.querySelectorAll('.palette-slot');
+        if (paletteSlots[this.activePaletteSlot]) {
+            paletteSlots[this.activePaletteSlot].style.backgroundColor = color;
+        }
+        
         console.log('Slot', this.activePaletteSlot, 'actualizado a:', color);
     }
     
@@ -522,6 +567,11 @@ class CursorGUI {
         
         colorInput.value = newColor;
         this.updateActivePaletteSlot(newColor);
+        
+        // Disparar evento para que general.js actualice la paleta HTML
+        const event = new Event('input');
+        colorInput.dispatchEvent(event);
+        
         console.log('Tono aplicado:', hue, '° ->', newColor);
     }
     
@@ -557,6 +607,10 @@ class CursorGUI {
         colorInput.value = newColor;
         this.updateActivePaletteSlot(newColor);
         
+        // Disparar evento para que general.js actualice la paleta HTML
+        const event = new Event('input');
+        colorInput.dispatchEvent(event);
+        
         // Verificar el HSB del nuevo color
         const verifyHSB = this.rgbToHsb(rgb.r, rgb.g, rgb.b);
         console.log('Saturación aplicada:', saturation, '% -> Color:', newColor, '-> HSB verificado:', verifyHSB);
@@ -590,6 +644,11 @@ class CursorGUI {
         
         colorInput.value = newColor;
         this.updateActivePaletteSlot(newColor);
+        
+        // Disparar evento para que general.js actualice la paleta HTML
+        const event = new Event('input');
+        colorInput.dispatchEvent(event);
+        
         console.log('Brillo aplicado:', brightness, '% ->', newColor);
     }
     
