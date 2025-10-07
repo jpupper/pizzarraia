@@ -19,7 +19,7 @@ class CursorGUI {
         
         // Timer para detectar long press
         this.pressStartTime = 0;
-        this.longPressThreshold = 800; 
+        this.longPressThreshold = 500; 
         this.longPressTimer = null;
         this.isPressing = false;
         
@@ -28,8 +28,8 @@ class CursorGUI {
         this.pressStartY = 0;
         this.movementThreshold = 10; // Píxeles de tolerancia de movimiento
         
-        // Colores predefinidos en círculo
-        this.colors = [
+        // Colores base para la rueda (se mezclarán con la paleta)
+        this.baseColors = [
             '#FF0000', // Rojo
             '#FF7F00', // Naranja
             '#FFFF00', // Amarillo
@@ -41,7 +41,11 @@ class CursorGUI {
             '#0000FF', // Azul
             '#7F00FF', // Violeta
             '#FF00FF', // Magenta
-            '#FF007F', // Rosa
+            '#FF007F'  // Rosa
+        ];
+        
+        // Colores adicionales fijos
+        this.fixedColors = [
             '#FFFFFF', // Blanco
             '#CCCCCC', // Gris claro
             '#888888', // Gris
@@ -56,6 +60,19 @@ class CursorGUI {
         this.hoveredAlpha = null;
         this.hoveredSaturation = null;
         this.hoveredBrightness = null;
+        this.hoveredPaletteSlot = null;
+        
+        // Sistema de paleta de colores
+        this.colorPalette = [
+            '#FF0000', // Slot 1: Rojo
+            '#00FF00', // Slot 2: Verde
+            '#0000FF', // Slot 3: Azul
+            '#FFFF00', // Slot 4: Amarillo
+            '#FF00FF'  // Slot 5: Magenta
+        ];
+        this.activePaletteSlot = 0; // Índice del slot activo (0-4)
+        this.paletteSlotSize = 35;
+        this.paletteSlotSpacing = 10;
         
         // Configuración de tamaño
         this.minSize = 1;
@@ -146,7 +163,73 @@ class CursorGUI {
         this.hoveredAlpha = null;
         this.hoveredSaturation = null;
         this.hoveredBrightness = null;
+        this.hoveredPaletteSlot = null;
         this.cancelLongPress();
+    }
+    
+    /**
+     * Obtener la posición de un slot de la paleta
+     */
+    getPaletteSlotPosition(index) {
+        const totalWidth = (this.paletteSlotSize * 5) + (this.paletteSlotSpacing * 4);
+        const startX = this.centerX - totalWidth / 2;
+        // Posicionar los slots debajo de la rueda de colores
+        const y = this.centerY + this.radius + 80;
+        const x = startX + (index * (this.paletteSlotSize + this.paletteSlotSpacing));
+        
+        return { x, y };
+    }
+    
+    /**
+     * Verificar si un punto está sobre un slot de la paleta
+     */
+    getPaletteSlotAt(x, y) {
+        if (!this.isVisible) return null;
+        
+        for (let i = 0; i < 5; i++) {
+            const pos = this.getPaletteSlotPosition(i);
+            const dist = Math.sqrt(
+                Math.pow(x - (pos.x + this.paletteSlotSize / 2), 2) + 
+                Math.pow(y - (pos.y), 2)
+            );
+            
+            if (dist <= this.paletteSlotSize / 2) {
+                return i;
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Seleccionar un slot de la paleta
+     */
+    selectPaletteSlot(index) {
+        if (index >= 0 && index < 5) {
+            this.activePaletteSlot = index;
+            // Actualizar el color actual al del slot seleccionado
+            const colorInput = document.getElementById('c1');
+            if (colorInput) {
+                colorInput.value = this.colorPalette[index];
+                console.log('Slot de paleta seleccionado:', index, '->', this.colorPalette[index]);
+            }
+        }
+    }
+    
+    /**
+     * Actualizar el color del slot activo
+     */
+    updateActivePaletteSlot(color) {
+        this.colorPalette[this.activePaletteSlot] = color;
+        console.log('Slot', this.activePaletteSlot, 'actualizado a:', color);
+    }
+    
+    /**
+     * Generar los colores de la rueda basados en la paleta activa
+     */
+    getWheelColors() {
+        // Combinar los colores de la paleta con los colores fijos
+        return [...this.colorPalette, ...this.fixedColors];
     }
     
     /**
@@ -201,16 +284,18 @@ class CursorGUI {
         const distance = Math.sqrt(dx * dx + dy * dy);
         const angle = Math.atan2(dy, dx);
         
-        // Círculo central (color actual)
-        if (distance < this.innerRadius) {
-            return 'current';
+        // Verificar si está sobre un slot de la paleta (tiene prioridad)
+        const paletteSlot = this.getPaletteSlotAt(x, y);
+        if (paletteSlot !== null) {
+            return null; // Los slots se manejan por separado
         }
         
         // Anillo de colores
         if (distance >= this.innerRadius && distance < this.radius) {
+            const wheelColors = this.getWheelColors();
             const normalizedAngle = (angle + Math.PI) / (2 * Math.PI);
-            const colorIndex = Math.floor(normalizedAngle * this.colors.length);
-            return this.colors[colorIndex % this.colors.length];
+            const colorIndex = Math.floor(normalizedAngle * wheelColors.length);
+            return wheelColors[colorIndex % wheelColors.length];
         }
         
         return null;
@@ -348,6 +433,13 @@ class CursorGUI {
             return true;
         }
         
+        // Verificar si hizo click en un slot de la paleta
+        const paletteSlot = this.getPaletteSlotAt(x, y);
+        if (paletteSlot !== null) {
+            this.selectPaletteSlot(paletteSlot);
+            return true;
+        }
+        
         // Verificar si hizo click en un color
         const color = this.getColorAt(x, y);
         if (color && color !== 'current') {
@@ -355,6 +447,8 @@ class CursorGUI {
             const colorInput = document.getElementById('c1');
             if (colorInput) {
                 colorInput.value = color;
+                // Actualizar el slot activo de la paleta con el nuevo color
+                this.updateActivePaletteSlot(color);
                 console.log('Color seleccionado:', color);
             }
             this.hide();
@@ -453,6 +547,7 @@ class CursorGUI {
         this.hoveredAlpha = this.getAlphaAt(x, y);
         this.hoveredSaturation = this.getSaturationAt(x, y);
         this.hoveredBrightness = this.getBrightnessAt(x, y);
+        this.hoveredPaletteSlot = this.getPaletteSlotAt(x, y);
     }
     
     /**
@@ -468,13 +563,14 @@ class CursorGUI {
         buffer.fill(0, 0, 0, 100);
         buffer.ellipse(this.centerX, this.centerY, (this.radius + 40) * 2);
         
-        // Dibujar anillo de colores
-        const segmentAngle = (2 * Math.PI) / this.colors.length;
-        for (let i = 0; i < this.colors.length; i++) {
+        // Dibujar anillo de colores usando la paleta activa
+        const wheelColors = this.getWheelColors();
+        const segmentAngle = (2 * Math.PI) / wheelColors.length;
+        for (let i = 0; i < wheelColors.length; i++) {
             const startAngle = i * segmentAngle - Math.PI;
             const endAngle = (i + 1) * segmentAngle - Math.PI;
             
-            buffer.fill(this.colors[i]);
+            buffer.fill(wheelColors[i]);
             buffer.noStroke();
             
             // Dibujar segmento
@@ -488,7 +584,7 @@ class CursorGUI {
             buffer.endShape(CLOSE);
             
             // Borde si está en hover
-            if (this.hoveredColor === this.colors[i]) {
+            if (this.hoveredColor === wheelColors[i]) {
                 buffer.stroke(255, 255, 255, 200);
                 buffer.strokeWeight(3);
                 buffer.noFill();
@@ -503,13 +599,40 @@ class CursorGUI {
             }
         }
         
-        // Círculo central (color actual)
-        const currentColor = document.getElementById('c1') ? 
-            document.getElementById('c1').value : '#FFFFFF';
-        buffer.fill(currentColor);
-        buffer.stroke(255, 255, 255, 200);
-        buffer.strokeWeight(3);
-        buffer.ellipse(this.centerX, this.centerY, this.innerRadius * 2);
+        // Dibujar slots de la paleta de colores en el centro
+        for (let i = 0; i < 5; i++) {
+            const pos = this.getPaletteSlotPosition(i);
+            const slotX = pos.x + this.paletteSlotSize / 2;
+            const slotY = pos.y;
+            
+            // Color del slot
+            buffer.fill(this.colorPalette[i]);
+            
+            // Borde del slot
+            if (i === this.activePaletteSlot) {
+                // Slot activo: borde blanco grueso
+                buffer.stroke(255, 255, 255, 255);
+                buffer.strokeWeight(4);
+            } else if (i === this.hoveredPaletteSlot) {
+                // Slot en hover: borde blanco delgado
+                buffer.stroke(255, 255, 255, 200);
+                buffer.strokeWeight(3);
+            } else {
+                // Slot normal: borde gris
+                buffer.stroke(150, 150, 150, 150);
+                buffer.strokeWeight(2);
+            }
+            
+            // Dibujar el slot
+            buffer.ellipse(slotX, slotY, this.paletteSlotSize, this.paletteSlotSize);
+            
+            // Número del slot
+            buffer.fill(255, 255, 255, 200);
+            buffer.noStroke();
+            buffer.textAlign(CENTER, CENTER);
+            buffer.textSize(12);
+            buffer.text(i + 1, slotX, slotY + this.paletteSlotSize / 2 + 15);
+        }
         
         // Dibujar barra de tamaño
         const sizeBarX = this.centerX - this.sizeBarWidth / 2;

@@ -44,9 +44,15 @@ class Particle {
     }
     
     // Actualizar posición y vida de la partícula
-    update() {
+    update(flowfieldForce = null) {
         // Obtener el factor de velocidad global o usar el valor por defecto
         const speedFactor = window.artBrushSpeedFactor || 1.0;
+        
+        // Aplicar flowfield si está disponible
+        if (flowfieldForce) {
+            this.vx += flowfieldForce.x;
+            this.vy += flowfieldForce.y;
+        }
         
         // Mover la partícula según su velocidad ajustada por el factor global
         this.x += this.vx * speedFactor;
@@ -102,6 +108,98 @@ class ParticleSystem {
     constructor() {
         this.particles = [];
         this.baseSeed = Date.now(); // Semilla base para la generación de partículas
+        
+        // Flowfield configuration
+        this.flowfield = [];
+        this.flowfieldCols = 20;
+        this.flowfieldRows = 20;
+        this.flowfieldResolution = 20;
+        this.flowfieldStrength = 0.1;
+        this.showFlowfield = false;
+        this.noiseScale = 0.1; // Aumentado para más variación (era 0.01)
+        this.noiseZ = 0;
+        this.noiseZSpeed = 0.003; // Velocidad de cambio del flowfield
+        // No inicializar el flowfield aquí porque noise() no está disponible aún
+        // Se inicializará en la primera llamada a update()
+        this.flowfieldInitialized = false;
+    }
+    
+    // Inicializar el flowfield
+    initFlowfield() {
+        // Verificar que noise() esté disponible
+        if (typeof noise === 'undefined') {
+            console.warn('noise() no está disponible aún, esperando...');
+            return;
+        }
+        
+        this.flowfield = [];
+        for (let y = 0; y < this.flowfieldRows; y++) {
+            this.flowfield[y] = [];
+            for (let x = 0; x < this.flowfieldCols; x++) {
+                const angle = noise(x * this.noiseScale, y * this.noiseScale, this.noiseZ) * Math.PI * 2;
+                this.flowfield[y][x] = angle;
+            }
+        }
+        this.flowfieldInitialized = true;
+    }
+    
+    // Actualizar el flowfield
+    updateFlowfield() {
+        this.noiseZ += this.noiseZSpeed;
+        for (let y = 0; y < this.flowfieldRows; y++) {
+            for (let x = 0; x < this.flowfieldCols; x++) {
+                const angle = noise(x * this.noiseScale, y * this.noiseScale, this.noiseZ) * Math.PI * 4; // Aumentado a PI * 4 para más variación
+                this.flowfield[y][x] = angle;
+            }
+        }
+    }
+    
+    // Obtener la fuerza del flowfield en una posición
+    getFlowfieldForce(x, y) {
+        const col = Math.floor(x / this.flowfieldResolution);
+        const row = Math.floor(y / this.flowfieldResolution);
+        
+        if (row >= 0 && row < this.flowfieldRows && col >= 0 && col < this.flowfieldCols) {
+            const angle = this.flowfield[row][col];
+            return {
+                x: Math.cos(angle) * this.flowfieldStrength,
+                y: Math.sin(angle) * this.flowfieldStrength
+            };
+        }
+        return { x: 0, y: 0 };
+    }
+    
+    // Dibujar el flowfield
+    drawFlowfield(buffer) {
+        if (!this.showFlowfield) return;
+        
+        buffer.push();
+        buffer.stroke(255, 255, 255, 100);
+        buffer.strokeWeight(1);
+        
+        for (let y = 0; y < this.flowfieldRows; y++) {
+            for (let x = 0; x < this.flowfieldCols; x++) {
+                const angle = this.flowfield[y][x];
+                const posX = x * this.flowfieldResolution + this.flowfieldResolution / 2;
+                const posY = y * this.flowfieldResolution + this.flowfieldResolution / 2;
+                const length = this.flowfieldResolution * 0.4;
+                
+                const endX = posX + Math.cos(angle) * length;
+                const endY = posY + Math.sin(angle) * length;
+                
+                buffer.line(posX, posY, endX, endY);
+                
+                // Dibujar punta de flecha
+                const arrowSize = 3;
+                const arrowAngle1 = angle + Math.PI * 0.75;
+                const arrowAngle2 = angle - Math.PI * 0.75;
+                
+                buffer.line(endX, endY, endX + Math.cos(arrowAngle1) * arrowSize, endY + Math.sin(arrowAngle1) * arrowSize);
+                buffer.line(endX, endY, endX + Math.cos(arrowAngle2) * arrowSize, endY + Math.sin(arrowAngle2) * arrowSize);
+            }
+        }
+        
+        buffer.pop();
     }
     
     // Generar un valor pseudoaleatorio determinista basado en una semilla
@@ -271,12 +369,29 @@ class ParticleSystem {
     
     // Actualizar todas las partículas
     update() {
+        // Inicializar el flowfield si no está inicializado
+        if (!this.flowfieldInitialized) {
+            this.initFlowfield();
+        }
+        
+        // Actualizar el flowfield solo si está inicializado
+        if (this.flowfieldInitialized) {
+            this.updateFlowfield();
+        }
+        
         // Actualizar cada partícula
         for (let i = this.particles.length - 1; i >= 0; i--) {
-            this.particles[i].update();
+            const particle = this.particles[i];
+            
+            // Obtener la fuerza del flowfield en la posición de la partícula (solo si está inicializado)
+            const flowfieldForce = this.flowfieldInitialized ? 
+                this.getFlowfieldForce(particle.x, particle.y) : null;
+            
+            // Actualizar la partícula con la fuerza del flowfield
+            particle.update(flowfieldForce);
             
             // Eliminar partículas muertas
-            if (!this.particles[i].isAlive()) {
+            if (!particle.isAlive()) {
                 this.particles.splice(i, 1);
             }
         }
@@ -295,8 +410,16 @@ class ParticleSystem {
     }
 }
 
-// Instancia global del sistema de partículas
-let artBrushParticleSystem = new ParticleSystem();
+// Instancia global del sistema de partículas (se inicializa de forma lazy)
+let artBrushParticleSystem = null;
+
+// Función para obtener o crear la instancia del sistema de partículas
+function getParticleSystem() {
+    if (!artBrushParticleSystem) {
+        artBrushParticleSystem = new ParticleSystem();
+    }
+    return artBrushParticleSystem;
+}
 
 /**
  * Función básica para dibujar el pincel artístico
@@ -321,14 +444,14 @@ function drawBasicArtBrush(buffer, x, y, pmouseX, pmouseY, particleCount, size, 
     // Si se proporcionan parámetros de sincronización completos, usarlos directamente
     if (syncParams && syncParams.particleParams) {
         // Usar los parámetros exactos para cada partícula
-        return artBrushParticleSystem.addParticlesWithParams({
+        return getParticleSystem().addParticlesWithParams({
             x, y, pmouseX, pmouseY, count: particleCount, color, size,
             particleParams: syncParams.particleParams
         });
     } 
     // Si solo se proporciona la semilla base, usar los parámetros básicos
     else if (syncParams && syncParams.baseSeed) {
-        return artBrushParticleSystem.addParticlesWithParams({
+        return getParticleSystem().addParticlesWithParams({
             x, y, pmouseX, pmouseY, count: particleCount, color, size,
             baseSeed: syncParams.baseSeed,
             mouseDirection: syncParams.mouseDirection,
@@ -338,7 +461,7 @@ function drawBasicArtBrush(buffer, x, y, pmouseX, pmouseY, particleCount, size, 
     // Si no hay parámetros de sincronización, generar nuevos
     else {
         // Añadir partículas al sistema y devolver los parámetros usados
-        return artBrushParticleSystem.addParticles(
+        return getParticleSystem().addParticles(
             x, y,             // Posición actual
             pmouseX, pmouseY, // Posición anterior
             particleCount,    // Número de partículas
@@ -433,7 +556,7 @@ function drawArtBrush(buffer, x, y, pmouseX, pmouseY, particleCount, size, color
  * Actualiza el sistema de partículas del Art Brush
  */
 function updateArtBrush() {
-    artBrushParticleSystem.update();
+    getParticleSystem().update();
 }
 
 /**
@@ -441,5 +564,67 @@ function updateArtBrush() {
  * @param {p5.Graphics} buffer - Buffer donde dibujar
  */
 function drawArtBrushParticles(buffer) {
-    artBrushParticleSystem.draw(buffer);
+    getParticleSystem().draw(buffer);
+}
+
+/**
+ * Dibuja el flowfield en el GUI buffer
+ * @param {p5.Graphics} buffer - Buffer donde dibujar
+ */
+function drawArtBrushFlowfield(buffer) {
+    getParticleSystem().drawFlowfield(buffer);
+}
+
+/**
+ * Actualiza la configuración del flowfield
+ */
+function updateFlowfieldConfig() {
+    const colsInput = document.getElementById('flowfieldCols');
+    const rowsInput = document.getElementById('flowfieldRows');
+    const strengthInput = document.getElementById('flowfieldStrength');
+    const speedInput = document.getElementById('flowfieldSpeed');
+    const showCheckbox = document.getElementById('showFlowfield');
+    
+    const system = getParticleSystem();
+    
+    if (colsInput) {
+        const cols = parseInt(colsInput.value);
+        system.flowfieldCols = cols;
+        system.flowfieldResolution = windowWidth / cols;
+        // Actualizar valor mostrado
+        const valueSpan = document.getElementById('flowfieldCols-value');
+        if (valueSpan) valueSpan.textContent = cols;
+    }
+    
+    if (rowsInput) {
+        const rows = parseInt(rowsInput.value);
+        system.flowfieldRows = rows;
+        if (!colsInput) {
+            system.flowfieldResolution = windowHeight / rows;
+        }
+        // Actualizar valor mostrado
+        const valueSpan = document.getElementById('flowfieldRows-value');
+        if (valueSpan) valueSpan.textContent = rows;
+    }
+    
+    if (strengthInput) {
+        system.flowfieldStrength = parseFloat(strengthInput.value);
+        // Actualizar valor mostrado
+        const valueSpan = document.getElementById('flowfieldStrength-value');
+        if (valueSpan) valueSpan.textContent = parseFloat(strengthInput.value).toFixed(2);
+    }
+    
+    if (speedInput) {
+        system.noiseZSpeed = parseFloat(speedInput.value);
+        // Actualizar valor mostrado
+        const valueSpan = document.getElementById('flowfieldSpeed-value');
+        if (valueSpan) valueSpan.textContent = parseFloat(speedInput.value).toFixed(3);
+    }
+    
+    if (showCheckbox) {
+        system.showFlowfield = showCheckbox.checked;
+    }
+    
+    // Reinicializar el flowfield con la nueva configuración
+    system.initFlowfield();
 }

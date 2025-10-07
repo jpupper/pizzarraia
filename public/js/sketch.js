@@ -315,6 +315,9 @@ function draw() {
         cursorGUI.display(guiBuffer);
     }
     
+    // Dibujar el flowfield en el GUI buffer si está activado
+    drawArtBrushFlowfield(guiBuffer);
+    
     // Mostrar el buffer GUI siempre
     image(guiBuffer, 0, 0);
     
@@ -588,6 +591,11 @@ function keyPressed() {
     // Cerrar cursor GUI con ESC
     if (keyCode === ESCAPE && window.cursorGUI) {
         cursorGUI.hide();
+    }
+    // Cambiar entre slots de la paleta con las teclas 1-5
+    if (window.cursorGUI && key >= '1' && key <= '5') {
+        const slotIndex = parseInt(key) - 1;
+        cursorGUI.selectPaletteSlot(slotIndex);
     }
 }
 
