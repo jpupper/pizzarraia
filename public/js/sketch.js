@@ -996,20 +996,52 @@ function receiveFlowfieldSync(data) {
     console.log('Recibida sincronización de flowfield:', data);
 }
 
+// Función para toggle del flowfield (sincronizada)
+function toggleFlowfield() {
+    const checkbox = document.getElementById('activateFlowfield');
+    const controlsDiv = document.getElementById('flowfieldControls');
+    const system = getParticleSystem();
+    
+    // Actualizar el estado del flowfield
+    system.flowfieldActive = checkbox.checked;
+    
+    // Mostrar/ocultar controles
+    if (checkbox.checked) {
+        controlsDiv.style.display = 'block';
+    } else {
+        controlsDiv.style.display = 'none';
+    }
+    
+    // Enviar el cambio a otros clientes
+    if (config.sockets.sendEnabled) {
+        socket.emit('flowfield_config', {
+            active: checkbox.checked,
+            seed: system.flowfieldSeed,
+            noiseZ: system.noiseZ,
+            cols: system.flowfieldCols,
+            rows: system.flowfieldRows,
+            strength: system.flowfieldStrength,
+            speed: system.noiseZSpeed,
+            noiseScale: system.noiseScale
+        });
+        console.log('Flowfield', checkbox.checked ? 'activado' : 'desactivado');
+    }
+}
+
 // Función para enviar cambios de configuración del flowfield
 function sendFlowfieldConfigUpdate() {
     if (!config.sockets.sendEnabled) return;
     
     const system = getParticleSystem();
     const data = {
+        active: system.flowfieldActive,
         seed: system.flowfieldSeed,
         noiseZ: system.noiseZ,
         cols: system.flowfieldCols,
         rows: system.flowfieldRows,
         strength: system.flowfieldStrength,
         speed: system.noiseZSpeed,
-        noiseScale: system.noiseScale,
-        showFlowfield: system.showFlowfield
+        noiseScale: system.noiseScale
     };
     
     socket.emit('flowfield_config', data);
@@ -1023,6 +1055,20 @@ function receiveFlowfieldConfig(data) {
     console.log('Recibida configuración de flowfield:', data);
     
     const system = getParticleSystem();
+    const activateCheckbox = document.getElementById('activateFlowfield');
+    const controlsDiv = document.getElementById('flowfieldControls');
+    
+    // Actualizar el estado activo del flowfield
+    if (data.active !== undefined) {
+        system.flowfieldActive = data.active;
+        if (activateCheckbox) {
+            activateCheckbox.checked = data.active;
+        }
+        // Mostrar/ocultar controles
+        if (controlsDiv) {
+            controlsDiv.style.display = data.active ? 'block' : 'none';
+        }
+    }
     
     // Actualizar el sistema con los nuevos valores
     if (data.seed !== undefined) system.flowfieldSeed = data.seed;
@@ -1037,14 +1083,12 @@ function receiveFlowfieldConfig(data) {
     if (data.strength !== undefined) system.flowfieldStrength = data.strength;
     if (data.speed !== undefined) system.noiseZSpeed = data.speed;
     if (data.noiseScale !== undefined) system.noiseScale = data.noiseScale;
-    if (data.showFlowfield !== undefined) system.showFlowfield = data.showFlowfield;
     
     // Actualizar los sliders y valores mostrados en la UI
     const colsInput = document.getElementById('flowfieldCols');
     const rowsInput = document.getElementById('flowfieldRows');
     const strengthInput = document.getElementById('flowfieldStrength');
     const speedInput = document.getElementById('flowfieldSpeed');
-    const showCheckbox = document.getElementById('showFlowfield');
     
     if (colsInput && data.cols !== undefined) {
         colsInput.value = data.cols;
@@ -1068,10 +1112,6 @@ function receiveFlowfieldConfig(data) {
         speedInput.value = data.speed;
         const valueSpan = document.getElementById('flowfieldSpeed-value');
         if (valueSpan) valueSpan.textContent = data.speed.toFixed(3);
-    }
-    
-    if (showCheckbox && data.showFlowfield !== undefined) {
-        showCheckbox.checked = data.showFlowfield;
     }
     
     // Reinicializar el flowfield con la nueva configuración

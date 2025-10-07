@@ -111,11 +111,12 @@ class ParticleSystem {
         
         // Flowfield configuration
         this.flowfield = [];
+        this.flowfieldActive = false; // Si el flowfield está activo (sincronizado)
         this.flowfieldCols = 20;
         this.flowfieldRows = 20;
         this.flowfieldResolution = 20;
         this.flowfieldStrength = 0.1;
-        this.showFlowfield = false;
+        this.showFlowfield = false; // Solo para visualización (no sincronizado)
         this.noiseScale = 0.1; // Aumentado para más variación (era 0.01)
         this.noiseZ = 0;
         this.noiseZSpeed = 0.003; // Velocidad de cambio del flowfield
@@ -409,8 +410,8 @@ class ParticleSystem {
         for (let i = this.particles.length - 1; i >= 0; i--) {
             const particle = this.particles[i];
             
-            // Obtener la fuerza del flowfield en la posición de la partícula (solo si está inicializado)
-            const flowfieldForce = this.flowfieldInitialized ? 
+            // Obtener la fuerza del flowfield en la posición de la partícula (solo si está activo e inicializado)
+            const flowfieldForce = (this.flowfieldActive && this.flowfieldInitialized) ? 
                 this.getFlowfieldForce(particle.x, particle.y) : null;
             
             // Actualizar la partícula con la fuerza del flowfield
