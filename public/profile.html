@@ -404,19 +404,38 @@
                 
                 const item = document.createElement('div');
                 item.className = 'gallery-item';
-                item.innerHTML = `
-                    <div class="gallery-item-image" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 3rem;">
-                        🎨
-                    </div>
-                    <div class="gallery-item-info">
-                        <h3 class="gallery-item-title">${escapeHtml(image.title)}</h3>
-                        <p class="gallery-item-date">${formattedDate}</p>
-                        <div class="gallery-item-actions">
-                            <button class="btn btn-primary btn-small" onclick="viewImage('${image._id}')">Ver</button>
-                            <button class="btn btn-danger btn-small" onclick="deleteImage('${image._id}')">Eliminar</button>
-                        </div>
+                
+                // Crear elemento img y cargar la imagen
+                const imgElement = document.createElement('img');
+                imgElement.className = 'gallery-item-image';
+                imgElement.alt = escapeHtml(image.title);
+                imgElement.style.cursor = 'pointer';
+                imgElement.onclick = () => viewImage(image._id);
+                
+                // Cargar la imagen completa para la miniatura
+                fetch(`/api/images/${image._id}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.image && data.image.imageData) {
+                            imgElement.src = data.image.imageData;
+                        }
+                    })
+                    .catch(err => console.error('Error loading thumbnail:', err));
+                
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'gallery-item-info';
+                infoDiv.innerHTML = `
+                    <h3 class="gallery-item-title">${escapeHtml(image.title)}</h3>
+                    <p class="gallery-item-date">${formattedDate}</p>
+                    <div class="gallery-item-actions">
+                        <button class="btn btn-primary btn-small" onclick="viewImage('${image._id}')">Ver</button>
+                        <button class="btn btn-secondary btn-small" onclick="downloadImage('${image._id}', '${escapeHtml(image.title)}')">Descargar</button>
+                        <button class="btn btn-danger btn-small" onclick="deleteImage('${image._id}')">Eliminar</button>
                     </div>
                 `;
+                
+                item.appendChild(imgElement);
+                item.appendChild(infoDiv);
                 galleryGrid.appendChild(item);
             });
         }
@@ -433,6 +452,26 @@
             } catch (error) {
                 console.error('Error loading image:', error);
                 alert('Error al cargar la imagen');
+            }
+        }
+
+        async function downloadImage(imageId, title) {
+            try {
+                const response = await fetch(`/api/images/${imageId}`);
+                const data = await response.json();
+                
+                if (data.image) {
+                    // Crear un enlace temporal para descargar
+                    const link = document.createElement('a');
+                    link.href = data.image.imageData;
+                    link.download = `${title || 'dibujo'}.png`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+            } catch (error) {
+                console.error('Error downloading image:', error);
+                alert('Error al descargar la imagen');
             }
         }
 
