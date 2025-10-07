@@ -315,12 +315,36 @@ function updateLayerPreviews() {
     
     for (let i = 0; i < 5; i++) {
         const previewCanvas = document.getElementById(`layerPreview${i}`);
-        if (previewCanvas) {
+        if (previewCanvas && layers[i]) {
             const ctx = previewCanvas.getContext('2d');
-            // Limpiar el canvas de preview
-            ctx.clearRect(0, 0, 80, 60);
-            // Dibujar la capa escalada
-            ctx.drawImage(layers[i].canvas, 0, 0, windowWidth, windowHeight, 0, 0, 80, 60);
+            
+            // FORZAR las dimensiones del canvas de preview
+            const previewW = 100;
+            const previewH = 56;
+            previewCanvas.width = previewW;
+            previewCanvas.height = previewH;
+            
+            // Obtener las dimensiones REALES del canvas de la capa (el buffer de p5.js)
+            const sourceCanvas = layers[i].canvas;
+            const sourceW = sourceCanvas.width;
+            const sourceH = sourceCanvas.height;
+            
+            // Debug: imprimir dimensiones la primera vez
+            if (i === 0 && frameCount === 10) {
+                console.log('Source canvas:', sourceW, 'x', sourceH);
+                console.log('Preview canvas:', previewW, 'x', previewH);
+            }
+            
+            // Limpiar completamente
+            ctx.clearRect(0, 0, previewW, previewH);
+            
+            // DIBUJAR TODO EL CANVAS SOURCE ESTIRADO AL PREVIEW
+            // drawImage(source, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight)
+            ctx.drawImage(
+                sourceCanvas,
+                0, 0, sourceW, sourceH,           // Source: TODO el canvas (desde 0,0 hasta sourceW,sourceH)
+                0, 0, previewW, previewH          // Destination: TODO el preview (estirado a 100x56)
+            );
         }
     }
 }

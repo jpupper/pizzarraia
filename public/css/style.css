@@ -835,6 +835,18 @@ select option {
     transform: scale(1.05);
 }
 
+/* Estilos para canvas de previsualización de capas */
+canvas[id^="layerPreview"] {
+    width: 100px !important;
+    height: 56px !important;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    image-rendering: auto;
+    object-fit: fill !important; /* FORZAR que se estire para llenar todo */
+    display: block;
+}
+
 /* Estilos para botones de capas */
 .layer-btn {
     width: 40px;
