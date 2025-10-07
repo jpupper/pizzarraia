@@ -89,11 +89,18 @@ function setupCloseButton() {
 
 function setupButtonEvents() {
     const openButton = document.getElementById("opengui");
+    
+    // Eventos de hover
     openButton.addEventListener("mouseover", () => {
         isOverOpenButton = true;
     });
     openButton.addEventListener("mouseout", () => {
         isOverOpenButton = false;
+    });
+    
+    // Evento de click para abrir el GUI
+    openButton.addEventListener("click", () => {
+        openGui();
     });
 }
 
