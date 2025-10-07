@@ -1,4 +1,3 @@
-
 var GUI = document.getElementById("gui");
 var MODAL = document.getElementById("modal");
 var isModalOpen = true;
@@ -11,6 +10,7 @@ window.onload = function() {
     setupBrushSelector();
     setupChat();
     setupTabs();
+    checkUserAuthentication();
 };
 
 // Función para inicializar sliders desde config.js
@@ -638,3 +638,142 @@ function setupTabs() {
     });
   });
 }
+
+// ============================================================
+// FUNCIONES DE AUTENTICACIÓN Y GUARDADO
+// ============================================================
+
+// Variable global para almacenar el usuario actual
+let currentUser = null;
+
+// Función para verificar la autenticación del usuario
+async function checkUserAuthentication() {
+  try {
+    const response = await fetch('/api/check-session');
+    const data = await response.json();
+    
+    if (data.authenticated) {
+      currentUser = data.user;
+      showUserLoggedIn(data.user.username);
+    } else {
+      currentUser = null;
+      showUserNotLoggedIn();
+    }
+  } catch (error) {
+    console.error('Error checking authentication:', error);
+    showUserNotLoggedIn();
+  }
+}
+
+// Función para mostrar el estado de usuario logueado
+function showUserLoggedIn(username) {
+  const userNotLoggedIn = document.getElementById('userNotLoggedIn');
+  const userLoggedIn = document.getElementById('userLoggedIn');
+  const loggedUsername = document.getElementById('loggedUsername');
+  
+  if (userNotLoggedIn) userNotLoggedIn.style.display = 'none';
+  if (userLoggedIn) userLoggedIn.style.display = 'block';
+  if (loggedUsername) loggedUsername.textContent = username;
+  
+  console.log('Usuario logueado:', username);
+}
+
+// Función para mostrar el estado de usuario no logueado
+function showUserNotLoggedIn() {
+  const userNotLoggedIn = document.getElementById('userNotLoggedIn');
+  const userLoggedIn = document.getElementById('userLoggedIn');
+  
+  if (userNotLoggedIn) userNotLoggedIn.style.display = 'block';
+  if (userLoggedIn) userLoggedIn.style.display = 'none';
+  
+  console.log('Usuario no logueado');
+}
+
+// Función para cerrar sesión
+async function logoutUser() {
+  try {
+    await fetch('/api/logout', { method: 'POST' });
+    currentUser = null;
+    showUserNotLoggedIn();
+    alert('Sesión cerrada exitosamente');
+  } catch (error) {
+    console.error('Error al cerrar sesión:', error);
+    alert('Error al cerrar sesión');
+  }
+}
+
+// Función para guardar la imagen en el servidor
+async function saveImageToServer() {
+  // Verificar si el usuario está logueado
+  if (!currentUser) {
+    alert('Debes iniciar sesión para guardar imágenes');
+    // Cambiar a la pestaña de usuario
+    const userTab = document.querySelector('[data-tab="user"]');
+    if (userTab) userTab.click();
+    return;
+  }
+  
+  // Verificar que drawBuffer existe
+  if (!window.drawBuffer) {
+    alert('No hay imagen para guardar');
+    return;
+  }
+  
+  // Pedir título para la imagen
+  const title = prompt('Ingresa un título para tu dibujo:', 'Mi dibujo');
+  if (title === null) return; // Usuario canceló
+  
+  try {
+    // Convertir el canvas a base64
+    const canvas = drawBuffer.canvas;
+    const imageData = canvas.toDataURL('image/png', 1.0);
+    
+    // Mostrar indicador de carga
+    const saveButton = document.getElementById('saveButton');
+    if (saveButton) {
+      saveButton.style.opacity = '0.5';
+      saveButton.style.pointerEvents = 'none';
+    }
+    
+    // Enviar al servidor
+    const response = await fetch('/api/images', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        title: title || 'Sin título',
+        imageData: imageData
+      })
+    });
+    
+    const data = await response.json();
+    
+    // Restaurar botón
+    if (saveButton) {
+      saveButton.style.opacity = '1';
+      saveButton.style.pointerEvents = 'auto';
+    }
+    
+    if (response.ok) {
+      alert('¡Imagen guardada exitosamente!');
+      console.log('Imagen guardada:', data.image);
+    } else {
+      alert('Error al guardar: ' + (data.error || 'Error desconocido'));
+    }
+  } catch (error) {
+    console.error('Error guardando imagen:', error);
+    alert('Error al guardar la imagen. Por favor intenta de nuevo.');
+    
+    // Restaurar botón en caso de error
+    const saveButton = document.getElementById('saveButton');
+    if (saveButton) {
+      saveButton.style.opacity = '1';
+      saveButton.style.pointerEvents = 'auto';
+    }
+  }
+}
+
+// Hacer las funciones accesibles globalmente
+window.logoutUser = logoutUser;
+window.saveImageToServer = saveImageToServer;
