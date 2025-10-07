@@ -92,6 +92,9 @@ function setup() {
     // Configurar evento para recibir sincronización de flowfield
     socket.on("flowfield_sync", receiveFlowfieldSync);
     
+    // Configurar evento para recibir cambios de configuración del flowfield
+    socket.on("flowfield_config", receiveFlowfieldConfig);
+    
     // Inicializar valores
     asignarValores();
     drawBuffer.background(0);
@@ -944,20 +947,35 @@ function updateRemoteCursor(data) {
     PS.processCursorData(data);
 }
 
-// Función para enviar sincronización de flowfield
+// Función para enviar sincronización de flowfield (completa con configuración)
 function sendFlowfieldSync() {
     if (!config.sockets.sendEnabled) return;
     
     const system = getParticleSystem();
-    const data = {
+    
+    // Enviar seed y noiseZ
+    const syncData = {
         seed: system.flowfieldSeed,
         noiseZ: system.noiseZ,
         noiseScale: system.noiseScale,
         noiseZSpeed: system.noiseZSpeed
     };
+    socket.emit('flowfield_sync', syncData);
     
-    socket.emit('flowfield_sync', data);
-    console.log('Enviando sincronización de flowfield:', data);
+    // También enviar la configuración completa
+    const configData = {
+        seed: system.flowfieldSeed,
+        noiseZ: system.noiseZ,
+        cols: system.flowfieldCols,
+        rows: system.flowfieldRows,
+        strength: system.flowfieldStrength,
+        speed: system.noiseZSpeed,
+        noiseScale: system.noiseScale,
+        showFlowfield: system.showFlowfield
+    };
+    socket.emit('flowfield_config', configData);
+    
+    console.log('Enviando sincronización completa de flowfield:', configData);
 }
 
 // Función para recibir sincronización de flowfield
@@ -976,6 +994,88 @@ function receiveFlowfieldSync(data) {
     }
     
     console.log('Recibida sincronización de flowfield:', data);
+}
+
+// Función para enviar cambios de configuración del flowfield
+function sendFlowfieldConfigUpdate() {
+    if (!config.sockets.sendEnabled) return;
+    
+    const system = getParticleSystem();
+    const data = {
+        seed: system.flowfieldSeed,
+        noiseZ: system.noiseZ,
+        cols: system.flowfieldCols,
+        rows: system.flowfieldRows,
+        strength: system.flowfieldStrength,
+        speed: system.noiseZSpeed,
+        noiseScale: system.noiseScale,
+        showFlowfield: system.showFlowfield
+    };
+    
+    socket.emit('flowfield_config', data);
+    console.log('Enviando configuración de flowfield:', data);
+}
+
+// Función para recibir cambios de configuración del flowfield
+function receiveFlowfieldConfig(data) {
+    if (!config.sockets.receiveEnabled) return;
+    
+    console.log('Recibida configuración de flowfield:', data);
+    
+    const system = getParticleSystem();
+    
+    // Actualizar el sistema con los nuevos valores
+    if (data.seed !== undefined) system.flowfieldSeed = data.seed;
+    if (data.noiseZ !== undefined) system.noiseZ = data.noiseZ;
+    if (data.cols !== undefined) {
+        system.flowfieldCols = data.cols;
+        system.flowfieldResolution = windowWidth / data.cols;
+    }
+    if (data.rows !== undefined) {
+        system.flowfieldRows = data.rows;
+    }
+    if (data.strength !== undefined) system.flowfieldStrength = data.strength;
+    if (data.speed !== undefined) system.noiseZSpeed = data.speed;
+    if (data.noiseScale !== undefined) system.noiseScale = data.noiseScale;
+    if (data.showFlowfield !== undefined) system.showFlowfield = data.showFlowfield;
+    
+    // Actualizar los sliders y valores mostrados en la UI
+    const colsInput = document.getElementById('flowfieldCols');
+    const rowsInput = document.getElementById('flowfieldRows');
+    const strengthInput = document.getElementById('flowfieldStrength');
+    const speedInput = document.getElementById('flowfieldSpeed');
+    const showCheckbox = document.getElementById('showFlowfield');
+    
+    if (colsInput && data.cols !== undefined) {
+        colsInput.value = data.cols;
+        const valueSpan = document.getElementById('flowfieldCols-value');
+        if (valueSpan) valueSpan.textContent = data.cols;
+    }
+    
+    if (rowsInput && data.rows !== undefined) {
+        rowsInput.value = data.rows;
+        const valueSpan = document.getElementById('flowfieldRows-value');
+        if (valueSpan) valueSpan.textContent = data.rows;
+    }
+    
+    if (strengthInput && data.strength !== undefined) {
+        strengthInput.value = data.strength;
+        const valueSpan = document.getElementById('flowfieldStrength-value');
+        if (valueSpan) valueSpan.textContent = data.strength.toFixed(2);
+    }
+    
+    if (speedInput && data.speed !== undefined) {
+        speedInput.value = data.speed;
+        const valueSpan = document.getElementById('flowfieldSpeed-value');
+        if (valueSpan) valueSpan.textContent = data.speed.toFixed(3);
+    }
+    
+    if (showCheckbox && data.showFlowfield !== undefined) {
+        showCheckbox.checked = data.showFlowfield;
+    }
+    
+    // Reinicializar el flowfield con la nueva configuración
+    system.initFlowfield();
 }
 
 // Función para limpiar el fondo localmente

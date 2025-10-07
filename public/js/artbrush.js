@@ -603,8 +603,9 @@ function drawArtBrushFlowfield(buffer) {
 
 /**
  * Actualiza la configuración del flowfield
+ * @param {boolean} sendToOthers - Si es true, envía los cambios a otros clientes
  */
-function updateFlowfieldConfig() {
+function updateFlowfieldConfig(sendToOthers = true) {
     const colsInput = document.getElementById('flowfieldCols');
     const rowsInput = document.getElementById('flowfieldRows');
     const strengthInput = document.getElementById('flowfieldStrength');
@@ -653,4 +654,9 @@ function updateFlowfieldConfig() {
     
     // Reinicializar el flowfield con la nueva configuración
     system.initFlowfield();
+    
+    // Enviar configuración a otros clientes si está habilitado
+    if (sendToOthers && typeof sendFlowfieldConfigUpdate === 'function') {
+        sendFlowfieldConfigUpdate();
+    }
 }
