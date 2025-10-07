@@ -8,13 +8,13 @@ class CursorGUI {
         this.isVisible = false;
         this.centerX = 0;
         this.centerY = 0;
-        this.radius = 100; // Radio del círculo de colores
-        this.innerRadius = 30; // Radio del círculo central
-        this.sizeBarWidth = 200; // Ancho de la barra de tamaño
-        this.sizeBarHeight = 30; // Alto de la barra de tamaño
-        this.alphaBarY = 0; // Posición Y de la barra de transparencia (arriba)
-        this.saturationBarY = 0; // Posición Y de la barra de saturación (arriba)
-        this.brightnessBarY = 0; // Posición Y de la barra de brillo (arriba)
+        this.sizeBarWidth = 200; // Ancho de las barras
+        this.sizeBarHeight = 30; // Alto de las barras
+        this.hueBarY = 0; // Posición Y de la barra de tono (arriba)
+        this.saturationBarY = 0; // Posición Y de la barra de saturación
+        this.brightnessBarY = 0; // Posición Y de la barra de brillo
+        this.alphaBarY = 0; // Posición Y de la barra de transparencia
+        this.paletteY = 0; // Posición Y de los slots de paleta
         this.sizeBarY = 0; // Posición Y de la barra de tamaño (abajo)
         
         // Timer para detectar long press
@@ -28,36 +28,10 @@ class CursorGUI {
         this.pressStartY = 0;
         this.movementThreshold = 10; // Píxeles de tolerancia de movimiento
         
-        // Colores base para la rueda (se mezclarán con la paleta)
-        this.baseColors = [
-            '#FF0000', // Rojo
-            '#FF7F00', // Naranja
-            '#FFFF00', // Amarillo
-            '#7FFF00', // Lima
-            '#00FF00', // Verde
-            '#00FF7F', // Verde agua
-            '#00FFFF', // Cian
-            '#007FFF', // Azul cielo
-            '#0000FF', // Azul
-            '#7F00FF', // Violeta
-            '#FF00FF', // Magenta
-            '#FF007F'  // Rosa
-        ];
-        
-        // Colores adicionales fijos
-        this.fixedColors = [
-            '#FFFFFF', // Blanco
-            '#CCCCCC', // Gris claro
-            '#888888', // Gris
-            '#444444', // Gris oscuro
-            '#000000'  // Negro
-        ];
-        
-        
-        this.selectedColor = null;
-        this.hoveredColor = null;
+        // Variables para hover
         this.hoveredSize = null;
         this.hoveredAlpha = null;
+        this.hoveredHue = null;
         this.hoveredSaturation = null;
         this.hoveredBrightness = null;
         this.hoveredPaletteSlot = null;
@@ -143,13 +117,29 @@ class CursorGUI {
         this.isVisible = true;
         this.centerX = x;
         this.centerY = y;
-        // Calcular posición de las barras
-        // Arriba del círculo: transparencia, saturación y brillo
-        this.alphaBarY = y - this.radius - 180;
-        this.saturationBarY = this.alphaBarY + 50;
-        this.brightnessBarY = this.saturationBarY + 50;
-        // Abajo del círculo: tamaño
-        this.sizeBarY = y + this.radius + 60;
+        
+        // Calcular posiciones de las barras (de arriba hacia abajo)
+        let currentY = y - 200; // Empezar arriba
+        
+        this.hueBarY = currentY;
+        currentY += 50;
+        
+        this.saturationBarY = currentY;
+        currentY += 50;
+        
+        this.brightnessBarY = currentY;
+        currentY += 50;
+        
+        this.alphaBarY = currentY;
+        currentY += 60;
+        
+        // Slots de paleta en el centro
+        this.paletteY = currentY;
+        currentY += 70;
+        
+        // Barra de tamaño abajo
+        this.sizeBarY = currentY;
+        
         console.log('Cursor GUI mostrado en:', x, y);
     }
     
@@ -158,9 +148,9 @@ class CursorGUI {
      */
     hide() {
         this.isVisible = false;
-        this.hoveredColor = null;
         this.hoveredSize = null;
         this.hoveredAlpha = null;
+        this.hoveredHue = null;
         this.hoveredSaturation = null;
         this.hoveredBrightness = null;
         this.hoveredPaletteSlot = null;
@@ -173,8 +163,7 @@ class CursorGUI {
     getPaletteSlotPosition(index) {
         const totalWidth = (this.paletteSlotSize * 5) + (this.paletteSlotSpacing * 4);
         const startX = this.centerX - totalWidth / 2;
-        // Posicionar los slots debajo de la rueda de colores
-        const y = this.centerY + this.radius + 80;
+        const y = this.paletteY;
         const x = startX + (index * (this.paletteSlotSize + this.paletteSlotSpacing));
         
         return { x, y };
@@ -225,80 +214,35 @@ class CursorGUI {
     }
     
     /**
-     * Generar los colores de la rueda basados en la paleta activa
-     */
-    getWheelColors() {
-        // Combinar los colores de la paleta con los colores fijos
-        return [...this.colorPalette, ...this.fixedColors];
-    }
-    
-    /**
      * Verificar si un punto está dentro del selector
      */
     isPointInside(x, y) {
         if (!this.isVisible) return false;
         
-        // Verificar si está en el círculo de colores
-        const dist = Math.sqrt(
-            Math.pow(x - this.centerX, 2) + 
-            Math.pow(y - this.centerY, 2)
-        );
-        if (dist <= this.radius + 40) return true;
+        const barX = this.centerX - this.sizeBarWidth / 2;
         
-        // Verificar si está en la barra de tamaño
-        const sizeBarX = this.centerX - this.sizeBarWidth / 2;
-        if (x >= sizeBarX && x <= sizeBarX + this.sizeBarWidth &&
-            y >= this.sizeBarY && y <= this.sizeBarY + this.sizeBarHeight) {
-            return true;
+        // Verificar todas las barras
+        const bars = [
+            { y: this.hueBarY },
+            { y: this.saturationBarY },
+            { y: this.brightnessBarY },
+            { y: this.alphaBarY },
+            { y: this.sizeBarY }
+        ];
+        
+        for (const bar of bars) {
+            if (x >= barX && x <= barX + this.sizeBarWidth &&
+                y >= bar.y && y <= bar.y + this.sizeBarHeight) {
+                return true;
+            }
         }
         
-        // Verificar si está en la barra de transparencia
-        if (x >= sizeBarX && x <= sizeBarX + this.sizeBarWidth &&
-            y >= this.alphaBarY && y <= this.alphaBarY + this.sizeBarHeight) {
-            return true;
-        }
-        
-        // Verificar si está en la barra de saturación
-        if (x >= sizeBarX && x <= sizeBarX + this.sizeBarWidth &&
-            y >= this.saturationBarY && y <= this.saturationBarY + this.sizeBarHeight) {
-            return true;
-        }
-        
-        // Verificar si está en la barra de brillo
-        if (x >= sizeBarX && x <= sizeBarX + this.sizeBarWidth &&
-            y >= this.brightnessBarY && y <= this.brightnessBarY + this.sizeBarHeight) {
+        // Verificar slots de paleta
+        if (this.getPaletteSlotAt(x, y) !== null) {
             return true;
         }
         
         return false;
-    }
-    
-    /**
-     * Obtener el color en una posición específica
-     */
-    getColorAt(x, y) {
-        if (!this.isVisible) return null;
-        
-        const dx = x - this.centerX;
-        const dy = y - this.centerY;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        const angle = Math.atan2(dy, dx);
-        
-        // Verificar si está sobre un slot de la paleta (tiene prioridad)
-        const paletteSlot = this.getPaletteSlotAt(x, y);
-        if (paletteSlot !== null) {
-            return null; // Los slots se manejan por separado
-        }
-        
-        // Anillo de colores
-        if (distance >= this.innerRadius && distance < this.radius) {
-            const wheelColors = this.getWheelColors();
-            const normalizedAngle = (angle + Math.PI) / (2 * Math.PI);
-            const colorIndex = Math.floor(normalizedAngle * wheelColors.length);
-            return wheelColors[colorIndex % wheelColors.length];
-        }
-        
-        return null;
     }
     
     /**
@@ -340,6 +284,27 @@ class CursorGUI {
             const percentage = relativeX / this.sizeBarWidth;
             const alpha = Math.round(percentage * 255);
             return alpha;
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Obtener el tono (Hue) en una posición específica de la barra
+     */
+    getHueAt(x, y) {
+        if (!this.isVisible) return null;
+        
+        const hueBarX = this.centerX - this.sizeBarWidth / 2;
+        
+        // Verificar si está en la barra de tono
+        if (x >= hueBarX && x <= hueBarX + this.sizeBarWidth &&
+            y >= this.hueBarY && y <= this.hueBarY + this.sizeBarHeight) {
+            
+            // Calcular el tono basado en la posición X (0-360)
+            const relativeX = x - hueBarX;
+            const percentage = relativeX / this.sizeBarWidth;
+            return Math.round(percentage * 360);
         }
         
         return null;
@@ -419,6 +384,13 @@ class CursorGUI {
             return true;
         }
         
+        // Verificar si hizo click en la barra de tono
+        const hue = this.getHueAt(x, y);
+        if (hue !== null) {
+            this.applyHue(hue);
+            return true;
+        }
+        
         // Verificar si hizo click en la barra de saturación
         const saturation = this.getSaturationAt(x, y);
         if (saturation !== null) {
@@ -440,21 +412,6 @@ class CursorGUI {
             return true;
         }
         
-        // Verificar si hizo click en un color
-        const color = this.getColorAt(x, y);
-        if (color && color !== 'current') {
-            this.selectedColor = color;
-            const colorInput = document.getElementById('c1');
-            if (colorInput) {
-                colorInput.value = color;
-                // Actualizar el slot activo de la paleta con el nuevo color
-                this.updateActivePaletteSlot(color);
-                console.log('Color seleccionado:', color);
-            }
-            this.hide();
-            return true;
-        }
-        
         // Si hace click fuera, cerrar
         if (!this.isPointInside(x, y)) {
             this.hide();
@@ -462,6 +419,107 @@ class CursorGUI {
         }
         
         return false;
+    }
+    
+    /**
+     * Convertir RGB a HSB
+     */
+    rgbToHsb(r, g, b) {
+        r /= 255;
+        g /= 255;
+        b /= 255;
+        
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        const delta = max - min;
+        
+        let h = 0;
+        const s = max === 0 ? 0 : delta / max;
+        const v = max;
+        
+        if (delta !== 0) {
+            if (max === r) {
+                h = ((g - b) / delta + (g < b ? 6 : 0)) / 6;
+            } else if (max === g) {
+                h = ((b - r) / delta + 2) / 6;
+            } else {
+                h = ((r - g) / delta + 4) / 6;
+            }
+        }
+        
+        return {
+            h: Math.round(h * 360),
+            s: Math.round(s * 100),
+            b: Math.round(v * 100)
+        };
+    }
+    
+    /**
+     * Convertir HSB a RGB
+     */
+    hsbToRgb(h, s, b) {
+        h = h / 360;
+        s = s / 100;
+        b = b / 100;
+        
+        let r, g, bl;
+        
+        if (s === 0) {
+            r = g = bl = b;
+        } else {
+            const i = Math.floor(h * 6);
+            const f = h * 6 - i;
+            const p = b * (1 - s);
+            const q = b * (1 - f * s);
+            const t = b * (1 - (1 - f) * s);
+            
+            switch (i % 6) {
+                case 0: r = b; g = t; bl = p; break;
+                case 1: r = q; g = b; bl = p; break;
+                case 2: r = p; g = b; bl = t; break;
+                case 3: r = p; g = q; bl = b; break;
+                case 4: r = t; g = p; bl = b; break;
+                case 5: r = b; g = p; bl = q; break;
+            }
+        }
+        
+        // Clamp values to 0-255 range
+        return {
+            r: Math.max(0, Math.min(255, Math.round(r * 255))),
+            g: Math.max(0, Math.min(255, Math.round(g * 255))),
+            b: Math.max(0, Math.min(255, Math.round(bl * 255)))
+        };
+    }
+    
+    /**
+     * Aplicar tono (Hue) al color actual
+     */
+    applyHue(hue) {
+        const colorInput = document.getElementById('c1');
+        if (!colorInput) return;
+        
+        const currentColor = colorInput.value;
+        const r = parseInt(currentColor.substr(1, 2), 16);
+        const g = parseInt(currentColor.substr(3, 2), 16);
+        const b = parseInt(currentColor.substr(5, 2), 16);
+        
+        // Convertir a HSB
+        const hsb = this.rgbToHsb(r, g, b);
+        
+        // Cambiar el tono
+        hsb.h = hue;
+        
+        // Convertir de vuelta a RGB
+        const rgb = this.hsbToRgb(hsb.h, hsb.s, hsb.b);
+        
+        const newColor = '#' + 
+            rgb.r.toString(16).padStart(2, '0') + 
+            rgb.g.toString(16).padStart(2, '0') + 
+            rgb.b.toString(16).padStart(2, '0');
+        
+        colorInput.value = newColor;
+        this.updateActivePaletteSlot(newColor);
+        console.log('Tono aplicado:', hue, '° ->', newColor);
     }
     
     /**
@@ -476,21 +534,22 @@ class CursorGUI {
         const g = parseInt(currentColor.substr(3, 2), 16);
         const b = parseInt(currentColor.substr(5, 2), 16);
         
-        // Convertir a escala de grises
-        const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+        // Convertir a HSB
+        const hsb = this.rgbToHsb(r, g, b);
         
-        // Interpolar entre gris y color original según saturación
-        const sat = saturation / 100;
-        const newR = Math.round(gray + (r - gray) * sat);
-        const newG = Math.round(gray + (g - gray) * sat);
-        const newB = Math.round(gray + (b - gray) * sat);
+        // Cambiar la saturación
+        hsb.s = saturation;
+        
+        // Convertir de vuelta a RGB
+        const rgb = this.hsbToRgb(hsb.h, hsb.s, hsb.b);
         
         const newColor = '#' + 
-            newR.toString(16).padStart(2, '0') + 
-            newG.toString(16).padStart(2, '0') + 
-            newB.toString(16).padStart(2, '0');
+            rgb.r.toString(16).padStart(2, '0') + 
+            rgb.g.toString(16).padStart(2, '0') + 
+            rgb.b.toString(16).padStart(2, '0');
         
         colorInput.value = newColor;
+        this.updateActivePaletteSlot(newColor);
         console.log('Saturación aplicada:', saturation, '% ->', newColor);
     }
     
@@ -506,35 +565,23 @@ class CursorGUI {
         const g = parseInt(currentColor.substr(3, 2), 16);
         const b = parseInt(currentColor.substr(5, 2), 16);
         
-        // Brillo: 0-100 = oscurecer, 100 = neutro, 100-200 = aclarar
-        const factor = brightness / 100;
+        // Convertir a HSB
+        const hsb = this.rgbToHsb(r, g, b);
         
-        let newR, newG, newB;
-        if (factor < 1) {
-            // Oscurecer (interpolar hacia negro)
-            newR = Math.round(r * factor);
-            newG = Math.round(g * factor);
-            newB = Math.round(b * factor);
-        } else {
-            // Aclarar (interpolar hacia blanco)
-            const adjust = factor - 1;
-            newR = Math.round(r + (255 - r) * adjust);
-            newG = Math.round(g + (255 - g) * adjust);
-            newB = Math.round(b + (255 - b) * adjust);
-        }
+        // Cambiar el brillo
+        hsb.b = brightness;
         
-        // Asegurar que estén en el rango 0-255
-        newR = Math.max(0, Math.min(255, newR));
-        newG = Math.max(0, Math.min(255, newG));
-        newB = Math.max(0, Math.min(255, newB));
+        // Convertir de vuelta a RGB
+        const rgb = this.hsbToRgb(hsb.h, hsb.s, hsb.b);
         
         const newColor = '#' + 
-            newR.toString(16).padStart(2, '0') + 
-            newG.toString(16).padStart(2, '0') + 
-            newB.toString(16).padStart(2, '0');
+            rgb.r.toString(16).padStart(2, '0') + 
+            rgb.g.toString(16).padStart(2, '0') + 
+            rgb.b.toString(16).padStart(2, '0');
         
         colorInput.value = newColor;
-        console.log('Brillo aplicado:', brightness, '->', newColor);
+        this.updateActivePaletteSlot(newColor);
+        console.log('Brillo aplicado:', brightness, '% ->', newColor);
     }
     
     /**
@@ -542,7 +589,7 @@ class CursorGUI {
      */
     updateHover(x, y) {
         if (!this.isVisible) return;
-        this.hoveredColor = this.getColorAt(x, y);
+        this.hoveredHue = this.getHueAt(x, y);
         this.hoveredSize = this.getSizeAt(x, y);
         this.hoveredAlpha = this.getAlphaAt(x, y);
         this.hoveredSaturation = this.getSaturationAt(x, y);
@@ -558,45 +605,100 @@ class CursorGUI {
         
         buffer.push();
         
-        // Fondo semi-transparente oscuro
-        buffer.noStroke();
-        buffer.fill(0, 0, 0, 100);
-        buffer.ellipse(this.centerX, this.centerY, (this.radius + 40) * 2);
+        const barX = this.centerX - this.sizeBarWidth / 2;
         
-        // Dibujar anillo de colores usando la paleta activa
-        const wheelColors = this.getWheelColors();
-        const segmentAngle = (2 * Math.PI) / wheelColors.length;
-        for (let i = 0; i < wheelColors.length; i++) {
-            const startAngle = i * segmentAngle - Math.PI;
-            const endAngle = (i + 1) * segmentAngle - Math.PI;
-            
-            buffer.fill(wheelColors[i]);
+        // Obtener el color actual
+        const currentColor = document.getElementById('c1') ? document.getElementById('c1').value : '#FF0000';
+        const r = parseInt(currentColor.substr(1, 2), 16);
+        const g = parseInt(currentColor.substr(3, 2), 16);
+        const b = parseInt(currentColor.substr(5, 2), 16);
+        const currentHSB = this.rgbToHsb(r, g, b);
+        
+        // ===== BARRA DE TONO (HUE) =====
+        buffer.noStroke();
+        buffer.fill(50, 50, 50, 200);
+        buffer.rect(barX, this.hueBarY, this.sizeBarWidth, this.sizeBarHeight, 15);
+        
+        // Gradiente de tono (arcoíris)
+        for (let i = 0; i <= 20; i++) {
+            const hue = (i / 20) * 360;
+            const rgb = this.hsbToRgb(hue, 100, 100);
+            buffer.fill(rgb.r, rgb.g, rgb.b);
             buffer.noStroke();
-            
-            // Dibujar segmento
-            buffer.beginShape();
-            buffer.vertex(this.centerX, this.centerY);
-            for (let a = startAngle; a <= endAngle; a += 0.1) {
-                const x = this.centerX + Math.cos(a) * this.radius;
-                const y = this.centerY + Math.sin(a) * this.radius;
-                buffer.vertex(x, y);
-            }
-            buffer.endShape(CLOSE);
-            
-            // Borde si está en hover
-            if (this.hoveredColor === wheelColors[i]) {
-                buffer.stroke(255, 255, 255, 200);
-                buffer.strokeWeight(3);
-                buffer.noFill();
-                buffer.beginShape();
-                buffer.vertex(this.centerX, this.centerY);
-                for (let a = startAngle; a <= endAngle; a += 0.1) {
-                    const x = this.centerX + Math.cos(a) * this.radius;
-                    const y = this.centerY + Math.sin(a) * this.radius;
-                    buffer.vertex(x, y);
-                }
-                buffer.endShape(CLOSE);
-            }
+            buffer.rect(barX + (this.sizeBarWidth / 20) * i, this.hueBarY + 5, this.sizeBarWidth / 20, this.sizeBarHeight - 10);
+        }
+        
+        // Indicador de tono actual
+        const hueIndicatorX = barX + (currentHSB.h / 360) * this.sizeBarWidth;
+        buffer.fill(100, 200, 255);
+        buffer.stroke(255, 255, 255, 200);
+        buffer.strokeWeight(2);
+        buffer.ellipse(hueIndicatorX, this.hueBarY + this.sizeBarHeight / 2, 20, 20);
+        
+        if (this.hoveredHue !== null) {
+            buffer.fill(255, 255, 255, 230);
+            buffer.noStroke();
+            buffer.textAlign(CENTER, CENTER);
+            buffer.textSize(14);
+            buffer.text(this.hoveredHue + '°', this.centerX, this.hueBarY - 15);
+        }
+        
+        // ===== BARRA DE SATURACIÓN =====
+        buffer.noStroke();
+        buffer.fill(50, 50, 50, 200);
+        buffer.rect(barX, this.saturationBarY, this.sizeBarWidth, this.sizeBarHeight, 15);
+        
+        // Gradiente de saturación (gris a color)
+        for (let i = 0; i <= 20; i++) {
+            const sat = (i / 20) * 100;
+            const rgb = this.hsbToRgb(currentHSB.h, sat, currentHSB.b);
+            buffer.fill(rgb.r, rgb.g, rgb.b);
+            buffer.noStroke();
+            buffer.rect(barX + (this.sizeBarWidth / 20) * i, this.saturationBarY + 5, this.sizeBarWidth / 20, this.sizeBarHeight - 10);
+        }
+        
+        // Indicador de saturación actual
+        const satIndicatorX = barX + (currentHSB.s / 100) * this.sizeBarWidth;
+        buffer.fill(100, 200, 255);
+        buffer.stroke(255, 255, 255, 200);
+        buffer.strokeWeight(2);
+        buffer.ellipse(satIndicatorX, this.saturationBarY + this.sizeBarHeight / 2, 20, 20);
+        
+        if (this.hoveredSaturation !== null) {
+            buffer.fill(255, 255, 255, 230);
+            buffer.noStroke();
+            buffer.textAlign(CENTER, CENTER);
+            buffer.textSize(14);
+            buffer.text(this.hoveredSaturation + '%', this.centerX, this.saturationBarY - 15);
+        }
+        
+        // ===== BARRA DE BRILLO =====
+        buffer.noStroke();
+        buffer.fill(50, 50, 50, 200);
+        buffer.rect(barX, this.brightnessBarY, this.sizeBarWidth, this.sizeBarHeight, 15);
+        
+        // Gradiente de brillo (negro a color)
+        for (let i = 0; i <= 20; i++) {
+            const bright = (i / 20) * 100;
+            const rgb = this.hsbToRgb(currentHSB.h, currentHSB.s, bright);
+            buffer.fill(rgb.r, rgb.g, rgb.b);
+            buffer.noStroke();
+            buffer.rect(barX + (this.sizeBarWidth / 20) * i, this.brightnessBarY + 5, this.sizeBarWidth / 20, this.sizeBarHeight - 10);
+        }
+        
+        // Indicador de brillo actual
+        const brightIndicatorX = barX + (currentHSB.b / 100) * this.sizeBarWidth;
+        buffer.fill(100, 200, 255);
+        buffer.stroke(255, 255, 255, 200);
+        buffer.strokeWeight(2);
+        buffer.ellipse(brightIndicatorX, this.brightnessBarY + this.sizeBarHeight / 2, 20, 20);
+        
+        if (this.hoveredBrightness !== null) {
+            buffer.fill(255, 255, 255, 230);
+            buffer.noStroke();
+            buffer.textAlign(CENTER, CENTER);
+            buffer.textSize(14);
+            buffer.text(this.hoveredBrightness + '%', this.centerX, this.brightnessBarY - 15);
         }
         
         // Dibujar slots de la paleta de colores en el centro
@@ -706,113 +808,16 @@ class CursorGUI {
             buffer.text(this.hoveredAlpha, this.centerX, this.alphaBarY - 15);
         }
         
-        // Dibujar barra de saturación
-        const satBarX = this.centerX - this.sizeBarWidth / 2;
-        
-        // Fondo de la barra de saturación
-        buffer.noStroke();
-        buffer.fill(50, 50, 50, 200);
-        buffer.rect(satBarX, this.saturationBarY, this.sizeBarWidth, this.sizeBarHeight, 15);
-        
-        // Gradiente de saturación (de gris a color)
-        const satColor = document.getElementById('c1') ? document.getElementById('c1').value : '#FFFFFF';
-        const r = parseInt(satColor.substr(1, 2), 16);
-        const g = parseInt(satColor.substr(3, 2), 16);
-        const b = parseInt(satColor.substr(5, 2), 16);
-        const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-        
-        for (let i = 0; i <= 20; i++) {
-            const x = satBarX + (this.sizeBarWidth / 20) * i;
-            const sat = i / 20;
-            const newR = Math.round(gray + (r - gray) * sat);
-            const newG = Math.round(gray + (g - gray) * sat);
-            const newB = Math.round(gray + (b - gray) * sat);
-            buffer.fill(newR, newG, newB);
-            buffer.noStroke();
-            buffer.rect(x, this.saturationBarY + 5, this.sizeBarWidth / 20, this.sizeBarHeight - 10);
-        }
-        
-        // Indicador de saturación (siempre al 100% por defecto)
-        const satIndicatorX = satBarX + this.sizeBarWidth;
-        
-        buffer.fill(100, 200, 255);
-        buffer.stroke(255, 255, 255, 200);
-        buffer.strokeWeight(2);
-        buffer.ellipse(satIndicatorX, this.saturationBarY + this.sizeBarHeight / 2, 20, 20);
-        
-        // Mostrar valor de saturación en hover
-        if (this.hoveredSaturation !== null) {
-            buffer.fill(255, 255, 255, 230);
-            buffer.noStroke();
-            buffer.textAlign(CENTER, CENTER);
-            buffer.textSize(14);
-            buffer.text(this.hoveredSaturation + '%', this.centerX, this.saturationBarY - 15);
-        }
-        
-        // Dibujar barra de brillo
-        const brightBarX = this.centerX - this.sizeBarWidth / 2;
-        
-        // Fondo de la barra de brillo
-        buffer.noStroke();
-        buffer.fill(50, 50, 50, 200);
-        buffer.rect(brightBarX, this.brightnessBarY, this.sizeBarWidth, this.sizeBarHeight, 15);
-        
-        // Gradiente de brillo (de negro a color a blanco)
-        const brightColor = document.getElementById('c1') ? document.getElementById('c1').value : '#FFFFFF';
-        const br = parseInt(brightColor.substr(1, 2), 16);
-        const bg = parseInt(brightColor.substr(3, 2), 16);
-        const bb = parseInt(brightColor.substr(5, 2), 16);
-        
-        for (let i = 0; i <= 20; i++) {
-            const x = brightBarX + (this.sizeBarWidth / 20) * i;
-            const brightness = (i / 20) * 200; // 0-200
-            const factor = brightness / 100;
-            
-            let newR, newG, newB;
-            if (factor < 1) {
-                // Oscurecer
-                newR = Math.round(br * factor);
-                newG = Math.round(bg * factor);
-                newB = Math.round(bb * factor);
-            } else {
-                // Aclarar
-                const adjust = factor - 1;
-                newR = Math.round(br + (255 - br) * adjust);
-                newG = Math.round(bg + (255 - bg) * adjust);
-                newB = Math.round(bb + (255 - bb) * adjust);
-            }
-            
-            buffer.fill(newR, newG, newB);
-            buffer.noStroke();
-            buffer.rect(x, this.brightnessBarY + 5, this.sizeBarWidth / 20, this.sizeBarHeight - 10);
-        }
-        
-        // Indicador de brillo (100 = neutro, en el medio)
-        const brightIndicatorX = brightBarX + this.sizeBarWidth / 2;
-        
-        buffer.fill(100, 200, 255);
-        buffer.stroke(255, 255, 255, 200);
-        buffer.strokeWeight(2);
-        buffer.ellipse(brightIndicatorX, this.brightnessBarY + this.sizeBarHeight / 2, 20, 20);
-        
-        // Mostrar valor de brillo en hover
-        if (this.hoveredBrightness !== null) {
-            buffer.fill(255, 255, 255, 230);
-            buffer.noStroke();
-            buffer.textAlign(CENTER, CENTER);
-            buffer.textSize(14);
-            buffer.text(this.hoveredBrightness, this.centerX, this.brightnessBarY - 15);
-        }
-        
         // Texto de instrucción
         buffer.fill(255);
         buffer.noStroke();
         buffer.textAlign(CENTER, CENTER);
         buffer.textSize(12);
-        buffer.text('Transparencia', this.centerX, this.alphaBarY - 20);
-        buffer.text('Saturación', this.centerX, this.saturationBarY - 20);
-        buffer.text('Brillo', this.centerX, this.brightnessBarY - 20);
-        buffer.text('Color', this.centerX, this.centerY + this.radius + 50);
+        buffer.text('Tono', this.centerX, this.hueBarY + this.sizeBarHeight + 20);
+        buffer.text('Saturación', this.centerX, this.saturationBarY + this.sizeBarHeight + 20);
+        buffer.text('Brillo', this.centerX, this.brightnessBarY + this.sizeBarHeight + 20);
+        buffer.text('Transparencia', this.centerX, this.alphaBarY + this.sizeBarHeight + 20);
+        buffer.text('Paleta de Colores', this.centerX, this.paletteY - 10);
         buffer.text('Tamaño', this.centerX, this.sizeBarY + this.sizeBarHeight + 20);
         
         // Mostrar indicador de progreso si está presionando Y quieto
