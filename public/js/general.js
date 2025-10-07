@@ -499,21 +499,8 @@ function setupSocketControls() {
 
 // Función para generar un nombre de usuario basado en el hash de conexión
 function generateUsername(socketId) {
-  const adjectives = ['Rápido', 'Brillante', 'Creativo', 'Mágico', 'Épico', 'Salvaje', 'Cósmico', 'Eléctrico', 'Místico', 'Veloz'];
-  const nouns = ['Artista', 'Pintor', 'Dibujante', 'Creador', 'Maestro', 'Genio', 'Visionario', 'Soñador', 'Explorador', 'Aventurero'];
-  
-  // Usar el socketId como semilla para generar un nombre consistente
-  let hash = 0;
-  for (let i = 0; i < socketId.length; i++) {
-    hash = ((hash << 5) - hash) + socketId.charCodeAt(i);
-    hash = hash & hash; // Convert to 32bit integer
-  }
-  
-  const adjIndex = Math.abs(hash) % adjectives.length;
-  const nounIndex = Math.abs(hash >> 8) % nouns.length;
-  const number = Math.abs(hash >> 16) % 100;
-  
-  return `${adjectives[adjIndex]}${nouns[nounIndex]}${number}`;
+  // Usar la función del nameGenerator.js para crear nombres consistentes
+  return generarNombreAleatorio(socketId);
 }
 
 // Función para configurar el chat
@@ -528,28 +515,42 @@ function setupChat() {
     return;
   }
   
-  // Esperar a que el socket esté conectado para generar el nombre
+  // Variable para almacenar el nombre de usuario del chat
   let username = '';
   
-  socket.on('connect', function() {
-    // Generar nombre de usuario para este cliente basado en el socket ID
-    username = generateUsername(socket.id);
-    console.log('Username generado:', username);
-    
-    // Mostrar el nombre de usuario en la interfaz
-    if (chatUsernameSpan) {
-      chatUsernameSpan.textContent = username;
+  // Función para actualizar el nombre de usuario del chat
+  function updateChatUsername() {
+    // Si el usuario está logueado, usar su nombre de usuario
+    if (currentUser && currentUser.username) {
+      username = currentUser.username;
+      console.log('Usuario del chat (logueado):', username);
+    } else {
+      // Si no está logueado, generar un nombre aleatorio basado en el socket ID
+      if (socket && socket.id) {
+        username = generateUsername(socket.id);
+        console.log('Usuario del chat (generado):', username);
+      }
     }
-  });
-  
-  // Si ya está conectado, generar el nombre inmediatamente
-  if (socket.connected) {
-    username = generateUsername(socket.id);
-    console.log('Username generado (ya conectado):', username);
+    
+    // Mostrar el nombre en la interfaz
     if (chatUsernameSpan) {
       chatUsernameSpan.textContent = username;
     }
   }
+  
+  // Actualizar el nombre cuando el socket se conecta
+  socket.on('connect', function() {
+    updateChatUsername();
+  });
+  
+  // Si ya está conectado, actualizar inmediatamente
+  if (socket.connected) {
+    updateChatUsername();
+  }
+  
+  // Actualizar el nombre cuando cambia el estado de autenticación
+  // Esta función se llamará desde checkUserAuthentication
+  window.updateChatUsername = updateChatUsername;
   
   // Función para enviar mensaje
   function sendMessage() {
@@ -655,9 +656,19 @@ async function checkUserAuthentication() {
     if (data.authenticated) {
       currentUser = data.user;
       showUserLoggedIn(data.user.username);
+      
+      // Actualizar el nombre del chat si la función existe
+      if (typeof window.updateChatUsername === 'function') {
+        window.updateChatUsername();
+      }
     } else {
       currentUser = null;
       showUserNotLoggedIn();
+      
+      // Actualizar el nombre del chat si la función existe
+      if (typeof window.updateChatUsername === 'function') {
+        window.updateChatUsername();
+      }
     }
   } catch (error) {
     console.error('Error checking authentication:', error);
@@ -695,6 +706,12 @@ async function logoutUser() {
     await fetch('/api/logout', { method: 'POST' });
     currentUser = null;
     showUserNotLoggedIn();
+    
+    // Actualizar el nombre del chat después de cerrar sesión
+    if (typeof window.updateChatUsername === 'function') {
+      window.updateChatUsername();
+    }
+    
     alert('Sesión cerrada exitosamente');
   } catch (error) {
     console.error('Error al cerrar sesión:', error);
@@ -774,6 +791,23 @@ async function saveImageToServer() {
   }
 }
 
+// Función para obtener el nombre de usuario actual del chat
+function getCurrentChatUsername() {
+  // Si el usuario está logueado, devolver su nombre
+  if (currentUser && currentUser.username) {
+    return currentUser.username;
+  }
+  
+  // Si no está logueado, generar nombre basado en socket.id
+  if (typeof socket !== 'undefined' && socket && socket.id) {
+    return generarNombreAleatorio(socket.id);
+  }
+  
+  // Fallback
+  return 'Usuario Anónimo';
+}
+
 // Hacer las funciones accesibles globalmente
 window.logoutUser = logoutUser;
 window.saveImageToServer = saveImageToServer;
+window.getCurrentChatUsername = getCurrentChatUsername;

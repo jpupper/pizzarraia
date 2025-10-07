@@ -7,23 +7,27 @@
  * Clase que representa un cursor remoto individual
  */
 class CursorPoint {
-    constructor(_x, _y, _socketId, _isDrawing = false, _brushSize = 20) {
+    constructor(_x, _y, _socketId, _isDrawing = false, _brushSize = 20, _username = '') {
         this.x = _x;
         this.y = _y;
         this.socketId = _socketId; // ID único del socket
         this.isDrawing = _isDrawing;
         this.brushSize = _brushSize;
+        this.username = _username; // Nombre del usuario
         this.timestamp = Date.now();
     }
     
     /**
      * Actualizar la posición y estado del cursor
      */
-    set(newX, newY, isDrawing, brushSize) {
+    set(newX, newY, isDrawing, brushSize, username = '') {
         this.x = newX;
         this.y = newY;
         this.isDrawing = isDrawing;
         this.brushSize = brushSize;
+        if (username) {
+            this.username = username;
+        }
         this.timestamp = Date.now();
     }
     
@@ -130,6 +134,36 @@ class CursorServer {
             const crossSize = 6;
             buffer.line(cursor.x - crossSize, cursor.y, cursor.x + crossSize, cursor.y);
             buffer.line(cursor.x, cursor.y - crossSize, cursor.x, cursor.y + crossSize);
+            
+            // Dibujar nombre del usuario
+            if (cursor.username) {
+                buffer.push();
+                
+                // Configurar texto
+                buffer.textAlign(CENTER, BOTTOM);
+                buffer.textSize(14);
+                buffer.textFont('Arial');
+                
+                // Fondo semi-transparente para el texto
+                const textWidth = buffer.textWidth(cursor.username);
+                const padding = 6;
+                const bgX = cursor.x - textWidth / 2 - padding;
+                const bgY = cursor.y - cursor.brushSize / 2 - 25;
+                const bgWidth = textWidth + padding * 2;
+                const bgHeight = 20;
+                
+                // Dibujar fondo
+                buffer.noStroke();
+                buffer.fill(0, 0, 0, 150); // Negro semi-transparente
+                buffer.rect(bgX, bgY, bgWidth, bgHeight, 4); // Bordes redondeados
+                
+                // Dibujar texto
+                buffer.fill(cursor.isDrawing ? color(100, 255, 100) : color(100, 150, 255));
+                buffer.noStroke();
+                buffer.text(cursor.username, cursor.x, cursor.y - cursor.brushSize / 2 - 10);
+                
+                buffer.pop();
+            }
         }
     }
     
@@ -163,7 +197,8 @@ class CursorServer {
                 canvasX,
                 canvasY,
                 data.isDrawing || false,
-                data.brushSize || 20
+                data.brushSize || 20,
+                data.username || ''
             );
         } else {
             // Crear nuevo cursor
@@ -172,9 +207,10 @@ class CursorServer {
                 canvasY,
                 data.socketId,
                 data.isDrawing || false,
-                data.brushSize || 20
+                data.brushSize || 20,
+                data.username || ''
             ));
-            console.log(`Nuevo cursor remoto agregado: ${data.socketId} en (${canvasX.toFixed(1)}, ${canvasY.toFixed(1)})`);
+            console.log(`Nuevo cursor remoto agregado: ${data.socketId} (${data.username || 'Sin nombre'}) en (${canvasX.toFixed(1)}, ${canvasY.toFixed(1)})`);
         }
         
         // Debug: mostrar total de cursores (solo cuando cambia)
