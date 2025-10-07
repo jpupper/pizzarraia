@@ -9,6 +9,7 @@ window.onload = function() {
     setupBrushTypeEvents();
     setupBrushSelector();
     setupColorPalette();
+    setupLayerSelector();
     setupSocketControls();
     setupChat();
     setupTabs();
@@ -334,6 +335,30 @@ function setupBrushSelector() {
       // Disparar evento change para que se actualicen los parámetros
       const event = new Event('change');
       brushTypeInput.dispatchEvent(event);
+    });
+  });
+}
+
+// Función para configurar el selector de capas
+function setupLayerSelector() {
+  const layerButtons = document.querySelectorAll('.layer-btn');
+  
+  if (!layerButtons || layerButtons.length === 0) return;
+  
+  layerButtons.forEach((button, index) => {
+    button.addEventListener('click', function() {
+      // Remover clase active de todos los botones
+      layerButtons.forEach(btn => btn.classList.remove('active'));
+      
+      // Agregar clase active al botón clickeado
+      this.classList.add('active');
+      
+      // Actualizar la capa activa en sketch.js
+      const layerIndex = parseInt(this.getAttribute('data-layer'));
+      if (typeof window.activeLayer !== 'undefined') {
+        window.activeLayer = layerIndex;
+        console.log('Capa activa cambiada a:', layerIndex + 1);
+      }
     });
   });
 }

@@ -29,8 +29,17 @@ var PS; // Instancia de CursorServer (PointServer) para gestionar cursores de ot
 
 // Variables de canvas
 var mainCanvas; // Canvas principal
-var drawBuffer; // Buffer para dibujar los pinceles
+var drawBuffer; // Buffer para dibujar los pinceles (DEPRECATED - usar layers)
 var guiBuffer;  // Buffer para dibujar la grilla
+
+// Sistema de capas (5 capas)
+var layers = []; // Array de 5 buffers de capas
+var activeLayer = 0; // Índice de la capa activa (0-4)
+
+// Función helper para obtener la capa activa
+function getActiveLayer() {
+    return layers[activeLayer];
+}
 
 // Variables del sistema de grilla para pixel brush
 var gridSize = 1024; // Tamaño de la grilla (1024x1024)
@@ -69,6 +78,18 @@ function setup() {
     // Crear buffers para dibujo y GUI
     drawBuffer = createGraphics(windowWidth, windowHeight);
     guiBuffer = createGraphics(windowWidth, windowHeight);
+    
+    // Crear 5 capas
+    for (let i = 0; i < 5; i++) {
+        layers[i] = createGraphics(windowWidth, windowHeight);
+        if (i === 0) {
+            // Capa 0 empieza con fondo negro
+            layers[i].background(0);
+        } else {
+            // Capas 1-4 empiezan transparentes
+            layers[i].clear();
+        }
+    }
     
     // Obtener ID de sesión desde URL
     sessionId = config.getSessionId();
@@ -201,13 +222,14 @@ function updateGridBuffer() {
 }
 
 // Función para dibujar preview de la línea mientras se arrastra (Line Brush)
-function drawLinePreview() {
+function drawLinePreview(buffer) {
+    // Usar guiBuffer por defecto si no se especifica
+    const targetBuffer = buffer || guiBuffer;
+    
     const brushType = document.getElementById('brushType').value;
     
     // Solo dibujar preview si es Line Brush y estamos arrastrando
     if (brushType === 'line' && isMousePressed && !isOverGui && !isOverOpenButton && lineStartX !== null) {
-        // NO limpiar guiBuffer, solo dibujar encima
-        
         // Configurar estilo de la línea preview
         const brushSize = parseInt(document.getElementById('size').value);
         const colorValue = document.getElementById('c1').value;
@@ -216,26 +238,29 @@ function drawLinePreview() {
         const col = color(colorValue);
         col.setAlpha(Math.min(alphaValue, 150)); // Más transparente para el preview
         
-        // Dibujar directamente en el canvas principal (no en buffer)
-        push(); // Guardar estado
-        stroke(col);
-        strokeWeight(brushSize);
-        strokeCap(ROUND);
+        // Dibujar en el buffer especificado
+        targetBuffer.push(); // Guardar estado
+        targetBuffer.stroke(col);
+        targetBuffer.strokeWeight(brushSize);
+        targetBuffer.strokeCap(ROUND);
         
         // Dibujar línea desde el punto inicial hasta la posición actual del mouse
-        line(lineStartX, lineStartY, mouseX, mouseY);
+        targetBuffer.line(lineStartX, lineStartY, mouseX, mouseY);
         
         // Dibujar círculos en los extremos para mejor visualización
-        noStroke();
-        fill(col);
-        ellipse(lineStartX, lineStartY, brushSize * 0.5, brushSize * 0.5); // Punto inicial
-        ellipse(mouseX, mouseY, brushSize * 0.5, brushSize * 0.5); // Punto actual
-        pop(); // Restaurar estado
+        targetBuffer.noStroke();
+        targetBuffer.fill(col);
+        targetBuffer.ellipse(lineStartX, lineStartY, brushSize * 0.5, brushSize * 0.5); // Punto inicial
+        targetBuffer.ellipse(mouseX, mouseY, brushSize * 0.5, brushSize * 0.5); // Punto actual
+        targetBuffer.pop(); // Restaurar estado
     }
 }
 
 // Función para dibujar un puntero circular que muestra el tamaño del pincel actual
-function drawBrushCursor() {
+function drawBrushCursor(buffer) {
+    // Usar guiBuffer por defecto si no se especifica
+    const targetBuffer = buffer || guiBuffer;
+    
     // Obtener el tamaño del pincel desde el slider
     const brushSize = parseInt(document.getElementById('size').value);
     
@@ -247,48 +272,48 @@ function drawBrushCursor() {
     // Animación diferente cuando el mouse está presionado
     if (isMousePressed) {
         // Cursor cuando está dibujando - más dinámico
-        guiBuffer.stroke(255, 100, 100); // Color rojizo
-        guiBuffer.strokeWeight(2.5); // Grosor más grueso
-        guiBuffer.noFill();
+        targetBuffer.stroke(255, 100, 100); // Color rojizo
+        targetBuffer.strokeWeight(2.5); // Grosor más grueso
+        targetBuffer.noFill();
         
         // Círculo pulsante (usando frameCount para animación)
         const pulseSize = brushSize + sin(frameCount * 0.2) * 5;
-        guiBuffer.ellipse(mouseX, mouseY, pulseSize, pulseSize);
+        targetBuffer.ellipse(mouseX, mouseY, pulseSize, pulseSize);
         
         // Círculo interno adicional
-        guiBuffer.stroke(255, 150, 150, 150);
-        guiBuffer.strokeWeight(1);
-        guiBuffer.ellipse(mouseX, mouseY, brushSize * 0.5, brushSize * 0.5);
+        targetBuffer.stroke(255, 150, 150, 150);
+        targetBuffer.strokeWeight(1);
+        targetBuffer.ellipse(mouseX, mouseY, brushSize * 0.5, brushSize * 0.5);
         
         // Cruz más grande y visible
-        guiBuffer.stroke(255, 100, 100);
-        guiBuffer.strokeWeight(2);
+        targetBuffer.stroke(255, 100, 100);
+        targetBuffer.strokeWeight(2);
         const crossSize = 6;
-        guiBuffer.line(mouseX - crossSize, mouseY, mouseX + crossSize, mouseY);
-        guiBuffer.line(mouseX, mouseY - crossSize, mouseX, mouseY + crossSize);
+        targetBuffer.line(mouseX - crossSize, mouseY, mouseX + crossSize, mouseY);
+        targetBuffer.line(mouseX, mouseY - crossSize, mouseX, mouseY + crossSize);
     } else {
         // Cursor normal cuando no está dibujando
-        guiBuffer.stroke(255); // Color blanco para el borde
-        guiBuffer.strokeWeight(1.5); // Grosor del borde
-        guiBuffer.noFill(); // Sin relleno
+        targetBuffer.stroke(255); // Color blanco para el borde
+        targetBuffer.strokeWeight(1.5); // Grosor del borde
+        targetBuffer.noFill(); // Sin relleno
         
         // Dibujar un círculo en la posición del mouse con el tamaño del pincel
-        guiBuffer.ellipse(mouseX, mouseY, brushSize, brushSize);
+        targetBuffer.ellipse(mouseX, mouseY, brushSize, brushSize);
         
         // Dibujar una cruz pequeña en el centro para mayor precisión
         const crossSize = 4;
-        guiBuffer.line(mouseX - crossSize, mouseY, mouseX + crossSize, mouseY);
-        guiBuffer.line(mouseX, mouseY - crossSize, mouseX, mouseY + crossSize);
+        targetBuffer.line(mouseX - crossSize, mouseY, mouseX + crossSize, mouseY);
+        targetBuffer.line(mouseX, mouseY - crossSize, mouseX, mouseY + crossSize);
     }
 }
 
 // Función para dibujar cursores de otros clientes
-function drawRemoteCursors() {
+function drawRemoteCursors(buffer) {
     // Actualizar el servidor de cursores (eliminar obsoletos)
     PS.update();
     
-    // Dibujar todos los cursores en el guiBuffer
-    PS.display(guiBuffer);
+    // Dibujar todos los cursores en el buffer especificado
+    PS.display(buffer || guiBuffer);
 }
 
 // ============================================================
@@ -299,24 +324,31 @@ function draw() {
     // Limpiar el buffer GUI en cada frame
     guiBuffer.clear();
     
-    // Mostrar el buffer de dibujo en el canvas principal
-    image(drawBuffer, 0, 0);
+    // Renderizar todas las capas en orden (0 a 4)
+    // La capa 0 ya tiene el fondo negro, no necesitamos background() aquí
+    clear(); // Limpiar el canvas principal
+    for (let i = 0; i < 5; i++) {
+        image(layers[i], 0, 0);
+    }
+    
+    // Mantener compatibilidad con drawBuffer (renderizar encima de las capas)
+    // image(drawBuffer, 0, 0);
     
     // Dibujar la grilla en el buffer GUI si está activado
     if (document.getElementById("brushType").value === 'pixel' && document.getElementById('showGrid').checked) {
         updateGridBuffer();
     }
     
-    // Dibujar cursores de otros clientes
-    drawRemoteCursors();
+    // Dibujar cursores de otros clientes en el GUI buffer
+    drawRemoteCursors(guiBuffer);
     
-    // Dibujar el puntero circular que muestra el tamaño del pincel (local)
-    drawBrushCursor();
+    // Dibujar el puntero circular que muestra el tamaño del pincel (local) en el GUI buffer
+    drawBrushCursor(guiBuffer);
     
-    // Dibujar preview de línea si estamos usando Line Brush
-    drawLinePreview();
+    // Dibujar preview de línea si estamos usando Line Brush en el GUI buffer
+    drawLinePreview(guiBuffer);
     
-    // Dibujar el cursor GUI si está visible
+    // Dibujar el cursor GUI si está visible (ya se dibuja en guiBuffer)
     if (window.cursorGUI) {
         cursorGUI.display(guiBuffer);
     }
@@ -324,7 +356,7 @@ function draw() {
     // Dibujar el flowfield en el GUI buffer si está activado
     drawArtBrushFlowfield(guiBuffer);
     
-    // Mostrar el buffer GUI siempre
+    // Mostrar el buffer GUI siempre (encima de todas las capas)
     image(guiBuffer, 0, 0);
     
     // Actualizar y dibujar el sistema de partículas del Art Brush
@@ -345,6 +377,7 @@ function draw() {
         bt: brushType,
         bc: false,
         session: sessionId,
+        layer: activeLayer, // Número de capa activa (0-4)
         kaleidoSegments: parseInt(document.getElementById("kaleidoSegments").value) || 1,
         // Incluir las coordenadas del punto central del caleidoscopio si están definidas
         kaleidoCenterX: kaleidoCenterX !== null ? map(kaleidoCenterX, 0, windowWidth, 0, 1) : null,
@@ -419,12 +452,12 @@ function draw() {
         
         // Line brush NO dibuja mientras se arrastra, solo al soltar
         if (!isFillBrush && !isLineBrush) {
-            // Dibujar normalmente para otros brushes
-            dibujarCoso(drawBuffer, mouseX, mouseY, data);
+            // Dibujar normalmente para otros brushes en la capa activa
+            dibujarCoso(getActiveLayer(), mouseX, mouseY, data);
             shouldSendSocket = true;
         } else if (isFillBrush && !fillExecuted) {
-            // Fill brush solo una vez
-            dibujarCoso(drawBuffer, mouseX, mouseY, data);
+            // Fill brush solo una vez en la capa activa
+            dibujarCoso(getActiveLayer(), mouseX, mouseY, data);
             fillExecuted = true;
             shouldSendSocket = true;
         }
@@ -802,9 +835,18 @@ function newDrawing(data2) {
     }
     
     if (data2.bc) {
-        // Limpiar el background cuando se recibe el mensaje
-        cleanBackgroundLocal();
-        console.log("LIMPIEZA REMOTA APLICADA");
+        // Limpiar el background de la capa especificada cuando se recibe el mensaje
+        const layerToClean = data2.layer !== undefined ? data2.layer : 0;
+        
+        if (layerToClean === 0) {
+            // Capa 0 se limpia a negro
+            layers[0].background(0);
+            console.log("LIMPIEZA REMOTA APLICADA: CAPA 0 A NEGRO");
+        } else if (layerToClean >= 1 && layerToClean <= 4) {
+            // Capas 1-4 se limpian a transparente
+            layers[layerToClean].clear();
+            console.log("LIMPIEZA REMOTA APLICADA: CAPA", layerToClean, "A TRANSPARENTE");
+        }
     } else {
         // No actualizar ninguna variable global, cada trazo es completamente independiente
         
@@ -901,7 +943,10 @@ function newDrawing(data2) {
             data2.syncParams = localSyncParams;
         }
         
-        // Dibujar en el buffer de dibujo usando los parámetros recibidos
+        // Obtener la capa correcta (usar capa 0 si no se especifica)
+        const targetLayer = layers[data2.layer !== undefined ? data2.layer : 0];
+        
+        // Dibujar en la capa correcta usando los parámetros recibidos
         if (data2.bt === 'line') {
             // Manejo especial para Line Brush
             const startX = data2.pmouseX * windowWidth;
@@ -913,12 +958,12 @@ function newDrawing(data2) {
             // Obtener el número de segmentos para el efecto caleidoscopio
             const kaleidoSegments = data2.kaleidoSegments || 1;
             
-            console.log('DIBUJANDO LINE BRUSH DIRECTAMENTE:', startX, startY, 'to', canvasX, canvasY, 'con', kaleidoSegments, 'segmentos');
-            drawLineBrush(drawBuffer, canvasX, canvasY, startX, startY, brushSize, col, kaleidoSegments);
+            console.log('DIBUJANDO LINE BRUSH EN CAPA', data2.layer, ':', startX, startY, 'to', canvasX, canvasY, 'con', kaleidoSegments, 'segmentos');
+            drawLineBrush(targetLayer, canvasX, canvasY, startX, startY, brushSize, col, kaleidoSegments);
         } else {
-            // Otros pinceles
+            // Otros pinceles - dibujar en la capa correcta
             dibujarCoso(
-                drawBuffer,
+                targetLayer,
                 canvasX,
                 canvasY,
                 data2
@@ -1118,21 +1163,32 @@ function receiveFlowfieldConfig(data) {
     system.initFlowfield();
 }
 
-// Función para limpiar el fondo localmente
+// Función para limpiar el fondo localmente (solo la capa activa)
 function cleanBackgroundLocal() {
-    drawBuffer.background(0);
-    console.log("LIMPIANDO LOCALMENTE");
+    if (activeLayer === 0) {
+        // Capa 0 se limpia a negro
+        getActiveLayer().background(0);
+        console.log("LIMPIANDO CAPA 0 A NEGRO LOCALMENTE");
+    } else {
+        // Capas 1-4 se limpian a transparente
+        getActiveLayer().clear();
+        console.log("LIMPIANDO CAPA", activeLayer, "A TRANSPARENTE LOCALMENTE");
+    }
 }
 
 // Función para limpiar el fondo y enviar mensaje a otros clientes si está activada la sincronización
 function cleanBackground() {
-    // Limpiar el fondo localmente siempre
+    // Limpiar el fondo localmente siempre (solo capa activa)
     cleanBackgroundLocal();
     
     // Enviar mensaje a otros clientes si el envío de sockets está habilitado
     if (config.sockets.sendEnabled) {
-        socket.emit('mouse', {bc: true, session: sessionId});
-        console.log("ENVIANDO MENSAJE DE LIMPIEZA PARA SESIÓN:", sessionId);
+        socket.emit('mouse', {
+            bc: true, 
+            session: sessionId,
+            layer: activeLayer // Enviar el número de capa que se está limpiando
+        });
+        console.log("ENVIANDO MENSAJE DE LIMPIEZA PARA CAPA", activeLayer, "EN SESIÓN:", sessionId);
     } else {
         console.log("LIMPIEZA LOCAL SOLAMENTE (ENVÍO DE SOCKETS DESACTIVADO)");
     }
