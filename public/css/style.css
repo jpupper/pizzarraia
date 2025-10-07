@@ -854,6 +854,37 @@ select option {
     box-shadow: 0 0 10px rgba(138, 79, 191, 0.6);
 }
 
+/* Estilos para botones de visibilidad de capas */
+.layer-visibility-btn {
+    transition: all 0.3s ease;
+}
+
+.layer-visibility-btn:hover {
+    transform: scale(1.05);
+    background: rgba(138, 79, 191, 0.5) !important;
+}
+
+.layer-visibility-btn.active .eye-open {
+    display: block;
+}
+
+.layer-visibility-btn.active .eye-closed {
+    display: none;
+}
+
+.layer-visibility-btn:not(.active) .eye-open {
+    display: none;
+}
+
+.layer-visibility-btn:not(.active) .eye-closed {
+    display: block !important;
+}
+
+.layer-visibility-btn:not(.active) {
+    background: rgba(100, 100, 100, 0.3) !important;
+    border-color: rgba(255,255,255,0.2) !important;
+}
+
 /* Estilos para dispositivos móviles */
 @media screen and (max-width: 768px) {
     .socket-btn {

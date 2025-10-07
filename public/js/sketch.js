@@ -35,6 +35,7 @@ var guiBuffer;  // Buffer para dibujar la grilla
 // Sistema de capas (5 capas)
 var layers = []; // Array de 5 buffers de capas
 var activeLayer = 0; // Índice de la capa activa (0-4)
+var layerVisibility = [true, true, true, true, true]; // Visibilidad de cada capa
 
 // Función helper para obtener la capa activa
 function getActiveLayer() {
@@ -307,6 +308,23 @@ function drawBrushCursor(buffer) {
     }
 }
 
+// Función para actualizar las previsualizaciones de las capas
+function updateLayerPreviews() {
+    // Solo actualizar cada 10 frames para optimizar rendimiento
+    if (frameCount % 10 !== 0) return;
+    
+    for (let i = 0; i < 5; i++) {
+        const previewCanvas = document.getElementById(`layerPreview${i}`);
+        if (previewCanvas) {
+            const ctx = previewCanvas.getContext('2d');
+            // Limpiar el canvas de preview
+            ctx.clearRect(0, 0, 80, 60);
+            // Dibujar la capa escalada
+            ctx.drawImage(layers[i].canvas, 0, 0, windowWidth, windowHeight, 0, 0, 80, 60);
+        }
+    }
+}
+
 // Función para dibujar cursores de otros clientes
 function drawRemoteCursors(buffer) {
     // Actualizar el servidor de cursores (eliminar obsoletos)
@@ -324,12 +342,17 @@ function draw() {
     // Limpiar el buffer GUI en cada frame
     guiBuffer.clear();
     
-    // Renderizar todas las capas en orden (0 a 4)
+    // Renderizar todas las capas en orden (0 a 4) respetando visibilidad
     // La capa 0 ya tiene el fondo negro, no necesitamos background() aquí
     clear(); // Limpiar el canvas principal
     for (let i = 0; i < 5; i++) {
-        image(layers[i], 0, 0);
+        if (layerVisibility[i]) {
+            image(layers[i], 0, 0);
+        }
     }
+    
+    // Actualizar previsualizaciones de capas
+    updateLayerPreviews();
     
     // Mantener compatibilidad con drawBuffer (renderizar encima de las capas)
     // image(drawBuffer, 0, 0);

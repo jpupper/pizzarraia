@@ -342,9 +342,12 @@ function setupBrushSelector() {
 // Función para configurar el selector de capas
 function setupLayerSelector() {
   const layerButtons = document.querySelectorAll('.layer-btn');
+  const visibilityButtons = document.querySelectorAll('.layer-visibility-btn');
+  const layerPreviews = document.querySelectorAll('[id^="layerPreview"]');
   
   if (!layerButtons || layerButtons.length === 0) return;
   
+  // Event listeners para botones de selección de capa
   layerButtons.forEach((button, index) => {
     button.addEventListener('click', function() {
       // Remover clase active de todos los botones
@@ -357,9 +360,55 @@ function setupLayerSelector() {
       const layerIndex = parseInt(this.getAttribute('data-layer'));
       if (typeof window.activeLayer !== 'undefined') {
         window.activeLayer = layerIndex;
-        console.log('Capa activa cambiada a:', layerIndex + 1);
+        console.log('Capa activa cambiada a:', layerIndex);
       }
     });
+  });
+  
+  // Event listeners para botones de visibilidad
+  visibilityButtons.forEach((button, index) => {
+    button.addEventListener('click', function() {
+      const layerIndex = parseInt(this.getAttribute('data-layer'));
+      
+      // Toggle visibilidad
+      if (typeof window.layerVisibility !== 'undefined') {
+        window.layerVisibility[layerIndex] = !window.layerVisibility[layerIndex];
+        
+        // Toggle clase active
+        if (window.layerVisibility[layerIndex]) {
+          this.classList.add('active');
+          console.log('Capa', layerIndex, 'visible');
+        } else {
+          this.classList.remove('active');
+          console.log('Capa', layerIndex, 'oculta');
+        }
+      }
+    });
+  });
+  
+  // Event listeners para previsualizaciones (clickear para seleccionar capa)
+  layerPreviews.forEach((preview, index) => {
+    preview.addEventListener('click', function() {
+      const layerIndex = parseInt(this.id.replace('layerPreview', ''));
+      
+      // Remover clase active de todos los botones
+      layerButtons.forEach(btn => btn.classList.remove('active'));
+      
+      // Agregar clase active al botón correspondiente
+      const targetButton = document.querySelector(`.layer-btn[data-layer="${layerIndex}"]`);
+      if (targetButton) {
+        targetButton.classList.add('active');
+      }
+      
+      // Actualizar la capa activa
+      if (typeof window.activeLayer !== 'undefined') {
+        window.activeLayer = layerIndex;
+        console.log('Capa activa cambiada a:', layerIndex, '(desde preview)');
+      }
+    });
+    
+    // Cambiar cursor al pasar sobre el preview
+    preview.style.cursor = 'pointer';
   });
 }
 
