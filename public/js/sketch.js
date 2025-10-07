@@ -384,7 +384,7 @@ function draw() {
     
     // Actualizar y dibujar el sistema de partículas del Art Brush
     updateArtBrush();
-    drawArtBrushParticles(drawBuffer);
+    drawArtBrushParticles(getActiveLayer());
     
     const brushType = document.getElementById("brushType").value;
     
@@ -602,9 +602,9 @@ function mouseReleased() {
         // Obtener el número de segmentos para el efecto caleidoscopio
         const kaleidoSegments = parseInt(document.getElementById('kaleidoSegments').value) || 1;
         
-        // Dibujar localmente primero
+        // Dibujar localmente primero en la capa activa
         const brushSize = parseInt(document.getElementById('size').value);
-        drawLineBrush(drawBuffer, mouseX, mouseY, lineStartX, lineStartY, brushSize, col, kaleidoSegments);
+        drawLineBrush(getActiveLayer(), mouseX, mouseY, lineStartX, lineStartY, brushSize, col, kaleidoSegments);
         
         // Preparar datos para enviar por socket
         const data = {
@@ -665,7 +665,12 @@ function keyPressed() {
 // FUNCIONES DE TOUCH (MÓVILES)
 // ============================================================
 
-function touchStarted() {
+function touchStarted(event) {
+    // Si el touch es sobre un elemento HTML (botón, input, etc), no bloquear
+    if (event && event.target && event.target.tagName !== 'CANVAS') {
+        return; // Dejar que el evento se propague normalmente
+    }
+    
     // Si el cursor GUI está visible, manejar el touch
     if (window.cursorGUI && cursorGUI.isVisible) {
         const handled = cursorGUI.handleClick(mouseX, mouseY);
@@ -681,10 +686,17 @@ function touchStarted() {
     
     // Llamar a mousePressed para mantener compatibilidad
     mousePressed();
-    return false; // Prevenir comportamiento por defecto
+    
+    // Prevenir comportamiento por defecto en touch solo en el canvas
+    return false;
 }
 
-function touchEnded() {
+function touchEnded(event) {
+    // Si el touch es sobre un elemento HTML (botón, input, etc), no bloquear
+    if (event && event.target && event.target.tagName !== 'CANVAS') {
+        return; // Dejar que el evento se propague normalmente
+    }
+    
     // Cancelar el temporizador de long press
     if (window.cursorGUI) {
         cursorGUI.cancelLongPress();
@@ -692,7 +704,9 @@ function touchEnded() {
     
     // Llamar a mouseReleased para mantener compatibilidad
     mouseReleased();
-    return false; // Prevenir comportamiento por defecto
+    
+    // Prevenir comportamiento por defecto en touch solo en el canvas
+    return false;
 }
 
 function touchMoved() {

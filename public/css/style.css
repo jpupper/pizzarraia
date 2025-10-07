@@ -27,6 +27,11 @@ canvas {
     display: block; /* Asegura que el canvas ocupe todo el espacio */
 }
 
+/* El canvas principal de p5.js debe estar detrás de la GUI */
+canvas[style*="z-index: 1"] {
+    pointer-events: auto;
+}
+
 #gui {
     position: fixed;
     top: 1rem;
@@ -91,6 +96,10 @@ canvas {
 
 #opengui:hover {
     background-color: var(--primary-light);
+}
+
+#opengui svg {
+    pointer-events: none;
 }
 
 label {
