@@ -39,40 +39,8 @@
         
         <!-- Contenido de la pestaña: Interfaz de dibujo -->
         <div id="tab-drawing" class="tab-content active">
-         <!-- Controles de Sockets -->
-         <div class="socket-controls">
-            <h4>Control de Sockets</h4>
-            
-            <!-- Contador de cursores -->
-            <div id="cursorCount" class="cursor-counter">Cursores: 0</div>
-            
-            <!-- Selector de sesión (unificado con el indicador) -->
-            <div class="session-selector">
-                <label for="sessionInput">Sesión:</label>
-                <input type="text" id="sessionInput" class="jpinput session-input">
-            </div>
-            
-            <!-- Botones de control de sockets -->
-            <div class="socket-buttons">
-                <button id="toggleReceive" class="socket-btn square active" title="Recibir Sockets">
-                    <svg viewBox="0 0 24 24">
-                        <!-- Auriculares (siempre visibles) -->
-                        <path fill="white" d="M12,1C7,1 3,5 3,10V17A3,3 0 0,0 6,20H9V12H5V10A7,7 0 0,1 12,3A7,7 0 0,1 19,10V12H15V20H18A3,3 0 0,0 21,17V10C21,5 16.97,1 12,1Z" />
-                        <!-- Rayita diagonal (visible cuando está inactivo) -->
-                        <g class="headphone-disabled" style="display:none;">
-                            <path fill="white" d="M12,1C7,1 3,5 3,10V17A3,3 0 0,0 6,20H9V12H5V10A7,7 0 0,1 12,3A7,7 0 0,1 19,10V12H15V20H18A3,3 0 0,0 21,17V10C21,5 16.97,1 12,1Z" />
-                            <path fill="none" d="M2,4L22,22" stroke="white" stroke-width="2.5" />
-                        </g>
-                    </svg>
-                </button>
-                <button id="toggleSend" class="socket-btn square active" title="Enviar Sockets">
-                    <svg viewBox="0 0 24 24" class="eye-icon">
-                        <!-- Ojo abierto (visible cuando está activo) -->
-                        <path class="eye-open" fill="white" d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" />
-                        <!-- Ojo cerrado (visible cuando está inactivo) -->
-                        <path class="eye-closed" fill="white" d="M11.83,9L15,12.16C15,12.11 15,12.05 15,12A3,3 0 0,0 12,9C11.94,9 11.89,9 11.83,9M7.53,9.8L9.08,11.35C9.03,11.56 9,11.77 9,12A3,3 0 0,0 12,15C12.22,15 12.44,14.97 12.65,14.92L14.2,16.47C13.53,16.8 12.79,17 12,17A5,5 0 0,1 7,12C7,11.21 7.2,10.47 7.53,9.8M2,4.27L4.28,6.55L4.73,7C3.08,8.3 1.78,10 1,12C2.73,16.39 7,19.5 12,19.5C13.55,19.5 15.03,19.2 16.38,18.66L16.81,19.08L19.73,22L21,20.73L3.27,3M12,7A5,5 0 0,1 17,12C17,12.64 16.87,13.26 16.64,13.82L19.57,16.75C21.07,15.5 22.27,13.86 23,12C21.27,7.61 17,4.5 12,4.5C10.6,4.5 9.26,4.75 8,5.2L10.17,7.35C10.74,7.13 11.35,7 12,7Z" style="display:none;" />
-                    </svg>
-                </button>
+         <!-- Botones de descarga y guardado -->
+         <div class="socket-buttons">
                 <button id="downloadButton" class="socket-btn square active" onClick="downloadImage()" title="Download Image">
                     <svg viewBox="0 0 24 24">
                         <path fill="white" d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z" />
@@ -84,7 +52,6 @@
                     </svg>
                 </button>
             </div>
-        </div>
         
         <label>Color Palette</label>
         <div class="color-palette-slots" style="display: flex; gap: 8px; margin-bottom: 10px;">
@@ -272,6 +239,42 @@
         <div id="tab-chat" class="tab-content">
         <div class="chat-section">
             <h4>Chat en Vivo</h4>
+            
+            <!-- Selector de sesión -->
+            <div class="session-selector" style="margin-bottom: 15px;">
+                <label for="sessionInput" style="color: rgba(255,255,255,0.8); font-size: 0.9rem;">Sesión:</label>
+                <input type="text" id="sessionInput" class="jpinput session-input" style="width: 100%; margin-top: 5px;">
+            </div>
+            
+            <!-- Botones de control de sockets -->
+            <div class="socket-buttons">
+                <button id="toggleReceive" class="socket-btn square active" title="Recibir Sockets">
+                    <svg viewBox="0 0 24 24">
+                        <path fill="white" d="M12,1C7,1 3,5 3,10V17A3,3 0 0,0 6,20H9V12H5V10A7,7 0 0,1 12,3A7,7 0 0,1 19,10V12H15V20H18A3,3 0 0,0 21,17V10C21,5 16.97,1 12,1Z" />
+                        <g class="headphone-disabled" style="display:none;">
+                            <path fill="none" d="M2,4L22,22" stroke="white" stroke-width="2.5" />
+                        </g>
+                    </svg>
+                </button>
+                <button id="toggleSend" class="socket-btn square active" title="Enviar Sockets">
+                    <svg viewBox="0 0 24 24" class="eye-icon">
+                        <path class="eye-open" fill="white" d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" />
+                        <path class="eye-closed" fill="white" d="M11.83,9L15,12.16C15,12.11 15,12.05 15,12A3,3 0 0,0 12,9C11.94,9 11.89,9 11.83,9M7.53,9.8L9.08,11.35C9.03,11.56 9,11.77 9,12A3,3 0 0,0 12,15C12.22,15 12.44,14.97 12.65,14.92L14.2,16.47C13.53,16.8 12.79,17 12,17A5,5 0 0,1 7,12C7,11.21 7.2,10.47 7.53,9.8M2,4.27L4.28,6.55L4.73,7C3.08,8.3 1.78,10 1,12C2.73,16.39 7,19.5 12,19.5C13.55,19.5 15.03,19.2 16.38,18.66L16.81,19.08L19.73,22L21,20.73L3.27,3M12,7A5,5 0 0,1 17,12C17,12.64 16.87,13.26 16.64,13.82L19.57,16.75C21.07,15.5 22.27,13.86 23,12C21.27,7.61 17,4.5 12,4.5C10.6,4.5 9.26,4.75 8,5.2L10.17,7.35C10.74,7.13 11.35,7 12,7Z" style="display:none;" />
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Contador de cursores -->
+            <div id="cursorCount" class="cursor-counter" style="text-align: center; padding: 8px; background-color: rgba(138, 79, 191, 0.2); border-radius: 5px; margin-bottom: 10px; color: rgba(255,255,255,0.9); font-size: 0.9rem;">Cursores: 0</div>
+            
+            <!-- Lista de usuarios conectados -->
+            <div style="margin-bottom: 15px; padding: 10px; background-color: rgba(138, 79, 191, 0.15); border-radius: 8px;">
+                <h5 style="margin: 0 0 8px 0; color: rgba(255,255,255,0.8); font-size: 0.85rem;">Usuarios Conectados:</h5>
+                <div id="connectedUsersList" style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 30px;">
+                    <span style="color: rgba(255,255,255,0.5); font-size: 0.8rem;">Cargando...</span>
+                </div>
+            </div>
+            
             <div class="chat-user-info" style="margin-bottom: 10px; padding: 8px; background-color: rgba(138, 79, 191, 0.2); border-radius: 5px;">
                 <span style="color: rgba(255,255,255,0.7);">Tu nombre: </span>
                 <span id="chatUsername" style="color: var(--accent); font-weight: bold;">Cargando...</span>

@@ -72,6 +72,38 @@ class CursorServer {
                 this.cursors.splice(i, 1);
             }
         }
+        
+        // Actualizar lista de usuarios conectados
+        this.updateConnectedUsersList();
+    }
+    
+    /**
+     * Actualizar la lista de usuarios conectados en el chat
+     */
+    updateConnectedUsersList() {
+        const usersList = document.getElementById('connectedUsersList');
+        if (!usersList) return;
+        
+        // Obtener usuarios únicos (sin LIDAR)
+        const uniqueUsers = new Map();
+        this.cursors.forEach(cursor => {
+            if (!cursor.socketId.startsWith('lidar_') && cursor.username) {
+                uniqueUsers.set(cursor.socketId, cursor.username);
+            }
+        });
+        
+        // Actualizar el HTML
+        if (uniqueUsers.size === 0) {
+            usersList.innerHTML = '<span style="color: rgba(255,255,255,0.5); font-size: 0.8rem;">No hay usuarios conectados</span>';
+        } else {
+            usersList.innerHTML = '';
+            uniqueUsers.forEach((username, socketId) => {
+                const userBadge = document.createElement('span');
+                userBadge.style.cssText = 'display: inline-block; padding: 4px 10px; background: rgba(138, 79, 191, 0.4); border-radius: 12px; font-size: 0.75rem; color: white; border: 1px solid rgba(138, 79, 191, 0.6);';
+                userBadge.textContent = username;
+                usersList.appendChild(userBadge);
+            });
+        }
     }
     
     /**

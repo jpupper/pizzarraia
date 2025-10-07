@@ -9,6 +9,7 @@ window.onload = function() {
     setupBrushTypeEvents();
     setupBrushSelector();
     setupColorPalette();
+    setupSocketControls();
     setupChat();
     setupTabs();
     checkUserAuthentication();

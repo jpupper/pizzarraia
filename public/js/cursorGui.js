@@ -817,17 +817,17 @@ class CursorGUI {
             buffer.text(this.hoveredAlpha, this.centerX, this.alphaBarY - 15);
         }
         
-        // Texto de instrucción
+        // Texto de instrucción (ARRIBA de cada slider)
         buffer.fill(255);
         buffer.noStroke();
         buffer.textAlign(CENTER, CENTER);
         buffer.textSize(12);
-        buffer.text('Tono', this.centerX, this.hueBarY + this.sizeBarHeight + 20);
-        buffer.text('Saturación', this.centerX, this.saturationBarY + this.sizeBarHeight + 20);
-        buffer.text('Brillo', this.centerX, this.brightnessBarY + this.sizeBarHeight + 20);
-        buffer.text('Transparencia', this.centerX, this.alphaBarY + this.sizeBarHeight + 20);
-        buffer.text('Paleta de Colores', this.centerX, this.paletteY - 10);
-        buffer.text('Tamaño', this.centerX, this.sizeBarY + this.sizeBarHeight + 20);
+        buffer.text('Tono', this.centerX, this.hueBarY - 10);
+        buffer.text('Saturación', this.centerX, this.saturationBarY - 10);
+        buffer.text('Brillo', this.centerX, this.brightnessBarY - 10);
+        buffer.text('Transparencia', this.centerX, this.alphaBarY - 10);
+        buffer.text('Paleta de Colores', this.centerX, this.paletteY - 25);
+        buffer.text('Tamaño', this.centerX, this.sizeBarY - 10);
         
         // Mostrar indicador de progreso si está presionando Y quieto
         if (this.isPressing && !this.isVisible && this.checkIfStill()) {
