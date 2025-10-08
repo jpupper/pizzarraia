@@ -139,5 +139,28 @@ const config = {
   }
 };
 
+// Token management functions
+config.saveToken = function(token) {
+  localStorage.setItem('pizarraia_token', token);
+};
+
+config.getToken = function() {
+  return localStorage.getItem('pizarraia_token');
+};
+
+config.removeToken = function() {
+  localStorage.removeItem('pizarraia_token');
+};
+
+config.getAuthHeaders = function() {
+  const token = this.getToken();
+  if (token) {
+    return {
+      'Authorization': `Bearer ${token}`
+    };
+  }
+  return {};
+};
+
 // Exponer la configuración globalmente
 window.config = config;

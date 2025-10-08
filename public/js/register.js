@@ -7,7 +7,7 @@ const passwordStrengthBar = document.getElementById('passwordStrengthBar');
 
 // Check if already logged in
 fetch(`${config.API_URL}/api/check-session`, {
-    credentials: 'include'
+    headers: config.getAuthHeaders()
 })
     .then(res => res.json())
     .then(data => {
@@ -69,7 +69,6 @@ registerForm.addEventListener('submit', async (e) => {
     try {
         const response = await fetch(`${config.API_URL}/api/register`, {
             method: 'POST',
-            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -79,6 +78,9 @@ registerForm.addEventListener('submit', async (e) => {
         const data = await response.json();
 
         if (response.ok) {
+            // Save token to localStorage
+            config.saveToken(data.token);
+            
             showSuccess('¡Cuenta creada exitosamente! Redirigiendo...');
             setTimeout(() => {
                 window.location.href = 'index.html';

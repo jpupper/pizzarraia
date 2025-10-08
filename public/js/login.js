@@ -5,7 +5,7 @@ const successMessage = document.getElementById('successMessage');
 
 // Check if already logged in
 fetch(`${config.API_URL}/api/check-session`, {
-    credentials: 'include'
+    headers: config.getAuthHeaders()
 })
     .then(res => res.json())
     .then(data => {
@@ -33,7 +33,6 @@ loginForm.addEventListener('submit', async (e) => {
     try {
         const response = await fetch(`${config.API_URL}/api/login`, {
             method: 'POST',
-            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -43,6 +42,9 @@ loginForm.addEventListener('submit', async (e) => {
         const data = await response.json();
 
         if (response.ok) {
+            // Save token to localStorage
+            config.saveToken(data.token);
+            
             showSuccess('¡Inicio de sesión exitoso! Redirigiendo...');
             setTimeout(() => {
                 window.location.href = 'index.html';
