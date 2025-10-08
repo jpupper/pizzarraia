@@ -791,7 +791,7 @@ let currentUser = null;
 async function checkUserAuthentication() {
   try {
     const response = await fetch(`${config.API_URL}/api/check-session`, {
-      credentials: 'include'
+      headers: config.getAuthHeaders()
     });
     const data = await response.json();
     
@@ -847,8 +847,12 @@ async function logoutUser() {
   try {
     await fetch(`${config.API_URL}/api/logout`, { 
       method: 'POST',
-      credentials: 'include'
+      headers: config.getAuthHeaders()
     });
+    
+    // Remove token from localStorage
+    config.removeToken();
+    
     currentUser = null;
     showUserNotLoggedIn();
     
@@ -900,8 +904,8 @@ async function saveImageToServer() {
     // Enviar al servidor
     const response = await fetch(`${config.API_URL}/api/images`, {
       method: 'POST',
-      credentials: 'include',
       headers: {
+        ...config.getAuthHeaders(),
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({

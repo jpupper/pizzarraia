@@ -6,7 +6,7 @@ let userImages = [];
 async function checkAuth() {
     try {
         const response = await fetch(`${config.API_URL}/api/check-session`, {
-            credentials: 'include'
+            headers: config.getAuthHeaders()
         });
         const data = await response.json();
         
@@ -30,7 +30,7 @@ function loadUserProfile() {
     
     // Get user details for member since date
     fetch(`${config.API_URL}/api/user`, {
-            credentials: 'include'
+            headers: config.getAuthHeaders()
         })
         .then(res => res.json())
         .then(data => {
@@ -49,7 +49,7 @@ function loadUserProfile() {
 async function loadUserImages() {
     try {
         const response = await fetch(`${config.API_URL}/api/images`, {
-            credentials: 'include'
+            headers: config.getAuthHeaders()
         });
         const data = await response.json();
         
@@ -107,7 +107,7 @@ function renderGallery() {
         
         // Cargar la imagen completa para la miniatura
         fetch(`${config.API_URL}/api/images/${image._id}`, {
-                credentials: 'include'
+                headers: config.getAuthHeaders()
             })
             .then(res => res.json())
             .then(data => {
@@ -138,7 +138,7 @@ function renderGallery() {
 async function viewImage(imageId) {
     try {
         const response = await fetch(`${config.API_URL}/api/images/${imageId}`, {
-            credentials: 'include'
+            headers: config.getAuthHeaders()
         });
         const data = await response.json();
         
@@ -155,7 +155,7 @@ async function viewImage(imageId) {
 async function downloadImage(imageId, title) {
     try {
         const response = await fetch(`${config.API_URL}/api/images/${imageId}`, {
-            credentials: 'include'
+            headers: config.getAuthHeaders()
         });
         const data = await response.json();
         
@@ -182,7 +182,7 @@ async function deleteImage(imageId) {
     try {
         const response = await fetch(`${config.API_URL}/api/images/${imageId}`, {
             method: 'DELETE',
-            credentials: 'include'
+            headers: config.getAuthHeaders()
         });
         
         if (response.ok) {
@@ -204,8 +204,12 @@ async function logout() {
     try {
         await fetch(`${config.API_URL}/api/logout`, { 
             method: 'POST',
-            credentials: 'include'
+            headers: config.getAuthHeaders()
         });
+        
+        // Remove token from localStorage
+        config.removeToken();
+        
         window.location.href = 'login.html';
     } catch (error) {
         console.error('Error logging out:', error);

@@ -3,8 +3,6 @@ const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
 const mongoose = require('mongoose');
-const session = require('express-session');
-const MongoStore = require('connect-mongo');
 const cors = require('cors');
 
 const User = require('./models/User');
@@ -40,29 +38,35 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Session configuration
-app.use(session({
-  secret: 'pizzarraia-secret-key-change-in-production',
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: MONGODB_URI,
-    touchAfter: 24 * 3600
-  }),
-  cookie: {
-    maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-    httpOnly: true,
-    secure: true, // Required for sameSite: 'none'
-    sameSite: 'none' // Allow cross-origin cookies
+// Session storage in memory (simple approach)
+// Maps sessionToken -> userId
+const activeSessions = new Map();
+
+// Generate random session token
+function generateSessionToken() {
+  return require('crypto').randomBytes(32).toString('hex');
+}
+
+// Middleware to extract user from Authorization header
+app.use((req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    const userId = activeSessions.get(token);
+    if (userId) {
+      req.userId = userId;
+      req.sessionToken = token;
+    }
   }
-}));
+  next();
+});
 
 // Serve static files under /pizarraia path
 app.use('/pizarraia', express.static(path.join(__dirname, 'public')));
 
 // Authentication middleware
 const isAuthenticated = (req, res, next) => {
-  if (req.session.userId) {
+  if (req.userId) {
     next();
   } else {
     res.status(401).json({ error: 'No autenticado' });
@@ -99,11 +103,13 @@ app.post('/pizarraia/api/register', async (req, res) => {
     const user = new User({ username, password });
     await user.save();
     
-    req.session.userId = user._id;
-    req.session.username = user.username;
+    // Generate session token
+    const token = generateSessionToken();
+    activeSessions.set(token, user._id.toString());
     
     res.json({ 
-      success: true, 
+      success: true,
+      token: token,
       user: { 
         id: user._id, 
         username: user.username 
@@ -134,11 +140,13 @@ app.post('/pizarraia/api/login', async (req, res) => {
       return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
     }
     
-    req.session.userId = user._id;
-    req.session.username = user.username;
+    // Generate session token
+    const token = generateSessionToken();
+    activeSessions.set(token, user._id.toString());
     
     res.json({ 
-      success: true, 
+      success: true,
+      token: token,
       user: { 
         id: user._id, 
         username: user.username 
@@ -152,18 +160,16 @@ app.post('/pizarraia/api/login', async (req, res) => {
 
 // Logout
 app.post('/pizarraia/api/logout', (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      return res.status(500).json({ error: 'Error al cerrar sesión' });
-    }
-    res.json({ success: true });
-  });
+  if (req.sessionToken) {
+    activeSessions.delete(req.sessionToken);
+  }
+  res.json({ success: true });
 });
 
 // Get current user
 app.get('/pizarraia/api/user', isAuthenticated, async (req, res) => {
   try {
-    const user = await User.findById(req.session.userId).select('-password');
+    const user = await User.findById(req.userId).select('-password');
     res.json({ user });
   } catch (error) {
     res.status(500).json({ error: 'Error en el servidor' });
@@ -171,15 +177,20 @@ app.get('/pizarraia/api/user', isAuthenticated, async (req, res) => {
 });
 
 // Check session
-app.get('/pizarraia/api/check-session', (req, res) => {
-  if (req.session.userId) {
-    res.json({ 
-      authenticated: true, 
-      user: { 
-        id: req.session.userId, 
-        username: req.session.username 
-      } 
-    });
+app.get('/pizarraia/api/check-session', async (req, res) => {
+  if (req.userId) {
+    try {
+      const user = await User.findById(req.userId).select('-password');
+      res.json({ 
+        authenticated: true, 
+        user: { 
+          id: user._id, 
+          username: user.username 
+        } 
+      });
+    } catch (error) {
+      res.json({ authenticated: false });
+    }
   } else {
     res.json({ authenticated: false });
   }
@@ -194,9 +205,10 @@ app.post('/pizarraia/api/images', isAuthenticated, async (req, res) => {
       return res.status(400).json({ error: 'Datos de imagen requeridos' });
     }
     
+    const user = await User.findById(req.userId);
     const image = new Image({
-      userId: req.session.userId,
-      username: req.session.username,
+      userId: req.userId,
+      username: user.username,
       title: title || 'Sin título',
       imageData
     });
@@ -220,7 +232,7 @@ app.post('/pizarraia/api/images', isAuthenticated, async (req, res) => {
 // Get user's images
 app.get('/pizarraia/api/images', isAuthenticated, async (req, res) => {
   try {
-    const images = await Image.find({ userId: req.session.userId })
+    const images = await Image.find({ userId: req.userId })
       .sort({ createdAt: -1 })
       .select('-imageData'); // Don't send image data in list
     
@@ -236,7 +248,7 @@ app.get('/pizarraia/api/images/:id', isAuthenticated, async (req, res) => {
   try {
     const image = await Image.findOne({ 
       _id: req.params.id, 
-      userId: req.session.userId 
+      userId: req.userId 
     });
     
     if (!image) {
@@ -255,7 +267,7 @@ app.delete('/pizarraia/api/images/:id', isAuthenticated, async (req, res) => {
   try {
     const image = await Image.findOneAndDelete({ 
       _id: req.params.id, 
-      userId: req.session.userId 
+      userId: req.userId 
     });
     
     if (!image) {
