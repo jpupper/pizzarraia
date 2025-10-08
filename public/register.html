@@ -229,6 +229,7 @@
         </div>
     </div>
 
+    <script src="js/config.js"></script>
     <script>
         const registerForm = document.getElementById('registerForm');
         const errorMessage = document.getElementById('errorMessage');
@@ -237,7 +238,7 @@
         const passwordStrengthBar = document.getElementById('passwordStrengthBar');
 
         // Check if already logged in
-        fetch('/pizarraia/api/check-session')
+        fetch(`${config.API_URL}/api/check-session`)
             .then(res => res.json())
             .then(data => {
                 if (data.authenticated) {
@@ -296,7 +297,7 @@
             registerForm.classList.add('loading');
 
             try {
-                const response = await fetch('/pizarraia/api/register', {
+                const response = await fetch(`${config.API_URL}/api/register`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
