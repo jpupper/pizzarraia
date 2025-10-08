@@ -135,21 +135,215 @@ function renderGallery() {
     });
 }
 
+let currentImageId = null;
+
 async function viewImage(imageId) {
+    currentImageId = imageId;
+    
     try {
-        const response = await fetch(`${config.API_URL}/api/images/${imageId}`, {
-            headers: config.getAuthHeaders()
-        });
+        // Usar la ruta de galería que tiene todos los datos
+        const response = await fetch(`${config.API_URL}/api/gallery/${imageId}`);
         const data = await response.json();
         
         if (data.image) {
-            document.getElementById('modalImage').src = data.image.imageData;
+            const image = data.image;
+            const date = new Date(image.createdAt);
+            const formattedDate = date.toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            // Set image data
+            document.getElementById('modalImage').src = image.imageData;
+            document.getElementById('modalTitle').textContent = image.title;
+            document.getElementById('modalDescription').textContent = image.description || 'Sin descripción';
+            document.getElementById('modalAuthor').innerHTML = `👤 Por: <strong>${escapeHtml(image.username)}</strong>`;
+            document.getElementById('modalSavedBy').innerHTML = `💾 Guardado por: <strong>${escapeHtml(image.savedBy || image.username)}</strong>`;
+            document.getElementById('modalDate').textContent = `📅 ${formattedDate}`;
+            document.getElementById('modalSession').innerHTML = `🎨 Sesión: <strong>${image.sessionId || '0'}</strong>`;
+            
+            // Render collaborators
+            if (image.collaborators && image.collaborators.length > 0) {
+                document.getElementById('collaboratorsSection').style.display = 'block';
+                document.getElementById('modalCollaborators').innerHTML = image.collaborators.map(collab =>
+                    `<span class="collaborator-chip">${escapeHtml(collab.username)}</span>`
+                ).join('');
+            } else {
+                document.getElementById('collaboratorsSection').style.display = 'none';
+            }
+            
+            // Update likes
+            updateLikeButton(image.likes || []);
+            document.getElementById('likesCount').textContent = `${(image.likes || []).length} likes`;
+            
+            // Update comments
+            renderComments(image.comments || []);
+            
             document.getElementById('imageModal').classList.add('active');
         }
     } catch (error) {
         console.error('Error loading image:', error);
         alert('Error al cargar la imagen');
     }
+}
+
+function updateLikeButton(likes) {
+    const likeBtn = document.getElementById('likeBtn');
+    const likeText = document.getElementById('likeText');
+    
+    if (currentUser) {
+        const userLiked = likes.some(like => like.username === currentUser.username);
+        
+        if (userLiked) {
+            likeBtn.classList.add('liked');
+            likeText.textContent = 'Te gusta';
+        } else {
+            likeBtn.classList.remove('liked');
+            likeText.textContent = 'Me gusta';
+        }
+    } else {
+        likeBtn.classList.remove('liked');
+        likeText.textContent = 'Me gusta';
+    }
+}
+
+async function toggleLike() {
+    if (!currentUser) {
+        alert('Debes iniciar sesión para dar like');
+        return;
+    }
+    
+    if (!currentImageId) return;
+    
+    try {
+        const response = await fetch(`${config.API_URL}/api/images/${currentImageId}/like`, {
+            method: 'POST',
+            headers: config.getAuthHeaders()
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Reload image to update likes
+            viewImage(currentImageId);
+            loadUserImages(); // Refresh gallery
+        } else {
+            alert(data.error || 'Error al dar like');
+        }
+    } catch (error) {
+        console.error('Error toggling like:', error);
+        alert('Error al dar like');
+    }
+}
+
+function renderComments(comments) {
+    const commentsList = document.getElementById('commentsList');
+    const commentsCount = document.getElementById('commentsCount');
+    
+    commentsCount.textContent = comments.length;
+    
+    if (comments.length === 0) {
+        commentsList.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No hay comentarios aún</p>';
+        return;
+    }
+    
+    const html = comments.map(comment => {
+        const date = new Date(comment.createdAt);
+        const formattedDate = date.toLocaleDateString('es-ES', {
+            day: 'numeric',
+            month: 'short',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        const canDelete = currentUser && currentUser.username === comment.username;
+        
+        return `
+            <div class="comment-item">
+                <div class="comment-header">
+                    <span class="comment-author">${escapeHtml(comment.username)}</span>
+                    <span class="comment-date">${formattedDate}</span>
+                </div>
+                <p class="comment-text">${escapeHtml(comment.text)}</p>
+                ${canDelete ? `<button class="comment-delete" onclick="deleteComment('${comment._id}')">Eliminar</button>` : ''}
+            </div>
+        `;
+    }).join('');
+    
+    commentsList.innerHTML = html;
+}
+
+async function submitComment() {
+    if (!currentUser) {
+        alert('Debes iniciar sesión para comentar');
+        return;
+    }
+    
+    if (!currentImageId) return;
+    
+    const commentInput = document.getElementById('commentInput');
+    const text = commentInput.value.trim();
+    
+    if (!text) {
+        alert('Escribe un comentario');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${config.API_URL}/api/images/${currentImageId}/comment`, {
+            method: 'POST',
+            headers: {
+                ...config.getAuthHeaders(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ text })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            commentInput.value = '';
+            // Reload image to update comments
+            viewImage(currentImageId);
+            loadUserImages(); // Refresh gallery
+        } else {
+            alert(data.error || 'Error al comentar');
+        }
+    } catch (error) {
+        console.error('Error submitting comment:', error);
+        alert('Error al enviar comentario');
+    }
+}
+
+async function deleteComment(commentId) {
+    if (!confirm('¿Eliminar este comentario?')) return;
+    
+    try {
+        const response = await fetch(`${config.API_URL}/api/images/${currentImageId}/comment/${commentId}`, {
+            method: 'DELETE',
+            headers: config.getAuthHeaders()
+        });
+        
+        if (response.ok) {
+            // Reload image to update comments
+            viewImage(currentImageId);
+            loadUserImages(); // Refresh gallery
+        } else {
+            alert('Error al eliminar comentario');
+        }
+    } catch (error) {
+        console.error('Error deleting comment:', error);
+        alert('Error al eliminar comentario');
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 async function downloadImage(imageId, title) {

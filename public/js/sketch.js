@@ -57,6 +57,28 @@ function renderAllLayers() {
     return combined;
 }
 
+// Función para toggle de visibilidad de capa
+function toggleLayerVisibility(layerIndex) {
+    if (layerIndex >= 0 && layerIndex < 5) {
+        layerVisibility[layerIndex] = !layerVisibility[layerIndex];
+        
+        // Actualizar el botón visual si existe
+        const layerBtn = document.querySelector(`[data-layer="${layerIndex}"]`);
+        if (layerBtn) {
+            if (layerVisibility[layerIndex]) {
+                layerBtn.classList.add('active');
+            } else {
+                layerBtn.classList.remove('active');
+            }
+        }
+        
+        // Actualizar previews
+        updateLayerPreviews();
+        
+        console.log(`Capa ${layerIndex} ${layerVisibility[layerIndex] ? 'visible' : 'oculta'}`);
+    }
+}
+
 // Variables del sistema de grilla para pixel brush
 var gridSize = 1024; // Tamaño de la grilla (1024x1024)
 var gridCols = 32;   // Número predeterminado de columnas
@@ -695,10 +717,17 @@ function keyPressed() {
     if (keyCode === ESCAPE && window.cursorGUI) {
         cursorGUI.hide();
     }
-    // Cambiar entre slots de la paleta con las teclas 1-5
-    if (window.cursorGUI && key >= '1' && key <= '5') {
-        const slotIndex = parseInt(key) - 1;
-        cursorGUI.selectPaletteSlot(slotIndex);
+    // Teclas 1-5: Toggle de capas O slots de paleta
+    if (key >= '1' && key <= '5') {
+        const index = parseInt(key) - 1;
+        
+        // Si el cursor GUI está visible, cambiar slot de paleta
+        if (window.cursorGUI && cursorGUI.isVisible) {
+            cursorGUI.selectPaletteSlot(index);
+        } else {
+            // Si no, toggle de visibilidad de capa
+            toggleLayerVisibility(index);
+        }
     }
 }
 

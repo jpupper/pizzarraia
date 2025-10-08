@@ -685,11 +685,19 @@ function setupChat() {
   // Actualizar el nombre cuando el socket se conecta
   socket.on('connect', function() {
     updateChatUsername();
+    // Enviar username al servidor
+    if (socket && socket.connected && username) {
+      socket.emit('update_username', { username: username });
+    }
   });
   
   // Si ya está conectado, actualizar inmediatamente
   if (socket.connected) {
     updateChatUsername();
+    // Enviar username al servidor
+    if (username) {
+      socket.emit('update_username', { username: username });
+    }
   }
   
   // Actualizar el nombre cuando cambia el estado de autenticación
@@ -874,7 +882,7 @@ async function logoutUser() {
   }
 }
 
-// Función para guardar la imagen en el servidor
+// Función para abrir el modal de guardar imagen
 async function saveImageToServer() {
   // Verificar si el usuario está logueado
   if (!currentUser) {
@@ -891,9 +899,53 @@ async function saveImageToServer() {
     return;
   }
   
-  // Pedir título para la imagen
-  const title = prompt('Ingresa un título para tu dibujo:', 'Mi dibujo');
-  if (title === null) return; // Usuario canceló
+  // Obtener colaboradores de la sesión actual
+  await loadCollaborators();
+  
+  // Mostrar el modal
+  document.getElementById('saveImageModal').classList.add('active');
+  document.getElementById('imageTitle').value = '';
+  document.getElementById('imageDescription').value = '';
+  document.getElementById('imageTitle').focus();
+}
+
+// Función para cerrar el modal
+function closeSaveModal() {
+  document.getElementById('saveImageModal').classList.remove('active');
+}
+
+// Función para cargar colaboradores
+async function loadCollaborators() {
+  try {
+    const response = await fetch(`${config.API_URL}/api/admin/sessions`, {
+      headers: config.getAuthHeaders()
+    });
+    const data = await response.json();
+    
+    const currentSessionId = config.getSessionId();
+    const currentSession = data.sessions.find(s => s.sessionId === currentSessionId);
+    
+    const collaboratorsList = document.getElementById('collaboratorsList');
+    
+    if (currentSession && currentSession.users.length > 0) {
+      collaboratorsList.innerHTML = currentSession.users.map(user => 
+        `<span class="collaborator-chip">${escapeHtml(user.username)}</span>`
+      ).join('');
+    } else {
+      collaboratorsList.innerHTML = '<p>Solo tú en esta sesión</p>';
+    }
+  } catch (error) {
+    console.error('Error loading collaborators:', error);
+    document.getElementById('collaboratorsList').innerHTML = '<p>No se pudieron cargar los colaboradores</p>';
+  }
+}
+
+// Función para enviar el formulario de guardar
+async function submitSaveImage(event) {
+  event.preventDefault();
+  
+  const title = document.getElementById('imageTitle').value.trim();
+  const description = document.getElementById('imageDescription').value.trim();
   
   try {
     // Combinar todas las capas visibles
@@ -903,11 +955,26 @@ async function saveImageToServer() {
     const canvas = combined.canvas;
     const imageData = canvas.toDataURL('image/png', 1.0);
     
-    // Mostrar indicador de carga
-    const saveButton = document.getElementById('saveButton');
-    if (saveButton) {
-      saveButton.style.opacity = '0.5';
-      saveButton.style.pointerEvents = 'none';
+    // Obtener colaboradores y sesión actual
+    const sessionResponse = await fetch(`${config.API_URL}/api/admin/sessions`, {
+      headers: config.getAuthHeaders()
+    });
+    const sessionData = await sessionResponse.json();
+    
+    const currentSessionId = config.getSessionId();
+    const currentSession = sessionData.sessions.find(s => s.sessionId === currentSessionId);
+    
+    const collaborators = currentSession ? currentSession.users.map(user => ({
+      socketId: user.socketId,
+      username: user.username,
+      connectedAt: new Date()
+    })) : [];
+    
+    // Deshabilitar botón de submit
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Guardando...';
     }
     
     // Enviar al servidor
@@ -918,20 +985,24 @@ async function saveImageToServer() {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        title: title || 'Sin título',
-        imageData: imageData
+        title,
+        description,
+        imageData,
+        collaborators,
+        sessionId: currentSessionId
       })
     });
     
     const data = await response.json();
     
     // Restaurar botón
-    if (saveButton) {
-      saveButton.style.opacity = '1';
-      saveButton.style.pointerEvents = 'auto';
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Guardar Imagen';
     }
     
     if (response.ok) {
+      closeSaveModal();
       alert('¡Imagen guardada exitosamente!');
       console.log('Imagen guardada:', data.image);
     } else {
@@ -942,13 +1013,26 @@ async function saveImageToServer() {
     alert('Error al guardar la imagen. Por favor intenta de nuevo.');
     
     // Restaurar botón en caso de error
-    const saveButton = document.getElementById('saveButton');
-    if (saveButton) {
-      saveButton.style.opacity = '1';
-      saveButton.style.pointerEvents = 'auto';
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Guardar Imagen';
     }
   }
 }
+
+// Contador de caracteres para la descripción
+document.addEventListener('DOMContentLoaded', () => {
+  const descriptionTextarea = document.getElementById('imageDescription');
+  const charCount = document.getElementById('charCount');
+  
+  if (descriptionTextarea && charCount) {
+    descriptionTextarea.addEventListener('input', () => {
+      const length = descriptionTextarea.value.length;
+      charCount.textContent = `${length}/500 caracteres`;
+    });
+  }
+});
 
 // Función para obtener el nombre de usuario actual del chat
 function getCurrentChatUsername() {
@@ -966,7 +1050,30 @@ function getCurrentChatUsername() {
   return 'Usuario Anónimo';
 }
 
+// Función para compartir la sesión actual
+function shareSession() {
+  const currentUrl = window.location.href;
+  const sessionId = config.getSessionId();
+  
+  // Copiar al portapapeles
+  navigator.clipboard.writeText(currentUrl).then(() => {
+    alert(`¡Link copiado! Comparte esta sesión (${sessionId}) con tus amigos:\n${currentUrl}`);
+  }).catch(() => {
+    // Fallback si no funciona el clipboard API
+    prompt('Copia este link para compartir:', currentUrl);
+  });
+}
+
 // Hacer las funciones accesibles globalmente
 window.logoutUser = logoutUser;
 window.saveImageToServer = saveImageToServer;
 window.getCurrentChatUsername = getCurrentChatUsername;
+window.closeSaveModal = closeSaveModal;
+window.submitSaveImage = submitSaveImage;
+window.shareSession = shareSession;
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}

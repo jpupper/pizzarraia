@@ -199,7 +199,7 @@ app.get('/pizarraia/api/check-session', async (req, res) => {
 // Save image
 app.post('/pizarraia/api/images', isAuthenticated, async (req, res) => {
   try {
-    const { title, imageData } = req.body;
+    const { title, description, imageData, collaborators, sessionId } = req.body;
     
     if (!imageData) {
       return res.status(400).json({ error: 'Datos de imagen requeridos' });
@@ -210,7 +210,13 @@ app.post('/pizarraia/api/images', isAuthenticated, async (req, res) => {
       userId: req.userId,
       username: user.username,
       title: title || 'Sin título',
-      imageData
+      description: description || '',
+      imageData,
+      savedBy: user.username,
+      collaborators: collaborators || [],
+      sessionId: sessionId || '0',
+      likes: [],
+      comments: []
     });
     
     await image.save();
@@ -220,6 +226,7 @@ app.post('/pizarraia/api/images', isAuthenticated, async (req, res) => {
       image: {
         id: image._id,
         title: image.title,
+        description: image.description,
         createdAt: image.createdAt
       }
     });
@@ -278,6 +285,111 @@ app.delete('/pizarraia/api/images/:id', isAuthenticated, async (req, res) => {
   } catch (error) {
     console.error('Error eliminando imagen:', error);
     res.status(500).json({ error: 'Error al eliminar la imagen' });
+  }
+});
+
+// Like an image
+app.post('/pizarraia/api/images/:id/like', isAuthenticated, async (req, res) => {
+  try {
+    const image = await Image.findById(req.params.id);
+    
+    if (!image) {
+      return res.status(404).json({ error: 'Imagen no encontrada' });
+    }
+    
+    const user = await User.findById(req.userId);
+    
+    // Check if already liked
+    const alreadyLiked = image.likes.some(like => like.userId.toString() === req.userId);
+    
+    if (alreadyLiked) {
+      // Unlike
+      image.likes = image.likes.filter(like => like.userId.toString() !== req.userId);
+    } else {
+      // Like
+      image.likes.push({
+        userId: req.userId,
+        username: user.username,
+        likedAt: new Date()
+      });
+    }
+    
+    await image.save();
+    
+    res.json({ 
+      success: true, 
+      liked: !alreadyLiked,
+      likesCount: image.likes.length
+    });
+  } catch (error) {
+    console.error('Error toggling like:', error);
+    res.status(500).json({ error: 'Error al dar like' });
+  }
+});
+
+// Add comment to image
+app.post('/pizarraia/api/images/:id/comment', isAuthenticated, async (req, res) => {
+  try {
+    const { text } = req.body;
+    
+    if (!text || text.trim() === '') {
+      return res.status(400).json({ error: 'El comentario no puede estar vacío' });
+    }
+    
+    const image = await Image.findById(req.params.id);
+    
+    if (!image) {
+      return res.status(404).json({ error: 'Imagen no encontrada' });
+    }
+    
+    const user = await User.findById(req.userId);
+    
+    image.comments.push({
+      userId: req.userId,
+      username: user.username,
+      text: text.trim(),
+      createdAt: new Date()
+    });
+    
+    await image.save();
+    
+    res.json({ 
+      success: true,
+      comment: image.comments[image.comments.length - 1]
+    });
+  } catch (error) {
+    console.error('Error adding comment:', error);
+    res.status(500).json({ error: 'Error al agregar comentario' });
+  }
+});
+
+// Delete comment
+app.delete('/pizarraia/api/images/:imageId/comment/:commentId', isAuthenticated, async (req, res) => {
+  try {
+    const image = await Image.findById(req.params.imageId);
+    
+    if (!image) {
+      return res.status(404).json({ error: 'Imagen no encontrada' });
+    }
+    
+    const comment = image.comments.id(req.params.commentId);
+    
+    if (!comment) {
+      return res.status(404).json({ error: 'Comentario no encontrado' });
+    }
+    
+    // Only the comment author can delete it
+    if (comment.userId.toString() !== req.userId) {
+      return res.status(403).json({ error: 'No tienes permiso para eliminar este comentario' });
+    }
+    
+    comment.remove();
+    await image.save();
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting comment:', error);
+    res.status(500).json({ error: 'Error al eliminar comentario' });
   }
 });
 
@@ -508,6 +620,15 @@ io.on('connection', (socket) => {
       });
     }
   }
+  // Update username for connected user
+  socket.on('update_username', function(data) {
+    const userInfo = connectedUsers.get(socket.id);
+    if (userInfo && data.username) {
+      userInfo.username = data.username;
+      console.log('Username updated for', socket.id, ':', data.username);
+    }
+  });
+  
   socket.on('chat_message', function(data) {
     // Reenviar el mensaje a todos los clientes de la misma sesión
     io.emit('chat_message', data);
