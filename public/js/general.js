@@ -790,7 +790,9 @@ let currentUser = null;
 // Función para verificar la autenticación del usuario
 async function checkUserAuthentication() {
   try {
-    const response = await fetch(`${config.API_URL}/api/check-session`);
+    const response = await fetch(`${config.API_URL}/api/check-session`, {
+      credentials: 'include'
+    });
     const data = await response.json();
     
     if (data.authenticated) {
@@ -843,7 +845,10 @@ function showUserNotLoggedIn() {
 // Función para cerrar sesión
 async function logoutUser() {
   try {
-    await fetch(`${config.API_URL}/api/logout`, { method: 'POST' });
+    await fetch(`${config.API_URL}/api/logout`, { 
+      method: 'POST',
+      credentials: 'include'
+    });
     currentUser = null;
     showUserNotLoggedIn();
     
@@ -895,6 +900,7 @@ async function saveImageToServer() {
     // Enviar al servidor
     const response = await fetch(`${config.API_URL}/api/images`, {
       method: 'POST',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json'
       },

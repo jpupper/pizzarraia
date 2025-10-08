@@ -4,7 +4,9 @@ const errorMessage = document.getElementById('errorMessage');
 const successMessage = document.getElementById('successMessage');
 
 // Check if already logged in
-fetch(`${config.API_URL}/api/check-session`)
+fetch(`${config.API_URL}/api/check-session`, {
+    credentials: 'include'
+})
     .then(res => res.json())
     .then(data => {
         if (data.authenticated) {
@@ -31,6 +33,7 @@ loginForm.addEventListener('submit', async (e) => {
     try {
         const response = await fetch(`${config.API_URL}/api/login`, {
             method: 'POST',
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json'
             },
