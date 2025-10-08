@@ -308,9 +308,14 @@
                 PizarraCollab es una pizarra colaborativa en tiempo real que permite a múltiples usuarios dibujar juntos desde cualquier lugar del mundo. 
                 Creado por <strong>JPupper</strong>, este proyecto combina arte, tecnología y colaboración.
             </p>
-            <a href="https://jeyder.com.ar/jpupper/" target="_blank" class="about-link">
-                🌐 Visitar sitio web
-            </a>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <a href="gallery.html" target="_blank" class="about-link">
+                    🖼️ Ver Galería Global
+                </a>
+                <a href="https://jeyder.com.ar/jpupper/" target="_blank" class="about-link">
+                    🌐 Visitar sitio web
+                </a>
+            </div>
         </div>
         </div>
         
@@ -393,6 +398,9 @@
                 <a href="profile.html" class="btn-user-action" style="display: inline-block; padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; margin-bottom: 10px; width: 100%; text-align: center; box-sizing: border-box;">
                     Ver Mi Galería
                 </a>
+                <button onclick="shareSession()" class="btn-user-action" style="display: block; padding: 10px 20px; background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; margin-bottom: 10px;">
+                    📤 Share
+                </button>
                 <button onclick="logoutUser()" class="btn-user-action" style="display: block; padding: 10px 20px; background: rgba(244, 67, 54, 0.8); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%;">
                     Cerrar Sesión
                 </button>
@@ -408,13 +416,40 @@
         </button>
     </div>
     
-    <button id="opengui" class="jpboton animated-button" onClick="openGui()">
+    <button id="opengui" class="jpboton animated-button" onClick="openGui()" style="display: none;">
         <svg viewBox="0 0 24 24">
             <path fill="currentColor" d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"/>
         </svg>
     </button>
     
     <input type="button" value="Close GUI" onClick="closeGui()" id="closegui" class="jpboton">
+    
+    <!-- Modal para guardar imagen -->
+    <div id="saveImageModal" class="save-modal">
+        <div class="save-modal-content">
+            <button class="save-modal-close" onclick="closeSaveModal()">×</button>
+            <h2>💾 Guardar tu Obra de Arte</h2>
+            <form id="saveImageForm" onsubmit="submitSaveImage(event)">
+                <div class="form-group">
+                    <label for="imageTitle">Título *</label>
+                    <input type="text" id="imageTitle" required placeholder="Ej: Atardecer Abstracto" maxlength="100">
+                </div>
+                <div class="form-group">
+                    <label for="imageDescription">Descripción</label>
+                    <textarea id="imageDescription" placeholder="Cuéntanos sobre tu creación..." rows="4" maxlength="500"></textarea>
+                    <small id="charCount">0/500 caracteres</small>
+                </div>
+                <div class="collaborators-info">
+                    <h4>👥 Colaboradores en esta sesión:</h4>
+                    <div id="collaboratorsList">Cargando...</div>
+                </div>
+                <div class="save-modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeSaveModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Imagen</button>
+                </div>
+            </form>
+        </div>
+    </div>
             
   <script src="js/general.js"></script>
   </body>

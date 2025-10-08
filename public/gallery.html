@@ -18,6 +18,14 @@
             </div>
         </header>
 
+        <!-- Sesiones Activas -->
+        <div class="active-sessions-section">
+            <h2>🔴 Sesiones Activas Ahora</h2>
+            <div id="activeSessions" class="sessions-container">
+                <div class="loading-small">Cargando sesiones...</div>
+            </div>
+        </div>
+
         <div class="gallery-stats">
             <div class="stat">
                 <span class="stat-number" id="totalImages">0</span>
@@ -27,6 +35,26 @@
                 <span class="stat-number" id="totalArtists">0</span>
                 <span class="stat-label">Artistas</span>
             </div>
+            <div class="stat">
+                <span class="stat-number" id="totalLikes">0</span>
+                <span class="stat-label">Likes Totales</span>
+            </div>
+        </div>
+
+        <!-- Toggle para vista móvil/desktop -->
+        <div class="view-toggle">
+            <button id="gridViewBtn" class="view-btn active" onclick="setView('grid')">
+                <svg viewBox="0 0 24 24" width="20" height="20">
+                    <path fill="currentColor" d="M3,11H11V3H3M3,21H11V13H3M13,21H21V13H13M13,3V11H21V3"/>
+                </svg>
+                Grid
+            </button>
+            <button id="scrollViewBtn" class="view-btn" onclick="setView('scroll')">
+                <svg viewBox="0 0 24 24" width="20" height="20">
+                    <path fill="currentColor" d="M3,3H21V5H3V3M3,7H21V9H3V7M3,11H21V13H3V11M3,15H21V17H3V15M3,19H21V21H3V19Z"/>
+                </svg>
+                Scroll
+            </button>
         </div>
 
         <div class="gallery-grid" id="galleryGrid">
@@ -36,18 +64,62 @@
 
     <!-- Modal para ver imagen completa -->
     <div id="imageModal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content-large">
             <button class="modal-close" onclick="closeModal()">×</button>
-            <img id="modalImage" class="modal-image" src="" alt="Imagen">
-            <div class="modal-info">
-                <h3 id="modalTitle">Título</h3>
-                <p id="modalAuthor">Por: Usuario</p>
-                <p id="modalDate">Fecha</p>
+            <div class="modal-layout">
+                <div class="modal-image-container">
+                    <img id="modalImage" class="modal-image" src="" alt="Imagen">
+                </div>
+                <div class="modal-sidebar">
+                    <div class="modal-header">
+                        <h3 id="modalTitle">Título</h3>
+                        <p id="modalDescription" class="modal-description"></p>
+                    </div>
+                    
+                    <div class="modal-meta">
+                        <p id="modalAuthor" class="author-info">👤 Por: <strong>Usuario</strong></p>
+                        <p id="modalSavedBy" class="saved-by-info">💾 Guardado por: <strong>Usuario</strong></p>
+                        <p id="modalDate" class="date-info">📅 Fecha</p>
+                        <p id="modalSession" class="session-info">🎨 Sesión: <strong>0</strong></p>
+                    </div>
+
+                    <div id="collaboratorsSection" class="collaborators-section">
+                        <h4>👥 Colaboradores</h4>
+                        <div id="modalCollaborators"></div>
+                    </div>
+
+                    <div class="like-section">
+                        <button id="likeBtn" class="like-btn" onclick="toggleLike()">
+                            <svg id="likeIcon" viewBox="0 0 24 24" width="24" height="24">
+                                <path fill="currentColor" d="M12,21.35L10.55,20.03C5.4,15.36 2,12.27 2,8.5C2,5.41 4.42,3 7.5,3C9.24,3 10.91,3.81 12,5.08C13.09,3.81 14.76,3 16.5,3C19.58,3 22,5.41 22,8.5C22,12.27 18.6,15.36 13.45,20.03L12,21.35Z"/>
+                            </svg>
+                            <span id="likeText">Me gusta</span>
+                        </button>
+                        <p id="likesCount" class="likes-count">0 likes</p>
+                    </div>
+
+                    <div class="comments-section">
+                        <h4>💬 Comentarios (<span id="commentsCount">0</span>)</h4>
+                        
+                        <div id="commentForm" class="comment-form" style="display: none;">
+                            <textarea id="commentInput" placeholder="Escribe un comentario..." rows="3" maxlength="500"></textarea>
+                            <button onclick="submitComment()" class="btn btn-primary btn-small">Comentar</button>
+                        </div>
+                        
+                        <div id="loginPrompt" class="login-prompt" style="display: none;">
+                            <p>Inicia sesión para comentar</p>
+                            <a href="login.html" class="btn btn-primary btn-small">Iniciar Sesión</a>
+                        </div>
+
+                        <div id="commentsList" class="comments-list"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <script src="js/config.js"></script>
+    <script src="js/nameGenerator.js"></script>
     <script src="js/gallery.js"></script>
 </body>
 </html>
