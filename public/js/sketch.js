@@ -42,6 +42,21 @@ function getActiveLayer() {
     return layers[activeLayer];
 }
 
+// Función para combinar todas las capas visibles en un solo canvas
+function renderAllLayers() {
+    // Crear un canvas temporal del mismo tamaño
+    const combined = createGraphics(windowWidth, windowHeight);
+    
+    // Dibujar cada capa visible en orden
+    for (let i = 0; i < 5; i++) {
+        if (layerVisibility[i] && layers[i]) {
+            combined.image(layers[i], 0, 0);
+        }
+    }
+    
+    return combined;
+}
+
 // Variables del sistema de grilla para pixel brush
 var gridSize = 1024; // Tamaño de la grilla (1024x1024)
 var gridCols = 32;   // Número predeterminado de columnas
@@ -131,6 +146,8 @@ function setup() {
     ps = new PalabraSystem();
     PS = new CursorServer(); // Inicializar el servidor de cursores (PointServer)
     window.PS = PS; // Hacer PS accesible globalmente para TouchDesigner
+    window.renderAllLayers = renderAllLayers; // Exponer función para combinar capas
+    window.drawBuffer = drawBuffer; // Mantener compatibilidad (deprecated)
     textAlign(CENTER, CENTER);
     textSize(80);
     
@@ -471,7 +488,7 @@ function draw() {
     };
     
     // Enviar posición del cursor cada frame si el envío de sockets está habilitado
-    if (config.sockets.sendEnabled) {
+    if (config.sockets.sendEnabled && socket && socket.connected) {
         socket.emit('cursor', cursorData);
     }
     
@@ -552,7 +569,7 @@ function draw() {
         }
         
         // Luego enviamos los datos por socket (con syncParams normalizados) si el envío está habilitado
-        if (shouldSendSocket && config.sockets.sendEnabled) {
+        if (shouldSendSocket && config.sockets.sendEnabled && socket && socket.connected) {
             socket.emit('mouse', data);
         }
         mouseFlag = false;
@@ -650,7 +667,7 @@ function mouseReleased() {
         
         // Enviar por socket si el envío está habilitado
         console.log('ENVIANDO LINE POR SOCKET:', data);
-        if (config.sockets.sendEnabled) {
+        if (config.sockets.sendEnabled && socket && socket.connected) {
             socket.emit('mouse', data);
         }
         
@@ -1099,7 +1116,9 @@ function sendFlowfieldSync() {
         noiseScale: system.noiseScale,
         noiseZSpeed: system.noiseZSpeed
     };
-    socket.emit('flowfield_sync', syncData);
+    if (socket && socket.connected) {
+        socket.emit('flowfield_sync', syncData);
+    }
     
     // También enviar la configuración completa
     const configData = {
@@ -1112,7 +1131,9 @@ function sendFlowfieldSync() {
         noiseScale: system.noiseScale,
         showFlowfield: system.showFlowfield
     };
-    socket.emit('flowfield_config', configData);
+    if (socket && socket.connected) {
+        socket.emit('flowfield_config', configData);
+    }
     
     console.log('Enviando sincronización completa de flowfield:', configData);
 }
@@ -1152,7 +1173,7 @@ function toggleFlowfield() {
     }
     
     // Enviar el cambio a otros clientes
-    if (config.sockets.sendEnabled) {
+    if (config.sockets.sendEnabled && socket && socket.connected) {
         socket.emit('flowfield_config', {
             active: checkbox.checked,
             seed: system.flowfieldSeed,
@@ -1183,8 +1204,10 @@ function sendFlowfieldConfigUpdate() {
         noiseScale: system.noiseScale
     };
     
-    socket.emit('flowfield_config', data);
-    console.log('Enviando configuración de flowfield:', data);
+    if (socket && socket.connected) {
+        socket.emit('flowfield_config', data);
+        console.log('Enviando configuración de flowfield:', data);
+    }
 }
 
 // Función para recibir cambios de configuración del flowfield
@@ -1276,7 +1299,7 @@ function cleanBackground() {
     cleanBackgroundLocal();
     
     // Enviar mensaje a otros clientes si el envío de sockets está habilitado
-    if (config.sockets.sendEnabled) {
+    if (config.sockets.sendEnabled && socket && socket.connected) {
         socket.emit('mouse', {
             bc: true, 
             session: sessionId,

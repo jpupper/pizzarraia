@@ -316,7 +316,9 @@ class CursorServer {
                                 sourceType: 'lidar',
                                 pointId: removedId
                             };
-                            socket.emit('mouse', socketData);
+                            if (socket && socket.connected) {
+                                socket.emit('mouse', socketData);
+                            }
                         }
                         
                         console.log(`Line Brush: Línea dibujada para ${removedId} desde (${startPoint.x}, ${startPoint.y}) hasta (${endPoint.x}, ${endPoint.y})`);
@@ -490,7 +492,9 @@ class CursorServer {
                     }
                     
                     // Enviar como evento de dibujo normal
-                    socket.emit('mouse', socketData);
+                    if (socket && socket.connected) {
+                        socket.emit('mouse', socketData);
+                    }
                     
                     // TAMBIÉN enviar actualización de cursor para que se vea en otros clientes
                     const cursorData = {
@@ -502,7 +506,9 @@ class CursorServer {
                         socketId: pointId, // Usar el pointId como identificador único
                         isCursorOnly: false // No es solo cursor, también está dibujando
                     };
-                    socket.emit('cursor', cursorData);
+                    if (socket && socket.connected) {
+                        socket.emit('cursor', cursorData);
+                    }
                 }
             }
         });
