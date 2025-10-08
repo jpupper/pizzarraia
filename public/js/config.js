@@ -2,6 +2,28 @@ const APP_PATH = 'pizarraia';  // Variable global para el nombre de la aplicaci�
 const PORT = 3025;  // Variable global para el puerto
 
 const config = {
+  // Detectar si estamos en local o en VPS
+  isLocal: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1',
+  
+  // URL de la API (incluye el path base)
+  get API_URL() {
+    return this.isLocal 
+      ? `http://localhost:${PORT}/${APP_PATH}` 
+      : `https://vps-4455523-x.dattaweb.com/${APP_PATH}`;
+  },
+  
+  // URL para Socket.IO
+  get SOCKET_URL() {
+    return this.isLocal 
+      ? `http://localhost:${PORT}` 
+      : 'https://vps-4455523-x.dattaweb.com';
+  },
+  
+  // Path base de la aplicación
+  get BASE_URL() {
+    return `/${APP_PATH}`;
+  },
+  
   // Get session ID from URL parameter, default to 0 if not present
   getSessionId: function() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -9,24 +31,12 @@ const config = {
   },
   
   getSocketConfig: function() {
-    const isLocal = window.location.hostname === 'localhost' || 
-                    window.location.hostname === '127.0.0.1';
-    
-    if (isLocal) {
-      return {
-        url: `http://localhost:${PORT}`,
-        options: {
-          path: `/${APP_PATH}/socket.io`
-        }
-      };
-    } else {
-      return {
-        url: 'https://vps-4455523-x.dattaweb.com',
-        options: {
-          path: `/${APP_PATH}/socket.io`
-        }
-      };
-    }
+    return {
+      url: this.SOCKET_URL,
+      options: {
+        path: `${this.BASE_URL}/socket.io`
+      }
+    };
   },
   
   // Configuración para los controles de sockets
@@ -128,3 +138,6 @@ const config = {
     }
   }
 };
+
+// Exponer la configuración globalmente
+window.config = config;
