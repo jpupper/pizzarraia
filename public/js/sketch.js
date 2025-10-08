@@ -690,9 +690,22 @@ function keyPressed() {
 // ============================================================
 
 function touchStarted(event) {
-    // Si el touch es sobre un elemento HTML (botón, input, etc), no bloquear
+    // Verificar si el touch es en la interfaz de usuario
+    const gui = document.getElementById('gui');
+    if (gui && gui.style.display !== 'none') {
+        const touch = event.touches ? event.touches[0] : event;
+        const guiRect = gui.getBoundingClientRect();
+        
+        // Si el toque está dentro de la interfaz de usuario, permitir el desplazamiento
+        if (touch.clientX >= guiRect.left && touch.clientX <= guiRect.right && 
+            touch.clientY >= guiRect.top && touch.clientY <= guiRect.bottom) {
+            return true;
+        }
+    }
+    
+    // Si el touch es sobre un elemento HTML que no es el canvas, no bloquear
     if (event && event.target && event.target.tagName !== 'CANVAS') {
-        return; // Dejar que el evento se propague normalmente
+        return true; // Permitir el comportamiento por defecto
     }
     
     // Si el cursor GUI está visible, manejar el touch
@@ -711,7 +724,7 @@ function touchStarted(event) {
     // Llamar a mousePressed para mantener compatibilidad
     mousePressed();
     
-    // Prevenir comportamiento por defecto en touch solo en el canvas
+    // Prevenir comportamiento por defecto en el canvas
     return false;
 }
 
@@ -733,12 +746,32 @@ function touchEnded(event) {
     return false;
 }
 
-function touchMoved() {
+function touchMoved(event) {
+    // Verificar si el movimiento es en la interfaz de usuario
+    const gui = document.getElementById('gui');
+    if (gui && gui.style.display !== 'none') {
+        const touch = event.touches ? event.touches[0] : event;
+        const guiRect = gui.getBoundingClientRect();
+        
+        // Si el movimiento es dentro de la interfaz, permitir el desplazamiento
+        if (touch.clientX >= guiRect.left && touch.clientX <= guiRect.right && 
+            touch.clientY >= guiRect.top && touch.clientY <= guiRect.bottom) {
+            return true;
+        }
+    }
+    
     // Actualizar hover del cursor GUI
     if (window.cursorGUI && cursorGUI.isVisible) {
         cursorGUI.updateHover(mouseX, mouseY);
     }
-    return false; // Prevenir scroll en móviles
+    
+    // Para el canvas, prevenir el scroll
+    if (event && event.target && event.target.tagName === 'CANVAS') {
+        return false;
+    }
+    
+    // Permitir el comportamiento por defecto para otros elementos
+    return true;
 }
 
 // ============================================================
