@@ -6,7 +6,9 @@ const passwordInput = document.getElementById('password');
 const passwordStrengthBar = document.getElementById('passwordStrengthBar');
 
 // Check if already logged in
-fetch(`${config.API_URL}/api/check-session`)
+fetch(`${config.API_URL}/api/check-session`, {
+    credentials: 'include'
+})
     .then(res => res.json())
     .then(data => {
         if (data.authenticated) {
@@ -67,6 +69,7 @@ registerForm.addEventListener('submit', async (e) => {
     try {
         const response = await fetch(`${config.API_URL}/api/register`, {
             method: 'POST',
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json'
             },

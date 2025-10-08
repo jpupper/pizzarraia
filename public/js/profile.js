@@ -5,7 +5,9 @@ let userImages = [];
 // Check authentication
 async function checkAuth() {
     try {
-        const response = await fetch(`${config.API_URL}/api/check-session`);
+        const response = await fetch(`${config.API_URL}/api/check-session`, {
+            credentials: 'include'
+        });
         const data = await response.json();
         
         if (!data.authenticated) {
@@ -27,7 +29,9 @@ function loadUserProfile() {
     document.getElementById('userAvatar').textContent = currentUser.username.charAt(0).toUpperCase();
     
     // Get user details for member since date
-    fetch(`${config.API_URL}/api/user`)
+    fetch(`${config.API_URL}/api/user`, {
+            credentials: 'include'
+        })
         .then(res => res.json())
         .then(data => {
             if (data.user && data.user.createdAt) {
@@ -44,7 +48,9 @@ function loadUserProfile() {
 
 async function loadUserImages() {
     try {
-        const response = await fetch(`${config.API_URL}/api/images`);
+        const response = await fetch(`${config.API_URL}/api/images`, {
+            credentials: 'include'
+        });
         const data = await response.json();
         
         userImages = data.images || [];
@@ -100,7 +106,9 @@ function renderGallery() {
         imgElement.onclick = () => viewImage(image._id);
         
         // Cargar la imagen completa para la miniatura
-        fetch(`${config.API_URL}/api/images/${image._id}`)
+        fetch(`${config.API_URL}/api/images/${image._id}`, {
+                credentials: 'include'
+            })
             .then(res => res.json())
             .then(data => {
                 if (data.image && data.image.imageData) {
@@ -129,7 +137,9 @@ function renderGallery() {
 
 async function viewImage(imageId) {
     try {
-        const response = await fetch(`${config.API_URL}/api/images/${imageId}`);
+        const response = await fetch(`${config.API_URL}/api/images/${imageId}`, {
+            credentials: 'include'
+        });
         const data = await response.json();
         
         if (data.image) {
@@ -144,7 +154,9 @@ async function viewImage(imageId) {
 
 async function downloadImage(imageId, title) {
     try {
-        const response = await fetch(`${config.API_URL}/api/images/${imageId}`);
+        const response = await fetch(`${config.API_URL}/api/images/${imageId}`, {
+            credentials: 'include'
+        });
         const data = await response.json();
         
         if (data.image) {
@@ -169,7 +181,8 @@ async function deleteImage(imageId) {
     
     try {
         const response = await fetch(`${config.API_URL}/api/images/${imageId}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            credentials: 'include'
         });
         
         if (response.ok) {
@@ -189,7 +202,10 @@ function closeModal() {
 
 async function logout() {
     try {
-        await fetch(`${config.API_URL}/api/logout`, { method: 'POST' });
+        await fetch(`${config.API_URL}/api/logout`, { 
+            method: 'POST',
+            credentials: 'include'
+        });
         window.location.href = 'login.html';
     } catch (error) {
         console.error('Error logging out:', error);
