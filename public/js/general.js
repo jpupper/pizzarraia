@@ -522,7 +522,7 @@ function downloadImage() {
   
   // Crear un nombre de archivo con timestamp
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-  const filename = `pizarraia_${timestamp}.png`;
+  const filename = `pizarracollab_${timestamp}.png`;
   
   // Convertir el canvas a blob y descargar
   canvas.toBlob(function(blob) {

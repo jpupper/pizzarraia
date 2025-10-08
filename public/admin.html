@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administrador - PizarraCollab</title>
+    <link rel='stylesheet' href='css/style.css' />
+    <link rel='stylesheet' href='css/admin.css' />
+</head>
+<body>
+    <div class="admin-container">
+        <header class="admin-header">
+            <h1>🎨 Panel de Administrador</h1>
+            <div class="admin-nav">
+                <a href="index.html" class="btn btn-secondary">Volver a la Pizarra</a>
+                <button onclick="logout()" class="btn btn-danger">Cerrar Sesión</button>
+            </div>
+        </header>
+
+        <div class="admin-content">
+            <!-- Estadísticas Generales -->
+            <section class="stats-section">
+                <div class="stat-card">
+                    <h3>Usuarios Registrados</h3>
+                    <p class="stat-number" id="totalUsers">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Usuarios Conectados</h3>
+                    <p class="stat-number" id="connectedUsers">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Sesiones Activas</h3>
+                    <p class="stat-number" id="activeSessions">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Imágenes Totales</h3>
+                    <p class="stat-number" id="totalImages">0</p>
+                </div>
+            </section>
+
+            <!-- Sesiones Activas -->
+            <section class="section">
+                <h2>📊 Sesiones Activas</h2>
+                <div id="sessionsContainer" class="sessions-grid">
+                    <p class="loading">Cargando sesiones...</p>
+                </div>
+            </section>
+
+            <!-- Usuarios Conectados -->
+            <section class="section">
+                <h2>👥 Usuarios Conectados Ahora</h2>
+                <div id="connectedContainer" class="users-table">
+                    <p class="loading">Cargando usuarios conectados...</p>
+                </div>
+            </section>
+
+            <!-- Todos los Usuarios -->
+            <section class="section">
+                <h2>📋 Todos los Usuarios Registrados</h2>
+                <div id="usersContainer" class="users-table">
+                    <p class="loading">Cargando usuarios...</p>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>

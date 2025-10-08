@@ -281,6 +281,82 @@ app.delete('/pizarraia/api/images/:id', isAuthenticated, async (req, res) => {
   }
 });
 
+// Global gallery route (public)
+app.get('/pizarraia/api/gallery', async (req, res) => {
+  try {
+    // Get all images with user info, sorted by creation date
+    const images = await Image.find()
+      .sort({ createdAt: -1 })
+      .select('-imageData') // Don't send full image data in list
+      .limit(100); // Limit to last 100 images
+    
+    res.json({ images });
+  } catch (error) {
+    console.error('Error getting gallery:', error);
+    res.status(500).json({ error: 'Error al obtener la galería' });
+  }
+});
+
+// Get specific image from gallery (public)
+app.get('/pizarraia/api/gallery/:id', async (req, res) => {
+  try {
+    const image = await Image.findById(req.params.id);
+    
+    if (!image) {
+      return res.status(404).json({ error: 'Imagen no encontrada' });
+    }
+    
+    res.json({ image });
+  } catch (error) {
+    console.error('Error getting image:', error);
+    res.status(500).json({ error: 'Error al obtener la imagen' });
+  }
+});
+
+// Admin routes
+app.get('/pizarraia/api/admin/users', isAuthenticated, async (req, res) => {
+  try {
+    // Get all users from database
+    const users = await User.find().select('-password').sort({ createdAt: -1 });
+    res.json({ users });
+  } catch (error) {
+    console.error('Error getting users:', error);
+    res.status(500).json({ error: 'Error al obtener usuarios' });
+  }
+});
+
+app.get('/pizarraia/api/admin/connected', (req, res) => {
+  try {
+    // Get connected users info
+    const connected = Array.from(connectedUsers.values());
+    res.json({ connected });
+  } catch (error) {
+    console.error('Error getting connected users:', error);
+    res.status(500).json({ error: 'Error al obtener usuarios conectados' });
+  }
+});
+
+app.get('/pizarraia/api/admin/sessions', (req, res) => {
+  try {
+    // Get active sessions with user count
+    const activeSessions = Object.keys(sessions)
+      .filter(sessionId => sessions[sessionId] && sessions[sessionId].length > 0)
+      .map(sessionId => ({
+        sessionId,
+        userCount: sessions[sessionId].length,
+        users: sessions[sessionId].map(socketId => {
+          const userInfo = connectedUsers.get(socketId);
+          return userInfo || { socketId, username: 'Anónimo' };
+        })
+      }));
+    
+    res.json({ sessions: activeSessions });
+  } catch (error) {
+    console.error('Error getting sessions:', error);
+    res.status(500).json({ error: 'Error al obtener sesiones' });
+  }
+});
+
 const server = http.createServer(app);
 
 // Adjuntar socket.io al servidor HTTP
@@ -295,8 +371,19 @@ const io = socketIo(server, {
 // Store active sessions and their sockets
 const sessions = {};
 
+// Store connected users info (socketId -> user info)
+const connectedUsers = new Map();
+
 io.on('connection', (socket) => {
   console.log('Cliente conectado: ' + socket.id);
+  
+  // Register connected user
+  connectedUsers.set(socket.id, {
+    socketId: socket.id,
+    username: 'Anónimo',
+    sessionId: '0',
+    connectedAt: new Date()
+  });
   
   // Handle session joining
   socket.on('join_session', (sessionId) => {
@@ -315,6 +402,12 @@ io.on('connection', (socket) => {
       sessions[sessionId] = [];
     }
     sessions[sessionId].push(socket.id);
+    
+    // Update user info
+    const userInfo = connectedUsers.get(socket.id);
+    if (userInfo) {
+      userInfo.sessionId = sessionId;
+    }
     
     console.log(`Cliente ${socket.id} se unió a la sesión ${sessionId}`);
     console.log('Sesiones activas:', sessions);
@@ -423,6 +516,9 @@ io.on('connection', (socket) => {
   // Manejar la desccconexión del cliente
   socket.on('disconnect', () => {
     console.log('Cliente desconectado: ' + socket.id);
+    
+    // Remove from connected users
+    connectedUsers.delete(socket.id);
     
     // Remove from session
     const sessionId = socket.sessionId || '0';

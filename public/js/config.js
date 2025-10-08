@@ -141,15 +141,15 @@ const config = {
 
 // Token management functions
 config.saveToken = function(token) {
-  localStorage.setItem('pizarraia_token', token);
+  localStorage.setItem('pizarracollab_token', token);
 };
 
 config.getToken = function() {
-  return localStorage.getItem('pizarraia_token');
+  return localStorage.getItem('pizarracollab_token');
 };
 
 config.removeToken = function() {
-  localStorage.removeItem('pizarraia_token');
+  localStorage.removeItem('pizarracollab_token');
 };
 
 config.getAuthHeaders = function() {

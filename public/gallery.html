@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galería Global - PizarraCollab</title>
+    <link rel='stylesheet' href='css/style.css' />
+    <link rel='stylesheet' href='css/gallery.css' />
+</head>
+<body>
+    <div class="gallery-container">
+        <header class="gallery-header">
+            <h1>🎨 Galería Global</h1>
+            <p>Explora las creaciones de toda la comunidad</p>
+            <div class="header-actions">
+                <a href="index.html" class="btn btn-primary">Crear mi Arte</a>
+                <a href="profile.html" class="btn btn-secondary">Mi Perfil</a>
+            </div>
+        </header>
+
+        <div class="gallery-stats">
+            <div class="stat">
+                <span class="stat-number" id="totalImages">0</span>
+                <span class="stat-label">Obras de Arte</span>
+            </div>
+            <div class="stat">
+                <span class="stat-number" id="totalArtists">0</span>
+                <span class="stat-label">Artistas</span>
+            </div>
+        </div>
+
+        <div class="gallery-grid" id="galleryGrid">
+            <div class="loading">Cargando galería...</div>
+        </div>
+    </div>
+
+    <!-- Modal para ver imagen completa -->
+    <div id="imageModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <img id="modalImage" class="modal-image" src="" alt="Imagen">
+            <div class="modal-info">
+                <h3 id="modalTitle">Título</h3>
+                <p id="modalAuthor">Por: Usuario</p>
+                <p id="modalDate">Fecha</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/gallery.js"></script>
+</body>
+</html>
