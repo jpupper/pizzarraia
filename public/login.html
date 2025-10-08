@@ -197,7 +197,7 @@
         const successMessage = document.getElementById('successMessage');
 
         // Check if already logged in
-        fetch('/api/check-session')
+        fetch('/pizarraia/api/check-session')
             .then(res => res.json())
             .then(data => {
                 if (data.authenticated) {
@@ -222,7 +222,7 @@
             loginForm.classList.add('loading');
 
             try {
-                const response = await fetch('/api/login', {
+                const response = await fetch('/pizarraia/api/login', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'

@@ -38,8 +38,8 @@ app.use(session({
   }
 }));
 
-// Serve static files
-app.use(express.static(path.join(__dirname, 'public')));
+// Serve static files under /pizarraia path
+app.use('/pizarraia', express.static(path.join(__dirname, 'public')));
 
 // Authentication middleware
 const isAuthenticated = (req, res, next) => {
@@ -50,9 +50,21 @@ const isAuthenticated = (req, res, next) => {
   }
 };
 
+// Main route
+app.get('/pizarraia', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Root route
+app.get('/', (req, res) => {
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'text/plain');
+  res.end('Pizarraia Server');
+});
+
 // API Routes
 // Register
-app.post('/api/register', async (req, res) => {
+app.post('/pizarraia/api/register', async (req, res) => {
   try {
     const { username, password } = req.body;
     
@@ -85,7 +97,7 @@ app.post('/api/register', async (req, res) => {
 });
 
 // Login
-app.post('/api/login', async (req, res) => {
+app.post('/pizarraia/api/login', async (req, res) => {
   try {
     const { username, password } = req.body;
     
@@ -120,7 +132,7 @@ app.post('/api/login', async (req, res) => {
 });
 
 // Logout
-app.post('/api/logout', (req, res) => {
+app.post('/pizarraia/api/logout', (req, res) => {
   req.session.destroy((err) => {
     if (err) {
       return res.status(500).json({ error: 'Error al cerrar sesión' });
@@ -130,7 +142,7 @@ app.post('/api/logout', (req, res) => {
 });
 
 // Get current user
-app.get('/api/user', isAuthenticated, async (req, res) => {
+app.get('/pizarraia/api/user', isAuthenticated, async (req, res) => {
   try {
     const user = await User.findById(req.session.userId).select('-password');
     res.json({ user });
@@ -140,7 +152,7 @@ app.get('/api/user', isAuthenticated, async (req, res) => {
 });
 
 // Check session
-app.get('/api/check-session', (req, res) => {
+app.get('/pizarraia/api/check-session', (req, res) => {
   if (req.session.userId) {
     res.json({ 
       authenticated: true, 
@@ -155,7 +167,7 @@ app.get('/api/check-session', (req, res) => {
 });
 
 // Save image
-app.post('/api/images', isAuthenticated, async (req, res) => {
+app.post('/pizarraia/api/images', isAuthenticated, async (req, res) => {
   try {
     const { title, imageData } = req.body;
     
@@ -187,7 +199,7 @@ app.post('/api/images', isAuthenticated, async (req, res) => {
 });
 
 // Get user's images
-app.get('/api/images', isAuthenticated, async (req, res) => {
+app.get('/pizarraia/api/images', isAuthenticated, async (req, res) => {
   try {
     const images = await Image.find({ userId: req.session.userId })
       .sort({ createdAt: -1 })
@@ -201,7 +213,7 @@ app.get('/api/images', isAuthenticated, async (req, res) => {
 });
 
 // Get specific image
-app.get('/api/images/:id', isAuthenticated, async (req, res) => {
+app.get('/pizarraia/api/images/:id', isAuthenticated, async (req, res) => {
   try {
     const image = await Image.findOne({ 
       _id: req.params.id, 
@@ -220,7 +232,7 @@ app.get('/api/images/:id', isAuthenticated, async (req, res) => {
 });
 
 // Delete image
-app.delete('/api/images/:id', isAuthenticated, async (req, res) => {
+app.delete('/pizarraia/api/images/:id', isAuthenticated, async (req, res) => {
   try {
     const image = await Image.findOneAndDelete({ 
       _id: req.params.id, 
