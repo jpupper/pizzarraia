@@ -7,12 +7,14 @@ const animales = [
     'Pulpo', 'Tiburón', 'Foca', 'Nutria', 'Mapache', 'Ardilla', 'Camaleón'
 ];
 
-const objetos = [
-    'Estrella', 'Luna', 'Sol', 'Cometa', 'Nube', 'Rayo', 'Cristal',
-    'Diamante', 'Espada', 'Escudo', 'Corona', 'Pluma', 'Flecha', 'Martillo',
-    'Llave', 'Espejo', 'Reloj', 'Brújula', 'Ancla', 'Faro', 'Campana',
-    'Tambor', 'Guitarra', 'Piano', 'Violín', 'Trompeta', 'Libro', 'Pergamino',
-    'Pincel', 'Paleta', 'Lienzo', 'Lápiz', 'Pluma', 'Tinta'
+const adjetivos = [
+    'Valiente', 'Audaz', 'Veloz', 'Sabio', 'Fuerte', 'Ágil', 'Brillante',
+    'Misterioso', 'Salvaje', 'Sereno', 'Feroz', 'Astuto', 'Noble', 'Leal',
+    'Curioso', 'Intrépido', 'Radiante', 'Silencioso', 'Poderoso', 'Gentil',
+    'Rebelde', 'Pacífico', 'Creativo', 'Ingenioso', 'Elegante', 'Rápido',
+    'Tranquilo', 'Explosivo', 'Místico', 'Épico', 'Legendario', 'Cósmico',
+    'Eterno', 'Infinito', 'Supremo', 'Divino', 'Celestial', 'Mágico',
+    'Heroico', 'Majestuoso', 'Glorioso', 'Invencible', 'Imparable', 'Libre'
 ];
 
 const colores = [
@@ -24,9 +26,9 @@ const colores = [
 ];
 
 /**
- * Genera un nombre aleatorio combinando un color, un animal y un objeto
+ * Genera un nombre aleatorio combinando un animal, un adjetivo y un color
  * @param {string} seed - Semilla opcional para generar nombres consistentes (ej: socket.id)
- * @returns {string} Nombre generado (ej: "Azul Gato Estrella")
+ * @returns {string} Nombre generado (ej: "Perro Valiente Verde")
  */
 function generarNombreAleatorio(seed = null) {
     let randomIndex;
@@ -39,18 +41,18 @@ function generarNombreAleatorio(seed = null) {
             hash = hash & hash;
         }
         
-        const colorIndex = Math.abs(hash) % colores.length;
-        const animalIndex = Math.abs(hash >> 8) % animales.length;
-        const objetoIndex = Math.abs(hash >> 16) % objetos.length;
+        const animalIndex = Math.abs(hash) % animales.length;
+        const adjetivoIndex = Math.abs(hash >> 8) % adjetivos.length;
+        const colorIndex = Math.abs(hash >> 16) % colores.length;
         
-        return `${colores[colorIndex]} ${animales[animalIndex]} ${objetos[objetoIndex]}`;
+        return `${animales[animalIndex]} ${adjetivos[adjetivoIndex]} ${colores[colorIndex]}`;
     } else {
         // Sin semilla, usar Math.random() para nombres completamente aleatorios
-        const colorAleatorio = colores[Math.floor(Math.random() * colores.length)];
         const animalAleatorio = animales[Math.floor(Math.random() * animales.length)];
-        const objetoAleatorio = objetos[Math.floor(Math.random() * objetos.length)];
+        const adjetivoAleatorio = adjetivos[Math.floor(Math.random() * adjetivos.length)];
+        const colorAleatorio = colores[Math.floor(Math.random() * colores.length)];
         
-        return `${colorAleatorio} ${animalAleatorio} ${objetoAleatorio}`;
+        return `${animalAleatorio} ${adjetivoAleatorio} ${colorAleatorio}`;
     }
 }
 
