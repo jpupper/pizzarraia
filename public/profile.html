@@ -318,7 +318,7 @@
         // Check authentication
         async function checkAuth() {
             try {
-                const response = await fetch('/api/check-session');
+                const response = await fetch('/pizarraia/api/check-session');
                 const data = await response.json();
                 
                 if (!data.authenticated) {
@@ -340,7 +340,7 @@
             document.getElementById('userAvatar').textContent = currentUser.username.charAt(0).toUpperCase();
             
             // Get user details for member since date
-            fetch('/api/user')
+            fetch('/pizarraia/api/user')
                 .then(res => res.json())
                 .then(data => {
                     if (data.user && data.user.createdAt) {
@@ -357,7 +357,7 @@
 
         async function loadUserImages() {
             try {
-                const response = await fetch('/api/images');
+                const response = await fetch('/pizarraia/api/images');
                 const data = await response.json();
                 
                 userImages = data.images || [];
@@ -413,7 +413,7 @@
                 imgElement.onclick = () => viewImage(image._id);
                 
                 // Cargar la imagen completa para la miniatura
-                fetch(`/api/images/${image._id}`)
+                fetch(`/pizarraia/api/images/${image._id}`)
                     .then(res => res.json())
                     .then(data => {
                         if (data.image && data.image.imageData) {
@@ -442,7 +442,7 @@
 
         async function viewImage(imageId) {
             try {
-                const response = await fetch(`/api/images/${imageId}`);
+                const response = await fetch(`/pizarraia/api/images/${imageId}`);
                 const data = await response.json();
                 
                 if (data.image) {
@@ -457,7 +457,7 @@
 
         async function downloadImage(imageId, title) {
             try {
-                const response = await fetch(`/api/images/${imageId}`);
+                const response = await fetch(`/pizarraia/api/images/${imageId}`);
                 const data = await response.json();
                 
                 if (data.image) {
@@ -481,7 +481,7 @@
             }
             
             try {
-                const response = await fetch(`/api/images/${imageId}`, {
+                const response = await fetch(`/pizarraia/api/images/${imageId}`, {
                     method: 'DELETE'
                 });
                 
@@ -502,7 +502,7 @@
 
         async function logout() {
             try {
-                await fetch('/api/logout', { method: 'POST' });
+                await fetch('/pizarraia/api/logout', { method: 'POST' });
                 window.location.href = 'login.html';
             } catch (error) {
                 console.error('Error logging out:', error);
