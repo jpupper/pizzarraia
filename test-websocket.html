@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>WebSocket Connection Test</h1>
+    <div id="status">Connecting to WebSocket server...</div>
+    <div id="messages"></div>
+
+    <script>
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const socketUrl = isLocal ? 'http://localhost:3025' : 'https://jeyder.com.ar';
+        
+        const socket = io(socketUrl, {
+            path: '/socket.io',
+            transports: ['websocket'],
+            secure: !isLocal,
+            rejectUnauthorized: false
+        });
+
+        socket.on('connect', () => {
+            document.getElementById('status').innerHTML = '✅ Connected to WebSocket server!';
+            document.getElementById('status').style.color = 'green';
+            
+            // Test message
+            socket.emit('test', { message: 'Hello from client' });
+        });
+
+        socket.on('connect_error', (error) => {
+            document.getElementById('status').innerHTML = `❌ Connection failed: ${error.message}`;
+            document.getElementById('status').style.color = 'red';
+            console.error('Connection error:', error);
+        });
+
+        socket.on('test-response', (data) => {
+            const messages = document.getElementById('messages');
+            messages.innerHTML += `<div>Server response: ${JSON.stringify(data)}</div>`;
+        });
+
+        // Add a test button
+        const button = document.createElement('button');
+        button.textContent = 'Send Test Message';
+        button.onclick = () => {
+            socket.emit('test', { message: 'Test message from button click', timestamp: new Date().toISOString() });
+        };
+        document.body.appendChild(button);
+    </script>
+</body>
+</html>

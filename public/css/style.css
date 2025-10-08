@@ -12,15 +12,15 @@
     padding: 0;
     box-sizing: border-box;
     font-family: 'Arial', sans-serif;
-    overflow: hidden; /* Previene el scroll */
 }
 
 body {
     background-color: var(--primary-dark);
     color: var(--text);
     min-height: 100vh;
-    padding: 0; /* Eliminamos el padding para fullscreen */
-    overflow: hidden; /* Previene el scroll */
+    padding: 0;
+    touch-action: manipulation; /* Mejora la respuesta táctil */
+    -webkit-overflow-scrolling: touch; /* Desplazamiento suave en iOS */
 }
 
 canvas {
@@ -44,8 +44,10 @@ canvas[style*="z-index: 1"] {
     z-index: 1000;
     display: none;
     transition: transform 0.3s ease;
-    max-height: 90vh; /* Altura mÃ¡xima */
+    max-height: 90vh; /* Altura máxima */
     overflow-y: auto; /* Permite scroll solo en el GUI */
+    -webkit-overflow-scrolling: touch; /* Desplazamiento suave en iOS */
+    overscroll-behavior: contain; /* Evita el efecto de rebote del navegador */
 }
 
 /* Estilos personalizados para la barra de desplazamiento del GUI */
