@@ -506,15 +506,19 @@ function updateArtBrushParameters(params) {
   }
 }
 
-// Función para descargar la imagen del drawBuffer en alta calidad
+// Función para descargar la imagen combinando todas las capas visibles
 function downloadImage() {
-  if (!window.drawBuffer) {
-    console.error('drawBuffer no está disponible');
+  // Verificar que la función renderAllLayers existe
+  if (typeof window.renderAllLayers !== 'function') {
+    console.error('renderAllLayers no está disponible');
     return;
   }
   
-  // Obtener el canvas del drawBuffer
-  const canvas = drawBuffer.canvas;
+  // Combinar todas las capas visibles
+  const combined = window.renderAllLayers();
+  
+  // Obtener el canvas combinado
+  const canvas = combined.canvas;
   
   // Crear un nombre de archivo con timestamp
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
@@ -698,12 +702,14 @@ function setupChat() {
     if (message === '') return;
     
     // Enviar mensaje por socket
-    socket.emit('chat_message', {
-      username: username,
-      message: message,
-      session: sessionId,
-      timestamp: Date.now()
-    });
+    if (socket && socket.connected) {
+      socket.emit('chat_message', {
+        username: username,
+        message: message,
+        session: sessionId,
+        timestamp: Date.now()
+      });
+    }
     
     // Limpiar input
     chatInput.value = '';
@@ -879,8 +885,8 @@ async function saveImageToServer() {
     return;
   }
   
-  // Verificar que drawBuffer existe
-  if (!window.drawBuffer) {
+  // Verificar que renderAllLayers existe
+  if (typeof window.renderAllLayers !== 'function') {
     alert('No hay imagen para guardar');
     return;
   }
@@ -890,8 +896,11 @@ async function saveImageToServer() {
   if (title === null) return; // Usuario canceló
   
   try {
-    // Convertir el canvas a base64
-    const canvas = drawBuffer.canvas;
+    // Combinar todas las capas visibles
+    const combined = window.renderAllLayers();
+    
+    // Convertir el canvas combinado a base64
+    const canvas = combined.canvas;
     const imageData = canvas.toDataURL('image/png', 1.0);
     
     // Mostrar indicador de carga
