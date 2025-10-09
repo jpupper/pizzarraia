@@ -536,7 +536,7 @@ function drawArtBrush(buffer, x, y, pmouseX, pmouseY, particleCount, size, color
         const dxPrev = pmouseX - centerX;
         const dyPrev = pmouseY - centerY;
         const distancePrev = Math.sqrt(dxPrev * dxPrev + dyPrev * dyPrev);
-        const anglePrev = Math.atan2(dyPrev, dyPrev);
+        const anglePrev = Math.atan2(dyPrev, dxPrev);
         
         // Crear un array para almacenar los parámetros de sincronización de todos los segmentos
         let allSyncParams = [];
@@ -552,6 +552,50 @@ function drawArtBrush(buffer, x, y, pmouseX, pmouseY, particleCount, size, color
             const newPmouseX = centerX + Math.cos(anglePrev + segmentAngle) * distancePrev;
             const newPmouseY = centerY + Math.sin(anglePrev + segmentAngle) * distancePrev;
             
+            // Si tenemos syncParams, necesitamos ajustar las coordenadas para cada segmento
+            let segmentSpecificSyncParams = null;
+            if (syncParams) {
+                // Crear una copia de syncParams con las coordenadas ajustadas para este segmento
+                segmentSpecificSyncParams = { ...syncParams };
+                
+                // Si hay particleParams, ajustar las posiciones de cada partícula para este segmento
+                if (syncParams.particleParams && syncParams.particleParams.length > 0) {
+                    const adjustedParticleParams = [];
+                    
+                    for (let j = 0; j < syncParams.particleParams.length; j++) {
+                        const p = syncParams.particleParams[j];
+                        
+                        // Calcular la posición de la partícula relativa al centro original
+                        const particleDx = p.x - x;
+                        const particleDy = p.y - y;
+                        const particleDistance = Math.sqrt(particleDx * particleDx + particleDy * particleDy);
+                        const particleAngle = Math.atan2(particleDy, particleDx);
+                        
+                        // Rotar la partícula según el segmento
+                        const rotatedParticleX = newX + Math.cos(particleAngle + segmentAngle) * particleDistance;
+                        const rotatedParticleY = newY + Math.sin(particleAngle + segmentAngle) * particleDistance;
+                        
+                        // Rotar también la velocidad
+                        const velocityAngle = Math.atan2(p.vy, p.vx);
+                        const velocityMagnitude = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+                        const rotatedVx = Math.cos(velocityAngle + segmentAngle) * velocityMagnitude;
+                        const rotatedVy = Math.sin(velocityAngle + segmentAngle) * velocityMagnitude;
+                        
+                        adjustedParticleParams.push({
+                            x: rotatedParticleX,
+                            y: rotatedParticleY,
+                            vx: rotatedVx,
+                            vy: rotatedVy,
+                            size: p.size,
+                            seed: p.seed + i * 10000, // Modificar seed para cada segmento
+                            colorSeed: p.colorSeed + i * 10000
+                        });
+                    }
+                    
+                    segmentSpecificSyncParams.particleParams = adjustedParticleParams;
+                }
+            }
+            
             // Dibujar el pincel artístico en la nueva posición
             const segmentSyncParams = drawBasicArtBrush(
                 buffer, 
@@ -560,7 +604,7 @@ function drawArtBrush(buffer, x, y, pmouseX, pmouseY, particleCount, size, color
                 particleCount, 
                 size, 
                 color, 
-                syncParams
+                segmentSpecificSyncParams || syncParams
             );
             
             // Guardar los parámetros de sincronización

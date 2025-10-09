@@ -16,6 +16,7 @@ class CursorGUI {
         this.alphaBarY = 0; // Posición Y de la barra de transparencia
         this.paletteY = 0; // Posición Y de los slots de paleta
         this.sizeBarY = 0; // Posición Y de la barra de tamaño (abajo)
+        this.brushButtonsY = 0; // Posición Y de los botones de pincel
         
         // Timer para detectar long press
         this.pressStartTime = 0;
@@ -35,6 +36,7 @@ class CursorGUI {
         this.hoveredSaturation = null;
         this.hoveredBrightness = null;
         this.hoveredPaletteSlot = null;
+        this.hoveredBrushButton = null;
         
         // Sistema de paleta de colores - sincronizar con HTML
         this.colorPalette = this.loadPaletteFromHTML();
@@ -45,6 +47,19 @@ class CursorGUI {
         // Configuración de tamaño
         this.minSize = 1;
         this.maxSize = 100;
+        
+        // Botones de pinceles
+        this.brushButtons = [
+            { id: 'classic', icon: '●', name: 'Classic' },
+            { id: 'line', icon: '/', name: 'Line' },
+            { id: 'art', icon: '✦', name: 'Art' },
+            { id: 'pixel', icon: '▦', name: 'Pixel' },
+            { id: 'text', icon: 'A', name: 'Text' },
+            { id: 'geometry', icon: '▲', name: 'Geometry' },
+            { id: 'fill', icon: '▨', name: 'Fill' }
+        ];
+        this.brushButtonSize = 40;
+        this.brushButtonSpacing = 8;
     }
     
     /**
@@ -143,26 +158,30 @@ class CursorGUI {
         this.centerY = y;
         
         // Calcular posiciones de las barras (de arriba hacia abajo)
-        let currentY = y - 250; // Empezar más arriba para dar más espacio
+        let currentY = y - 300; // Empezar más arriba para dar espacio a los botones de pincel
         
         this.hueBarY = currentY;
-        currentY += 60; // Aumentado de 50 a 60
+        currentY += 60;
         
         this.saturationBarY = currentY;
-        currentY += 60; // Aumentado de 50 a 60
+        currentY += 60;
         
         this.brightnessBarY = currentY;
-        currentY += 60; // Aumentado de 50 a 60
+        currentY += 60;
         
         this.alphaBarY = currentY;
-        currentY += 70; // Aumentado de 60 a 70
+        currentY += 70;
         
         // Slots de paleta en el centro
         this.paletteY = currentY;
-        currentY += 80; // Aumentado de 70 a 80
+        currentY += 80;
         
-        // Barra de tamaño abajo
+        // Barra de tamaño
         this.sizeBarY = currentY;
+        currentY += 70;
+        
+        // Botones de pinceles abajo
+        this.brushButtonsY = currentY;
         
         console.log('Cursor GUI mostrado en:', x, y);
     }
@@ -259,6 +278,66 @@ class CursorGUI {
     }
     
     /**
+     * Obtener la posición de un botón de pincel
+     */
+    getBrushButtonPosition(index) {
+        const totalButtons = this.brushButtons.length;
+        const totalWidth = (this.brushButtonSize * totalButtons) + (this.brushButtonSpacing * (totalButtons - 1));
+        const startX = this.centerX - totalWidth / 2;
+        const x = startX + (index * (this.brushButtonSize + this.brushButtonSpacing));
+        const y = this.brushButtonsY;
+        
+        return { x, y };
+    }
+    
+    /**
+     * Verificar si un punto está sobre un botón de pincel
+     */
+    getBrushButtonAt(x, y) {
+        if (!this.isVisible) return null;
+        
+        for (let i = 0; i < this.brushButtons.length; i++) {
+            const pos = this.getBrushButtonPosition(i);
+            
+            if (x >= pos.x && x <= pos.x + this.brushButtonSize &&
+                y >= pos.y && y <= pos.y + this.brushButtonSize) {
+                return i;
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Seleccionar un pincel
+     */
+    selectBrush(index) {
+        if (index >= 0 && index < this.brushButtons.length) {
+            const brush = this.brushButtons[index];
+            const brushTypeInput = document.getElementById('brushType');
+            
+            if (brushTypeInput) {
+                brushTypeInput.value = brush.id;
+                
+                // Disparar evento change para actualizar la interfaz
+                const event = new Event('change');
+                brushTypeInput.dispatchEvent(event);
+                
+                // Sincronizar con los botones de la interfaz principal
+                const brushBtns = document.querySelectorAll('.brush-btn');
+                brushBtns.forEach(btn => btn.classList.remove('active'));
+                
+                const targetBtn = document.querySelector(`.brush-btn[data-brush="${brush.id}"]`);
+                if (targetBtn) {
+                    targetBtn.classList.add('active');
+                }
+                
+                console.log('Pincel seleccionado:', brush.name);
+            }
+        }
+    }
+    
+    /**
      * Verificar si un punto está dentro del selector
      */
     isPointInside(x, y) {
@@ -284,6 +363,11 @@ class CursorGUI {
         
         // Verificar slots de paleta
         if (this.getPaletteSlotAt(x, y) !== null) {
+            return true;
+        }
+        
+        // Verificar botones de pincel
+        if (this.getBrushButtonAt(x, y) !== null) {
             return true;
         }
         
@@ -404,23 +488,30 @@ class CursorGUI {
         if (!this.isVisible) return false;
         
         // Debug: log de la posición Y del click
-        console.log('Click en Y:', y, 'Barras - Hue:', this.hueBarY, 'Sat:', this.saturationBarY, 'Bright:', this.brightnessBarY, 'Alpha:', this.alphaBarY, 'Size:', this.sizeBarY);
+        console.log('Click en Y:', y, 'Barras - Hue:', this.hueBarY, 'Sat:', this.saturationBarY, 'Bright:', this.brightnessBarY, 'Alpha:', this.alphaBarY, 'Size:', this.sizeBarY, 'Brushes:', this.brushButtonsY);
         
-        // Verificar si hizo click en la barra de tono (primero)
+        // Verificar si hizo click en un botón de pincel (primero)
+        const brushButton = this.getBrushButtonAt(x, y);
+        if (brushButton !== null) {
+            this.selectBrush(brushButton);
+            return true;
+        }
+        
+        // Verificar si hizo click en la barra de tono
         const hue = this.getHueAt(x, y);
         if (hue !== null) {
             this.applyHue(hue);
             return true;
         }
         
-        // Verificar si hizo click en la barra de saturación (segundo)
+        // Verificar si hizo click en la barra de saturación
         const saturation = this.getSaturationAt(x, y);
         if (saturation !== null) {
             this.applySaturation(saturation);
             return true;
         }
         
-        // Verificar si hizo click en la barra de brillo (tercero)
+        // Verificar si hizo click en la barra de brillo
         const brightness = this.getBrightnessAt(x, y);
         if (brightness !== null) {
             this.applyBrightness(brightness);
@@ -663,6 +754,7 @@ class CursorGUI {
         this.hoveredSaturation = this.getSaturationAt(x, y);
         this.hoveredBrightness = this.getBrightnessAt(x, y);
         this.hoveredPaletteSlot = this.getPaletteSlotAt(x, y);
+        this.hoveredBrushButton = this.getBrushButtonAt(x, y);
     }
     
     /**
@@ -887,6 +979,52 @@ class CursorGUI {
         buffer.text('Transparencia', this.centerX, this.alphaBarY - 10);
         buffer.text('Paleta de Colores', this.centerX, this.paletteY - 25);
         buffer.text('Tamaño', this.centerX, this.sizeBarY - 10);
+        buffer.text('Pinceles', this.centerX, this.brushButtonsY - 10);
+        
+        // Dibujar botones de pinceles
+        const currentBrush = document.getElementById('brushType') ? document.getElementById('brushType').value : 'classic';
+        
+        for (let i = 0; i < this.brushButtons.length; i++) {
+            const brush = this.brushButtons[i];
+            const pos = this.getBrushButtonPosition(i);
+            const isActive = brush.id === currentBrush;
+            const isHovered = i === this.hoveredBrushButton;
+            
+            // Fondo del botón
+            buffer.noStroke();
+            if (isActive) {
+                buffer.fill(138, 79, 191, 220); // Color activo (accent)
+            } else if (isHovered) {
+                buffer.fill(107, 61, 143, 200); // Color hover
+            } else {
+                buffer.fill(74, 43, 95, 180); // Color normal
+            }
+            buffer.rect(pos.x, pos.y, this.brushButtonSize, this.brushButtonSize, 8);
+            
+            // Borde del botón activo
+            if (isActive) {
+                buffer.stroke(255, 255, 255, 255);
+                buffer.strokeWeight(3);
+                buffer.noFill();
+                buffer.rect(pos.x, pos.y, this.brushButtonSize, this.brushButtonSize, 8);
+            }
+            
+            // Icono del pincel
+            buffer.fill(255, 255, 255, 255);
+            buffer.noStroke();
+            buffer.textAlign(CENTER, CENTER);
+            buffer.textSize(20);
+            buffer.text(brush.icon, pos.x + this.brushButtonSize / 2, pos.y + this.brushButtonSize / 2);
+            
+            // Nombre del pincel en hover
+            if (isHovered) {
+                buffer.fill(255, 255, 255, 230);
+                buffer.noStroke();
+                buffer.textAlign(CENTER, CENTER);
+                buffer.textSize(12);
+                buffer.text(brush.name, pos.x + this.brushButtonSize / 2, pos.y + this.brushButtonSize + 15);
+            }
+        }
         
         // Mostrar indicador de progreso si está presionando Y quieto
         if (this.isPressing && !this.isVisible && this.checkIfStill()) {

@@ -419,11 +419,17 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+// Variable global para almacenar la imagen actual
+let currentViewingImage = null;
+
 // Render layer selector
 function renderLayerSelector(image) {
     const layersSelector = document.getElementById('layersSelector');
     const layerButtons = document.getElementById('layerButtons');
     const modalImage = document.getElementById('modalImage');
+    
+    // Guardar referencia a la imagen actual
+    currentViewingImage = image;
     
     if (!image.layers || image.layers.length === 0) {
         layersSelector.style.display = 'none';
@@ -456,6 +462,56 @@ function renderLayerSelector(image) {
         };
         layerButtons.appendChild(layerBtn);
     });
+}
+
+// Función para descargar capas como ZIP
+async function downloadLayers() {
+    if (!currentViewingImage || !currentViewingImage.layers || currentViewingImage.layers.length === 0) {
+        if (typeof toast !== 'undefined') toast.warning('No hay capas para descargar');
+        return;
+    }
+    
+    try {
+        // Verificar que JSZip esté disponible
+        if (typeof JSZip === 'undefined') {
+            if (typeof toast !== 'undefined') toast.error('Error: Librería de compresión no disponible');
+            return;
+        }
+        
+        const zip = new JSZip();
+        const imageName = currentViewingImage.title || 'dibujo';
+        
+        // Agregar imagen combinada
+        const combinedData = currentViewingImage.imageData.split(',')[1]; // Remover el prefijo data:image/png;base64,
+        zip.file(`${imageName}_combined.png`, combinedData, { base64: true });
+        
+        // Agregar cada capa individual
+        currentViewingImage.layers.forEach((layer, index) => {
+            const layerData = layer.imageData.split(',')[1];
+            const layerName = layer.name || `Capa_${index}`;
+            zip.file(`${imageName}_${layerName}.png`, layerData, { base64: true });
+        });
+        
+        // Generar el ZIP y descargarlo
+        if (typeof toast !== 'undefined') toast.info('Generando archivo ZIP...');
+        
+        const content = await zip.generateAsync({ type: 'blob' });
+        
+        // Crear enlace de descarga
+        const url = URL.createObjectURL(content);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${imageName}_capas.zip`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        if (typeof toast !== 'undefined') toast.success('¡Capas descargadas exitosamente!');
+    } catch (error) {
+        console.error('Error descargando capas:', error);
+        if (typeof toast !== 'undefined') toast.error('Error al descargar las capas');
+    }
 }
 
 // Close modal on background click

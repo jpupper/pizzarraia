@@ -222,6 +222,9 @@ function setup() {
     socket.on("layer_added", receiveLayerAdded);
     socket.on("layer_deleted", receiveLayerDeleted);
     
+    // Configurar evento para sincronización de imagen del brush
+    socket.on("image_brush_sync", receiveImageBrushSync);
+    
     // Inicializar valores
     asignarValores();
     drawBuffer.background(0);
@@ -575,6 +578,13 @@ function draw() {
         case 'fill':
             // Añadir parámetros para fill brush
             data.fillTolerance = parseInt(document.getElementById('fillTolerance').value);
+            break;
+        case 'image':
+            // Añadir parámetros para image brush
+            const imageBrushMgr = getImageBrushManager();
+            if (imageBrushMgr.hasImage()) {
+                data.imageData = imageBrushMgr.getImageData();
+            }
             break;
     }
     
@@ -1008,6 +1018,13 @@ function dibujarCoso(buffer, x, y, data) {
             // Fill brush - rellena área contigua
             const tolerance = data.fillTolerance || 0;
             drawFillBrush(buffer, x, y, col, tolerance);
+            break;
+        case 'image':
+            // Image brush - dibuja con una imagen cargada
+            const imageKaleidoSegments = data.kaleidoSegments || 1;
+            const imageAlpha = parseInt(data.av);
+            const imageData = data.imageData || null;
+            drawImageBrush(buffer, x, y, brushSize, imageAlpha, imageData, imageKaleidoSegments);
             break;
         case 'classic':
         default:

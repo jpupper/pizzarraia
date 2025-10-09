@@ -51,7 +51,7 @@ const config = {
     alphaValue: {
       min: 0,
       max: 255,
-      default: 50,
+      default: 150,
       step: 1
     },
     size: {

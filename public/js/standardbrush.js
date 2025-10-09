@@ -11,9 +11,10 @@
  * @param {p5.Color} color - Color del pincel
  */
 function drawStandardLine(buffer, x1, y1, x2, y2, size, color) {
+    // Usar PROJECT en lugar de ROUND para evitar doble dibujo en las uniones
     buffer.stroke(color);
     buffer.strokeWeight(size);
-    buffer.strokeCap(ROUND);
+    buffer.strokeCap(PROJECT);
     buffer.line(x1, y1, x2, y2);
 }
 

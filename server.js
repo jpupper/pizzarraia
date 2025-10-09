@@ -701,6 +701,7 @@ io.on('connection', (socket) => {
   socket.on('cursor', cursorMsg);
   socket.on('flowfield_sync', flowfieldMsg);
   socket.on('flowfield_config', flowfieldConfigMsg);
+  socket.on('image_brush_sync', imageBrushSyncMsg);
   
   function flowfieldMsg(data){
     // Broadcast flowfield sync to all clients in the same session
@@ -736,6 +737,24 @@ io.on('connection', (socket) => {
     }
     
     console.log(`Flowfield config from session ${sessionId}:`, data);
+  }
+  
+  function imageBrushSyncMsg(data){
+    // Broadcast image brush sync to all clients in the same session
+    const sessionId = socket.sessionId || data.sessionId || '0';
+    
+    if (sessions[sessionId]) {
+      const sessionSockets = sessions[sessionId];
+      
+      // Broadcast to all sockets in the same session except the sender
+      sessionSockets.forEach(socketId => {
+        if (socketId !== socket.id) {
+          io.to(socketId).emit('image_brush_sync', data);
+        }
+      });
+    }
+    
+    console.log(`Image brush sync from session ${sessionId} (image size: ${data.imageData ? data.imageData.length : 0} bytes)`);
   }
   
   function mouseMsg(data){

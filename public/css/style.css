@@ -1153,3 +1153,220 @@ canvas[id^="layerPreview"] {
     background: rgba(255, 71, 87, 1);
     transform: scale(1.1);
 }
+
+/* ============================================================
+   WELCOME MODAL STYLES
+   ============================================================ */
+
+.welcome-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 10001;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    backdrop-filter: blur(5px);
+}
+
+.welcome-modal.active {
+    display: flex;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.welcome-modal-content {
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+    border-radius: 20px;
+    padding: 40px;
+    max-width: 500px;
+    width: 100%;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    border: 2px solid var(--accent);
+    animation: slideUp 0.4s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.welcome-modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.5rem;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.welcome-modal-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: rotate(90deg);
+}
+
+.welcome-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.welcome-header h1 {
+    font-size: 2.5rem;
+    margin: 0 0 10px 0;
+    color: white;
+    text-shadow: 0 2px 10px rgba(138, 79, 191, 0.5);
+}
+
+.welcome-subtitle {
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0;
+}
+
+.welcome-actions {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.welcome-btn {
+    flex: 1;
+    padding: 15px 20px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.welcome-btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.welcome-btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+    border-color: white;
+}
+
+.welcome-btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.welcome-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-3px);
+    border-color: white;
+}
+
+.welcome-footer {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* Responsive para móvil */
+@media screen and (max-width: 768px) {
+    .welcome-modal-content {
+        padding: 30px 20px;
+    }
+    
+    .welcome-header h1 {
+        font-size: 2rem;
+    }
+    
+    .welcome-actions {
+        flex-direction: column;
+    }
+    
+    .welcome-btn {
+        width: 100%;
+    }
+}
+
+/* ============================================================
+   LAYER SELECTOR STYLES (PROFILE PAGE)
+   ============================================================ */
+
+.layers-selector {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+}
+
+.layers-selector h4 {
+    margin: 0 0 10px 0;
+    color: white;
+    font-size: 1rem;
+}
+
+.layer-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.layer-btn {
+    padding: 8px 15px;
+    background: rgba(138, 79, 191, 0.3);
+    color: white;
+    border: 2px solid rgba(138, 79, 191, 0.5);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.layer-btn:hover {
+    background: rgba(138, 79, 191, 0.5);
+    transform: translateY(-2px);
+}
+
+.layer-btn.active {
+    background: var(--accent);
+    border-color: white;
+    box-shadow: 0 0 15px rgba(138, 79, 191, 0.6);
+}
+
+.layer-btn.combined {
+    font-weight: bold;
+}

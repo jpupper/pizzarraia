@@ -1,0 +1,326 @@
+// imagebrush.js - Implementación del pincel de imagen
+
+/**
+ * Sistema de gestión de imágenes para el Image Brush
+ */
+class ImageBrushManager {
+    constructor() {
+        this.currentImage = null; // Imagen p5.Image actual
+        this.imageData = null; // Data URL de la imagen (para sincronización)
+        this.imageSize = 50; // Tamaño fijo de la imagen (50x50)
+        this.isLoading = false;
+    }
+    
+    /**
+     * Cargar una imagen desde un archivo
+     * @param {File} file - Archivo de imagen
+     * @returns {Promise} - Promesa que se resuelve cuando la imagen está lista
+     */
+    loadImageFromFile(file) {
+        return new Promise((resolve, reject) => {
+            if (!file || !file.type.startsWith('image/')) {
+                reject(new Error('El archivo debe ser una imagen'));
+                return;
+            }
+            
+            this.isLoading = true;
+            
+            // Crear un FileReader para leer el archivo
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                const img = new Image();
+                
+                img.onload = () => {
+                    // Crear un canvas temporal para redimensionar
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = this.imageSize;
+                    tempCanvas.height = this.imageSize;
+                    const ctx = tempCanvas.getContext('2d');
+                    
+                    // Dibujar la imagen redimensionada
+                    ctx.drawImage(img, 0, 0, this.imageSize, this.imageSize);
+                    
+                    // Obtener la data URL de la imagen redimensionada
+                    this.imageData = tempCanvas.toDataURL('image/png');
+                    
+                    // Cargar la imagen en p5.js
+                    loadImage(this.imageData, (p5img) => {
+                        this.currentImage = p5img;
+                        this.isLoading = false;
+                        console.log('Imagen cargada y redimensionada a 50x50');
+                        
+                        // Actualizar preview en la UI
+                        this.updatePreview();
+                        
+                        resolve({
+                            image: this.currentImage,
+                            imageData: this.imageData
+                        });
+                    }, (err) => {
+                        this.isLoading = false;
+                        reject(err);
+                    });
+                };
+                
+                img.onerror = () => {
+                    this.isLoading = false;
+                    reject(new Error('Error al cargar la imagen'));
+                };
+                
+                img.src = e.target.result;
+            };
+            
+            reader.onerror = () => {
+                this.isLoading = false;
+                reject(new Error('Error al leer el archivo'));
+            };
+            
+            reader.readAsDataURL(file);
+        });
+    }
+    
+    /**
+     * Cargar una imagen desde data URL (para sincronización)
+     * @param {string} imageData - Data URL de la imagen
+     * @returns {Promise} - Promesa que se resuelve cuando la imagen está lista
+     */
+    loadImageFromData(imageData) {
+        return new Promise((resolve, reject) => {
+            this.isLoading = true;
+            this.imageData = imageData;
+            
+            loadImage(imageData, (p5img) => {
+                this.currentImage = p5img;
+                this.isLoading = false;
+                console.log('Imagen sincronizada recibida');
+                resolve(this.currentImage);
+            }, (err) => {
+                this.isLoading = false;
+                reject(err);
+            });
+        });
+    }
+    
+    /**
+     * Actualizar el preview de la imagen en la UI
+     */
+    updatePreview() {
+        const previewElement = document.getElementById('imageBrushPreview');
+        if (previewElement && this.imageData) {
+            previewElement.src = this.imageData;
+            previewElement.style.display = 'block';
+        }
+    }
+    
+    /**
+     * Limpiar la imagen actual
+     */
+    clearImage() {
+        this.currentImage = null;
+        this.imageData = null;
+        
+        const previewElement = document.getElementById('imageBrushPreview');
+        if (previewElement) {
+            previewElement.src = '';
+            previewElement.style.display = 'none';
+        }
+    }
+    
+    /**
+     * Verificar si hay una imagen cargada
+     */
+    hasImage() {
+        return this.currentImage !== null;
+    }
+    
+    /**
+     * Obtener los datos de la imagen para sincronización
+     */
+    getImageData() {
+        return this.imageData;
+    }
+}
+
+// Instancia global del gestor de imágenes
+let imageBrushManager = null;
+
+/**
+ * Obtener o crear la instancia del gestor de imágenes
+ */
+function getImageBrushManager() {
+    if (!imageBrushManager) {
+        imageBrushManager = new ImageBrushManager();
+    }
+    return imageBrushManager;
+}
+
+/**
+ * Función para dibujar una imagen básica
+ * @param {p5.Graphics} buffer - Buffer donde dibujar
+ * @param {number} x - Posición X
+ * @param {number} y - Posición Y
+ * @param {number} size - Tamaño del pincel (escala de la imagen)
+ * @param {p5.Image} image - Imagen a dibujar
+ * @param {number} alpha - Transparencia (0-255)
+ */
+function drawImageStamp(buffer, x, y, size, image, alpha) {
+    if (!image) return;
+    
+    buffer.push();
+    buffer.imageMode(CENTER);
+    buffer.tint(255, alpha);
+    
+    // Escalar la imagen según el tamaño del pincel
+    const scaledSize = size;
+    buffer.image(image, x, y, scaledSize, scaledSize);
+    
+    buffer.noTint();
+    buffer.pop();
+}
+
+/**
+ * Dibujar el Image Brush con posible efecto caleidoscopio
+ * @param {p5.Graphics} buffer - Buffer donde dibujar
+ * @param {number} x - Posición X del mouse
+ * @param {number} y - Posición Y del mouse
+ * @param {number} size - Tamaño del pincel
+ * @param {number} alpha - Transparencia (0-255)
+ * @param {string} imageData - Data URL de la imagen (opcional, para sincronización)
+ * @param {number} segments - Número de segmentos para el efecto caleidoscopio
+ */
+function drawImageBrush(buffer, x, y, size, alpha, imageData = null, segments = 1) {
+    const manager = getImageBrushManager();
+    
+    // Si se proporciona imageData y no coincide con la imagen actual, cargarla
+    if (imageData && imageData !== manager.getImageData()) {
+        manager.loadImageFromData(imageData).catch(err => {
+            console.error('Error al cargar imagen sincronizada:', err);
+        });
+        return; // Esperar a que se cargue la imagen
+    }
+    
+    // Verificar que hay una imagen cargada
+    if (!manager.hasImage()) {
+        console.warn('No hay imagen cargada en el Image Brush');
+        return;
+    }
+    
+    const image = manager.currentImage;
+    
+    // Obtener el número de segmentos para el efecto caleidoscopio
+    segments = segments || 1;
+    
+    if (segments <= 1) {
+        // Sin efecto caleidoscopio, dibujar normalmente
+        drawImageStamp(buffer, x, y, size, image, alpha);
+    } else {
+        // Con efecto caleidoscopio
+        const centerX = kaleidoCenterX !== null ? kaleidoCenterX : windowWidth / 2;
+        const centerY = kaleidoCenterY !== null ? kaleidoCenterY : windowHeight / 2;
+        
+        // Usar la función de kaleidoscopio para dibujar
+        drawKaleidoscope(
+            buffer,
+            x, y,
+            centerX, centerY,
+            segments,
+            drawImageStamp,
+            size, image, alpha
+        );
+    }
+}
+
+/**
+ * Manejar la carga de archivo de imagen
+ */
+function handleImageBrushFileUpload() {
+    const fileInput = document.getElementById('imageBrushFile');
+    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+        return;
+    }
+    
+    const file = fileInput.files[0];
+    const manager = getImageBrushManager();
+    
+    // Mostrar indicador de carga
+    if (typeof toast !== 'undefined') {
+        toast.info('Cargando imagen...');
+    }
+    
+    manager.loadImageFromFile(file)
+        .then((result) => {
+            console.log('Imagen cargada exitosamente');
+            if (typeof toast !== 'undefined') {
+                toast.success('Imagen cargada (50x50)');
+            }
+            
+            // Sincronizar la imagen con otros clientes
+            syncImageBrushToOthers(result.imageData);
+        })
+        .catch((err) => {
+            console.error('Error al cargar imagen:', err);
+            if (typeof toast !== 'undefined') {
+                toast.error('Error al cargar la imagen');
+            }
+        });
+}
+
+/**
+ * Sincronizar la imagen del brush con otros clientes
+ * @param {string} imageData - Data URL de la imagen
+ */
+function syncImageBrushToOthers(imageData) {
+    if (!config.sockets.sendEnabled || !socket || !socket.connected) {
+        return;
+    }
+    
+    // Enviar la imagen a otros clientes
+    socket.emit('image_brush_sync', {
+        sessionId: sessionId,
+        imageData: imageData
+    });
+    
+    console.log('Imagen del brush sincronizada con otros clientes');
+}
+
+/**
+ * Recibir sincronización de imagen de otros clientes
+ * @param {Object} data - Datos de sincronización
+ */
+function receiveImageBrushSync(data) {
+    if (!config.sockets.receiveEnabled) {
+        return;
+    }
+    
+    const manager = getImageBrushManager();
+    
+    manager.loadImageFromData(data.imageData)
+        .then(() => {
+            console.log('Imagen del brush sincronizada desde otro cliente');
+            if (typeof toast !== 'undefined') {
+                toast.info('Imagen del brush actualizada');
+            }
+        })
+        .catch((err) => {
+            console.error('Error al sincronizar imagen:', err);
+        });
+}
+
+/**
+ * Limpiar la imagen del brush
+ */
+function clearImageBrush() {
+    const manager = getImageBrushManager();
+    manager.clearImage();
+    
+    // Limpiar el input de archivo
+    const fileInput = document.getElementById('imageBrushFile');
+    if (fileInput) {
+        fileInput.value = '';
+    }
+    
+    if (typeof toast !== 'undefined') {
+        toast.info('Imagen del brush eliminada');
+    }
+}
