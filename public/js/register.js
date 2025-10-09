@@ -78,8 +78,11 @@ registerForm.addEventListener('submit', async (e) => {
         const data = await response.json();
 
         if (response.ok) {
-            // Save token to localStorage
+            // Save token and user to localStorage
             config.saveToken(data.token);
+            if (data.user) {
+                config.saveUser(data.user);
+            }
             
             showSuccess('¡Cuenta creada exitosamente! Redirigiendo...');
             setTimeout(() => {

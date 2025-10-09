@@ -182,11 +182,14 @@ async function viewImage(imageId) {
             // Update comments
             renderComments(image.comments || []);
             
+            // Render layer selector if layers exist
+            renderLayerSelector(image);
+            
             document.getElementById('imageModal').classList.add('active');
         }
     } catch (error) {
         console.error('Error loading image:', error);
-        alert('Error al cargar la imagen');
+        if (typeof toast !== 'undefined') toast.error('Error al cargar la imagen');
     }
 }
 
@@ -212,7 +215,7 @@ function updateLikeButton(likes) {
 
 async function toggleLike() {
     if (!currentUser) {
-        alert('Debes iniciar sesión para dar like');
+        if (typeof toast !== 'undefined') toast.warning('Debes iniciar sesión para dar like');
         return;
     }
     
@@ -231,11 +234,11 @@ async function toggleLike() {
             viewImage(currentImageId);
             loadUserImages(); // Refresh gallery
         } else {
-            alert(data.error || 'Error al dar like');
+            if (typeof toast !== 'undefined') toast.error(data.error || 'Error al dar like');
         }
     } catch (error) {
         console.error('Error toggling like:', error);
-        alert('Error al dar like');
+        if (typeof toast !== 'undefined') toast.error('Error al dar like');
     }
 }
 
@@ -278,17 +281,15 @@ function renderComments(comments) {
 
 async function submitComment() {
     if (!currentUser) {
-        alert('Debes iniciar sesión para comentar');
+        if (typeof toast !== 'undefined') toast.warning('Debes iniciar sesión para comentar');
         return;
     }
-    
-    if (!currentImageId) return;
     
     const commentInput = document.getElementById('commentInput');
     const text = commentInput.value.trim();
     
     if (!text) {
-        alert('Escribe un comentario');
+        if (typeof toast !== 'undefined') toast.warning('Escribe un comentario');
         return;
     }
     
@@ -310,11 +311,11 @@ async function submitComment() {
             viewImage(currentImageId);
             loadUserImages(); // Refresh gallery
         } else {
-            alert(data.error || 'Error al comentar');
+            if (typeof toast !== 'undefined') toast.error(data.error || 'Error al comentar');
         }
     } catch (error) {
         console.error('Error submitting comment:', error);
-        alert('Error al enviar comentario');
+        if (typeof toast !== 'undefined') toast.error('Error al enviar comentario');
     }
 }
 
@@ -332,11 +333,11 @@ async function deleteComment(commentId) {
             viewImage(currentImageId);
             loadUserImages(); // Refresh gallery
         } else {
-            alert('Error al eliminar comentario');
+            if (typeof toast !== 'undefined') toast.error('Error al eliminar comentario');
         }
     } catch (error) {
         console.error('Error deleting comment:', error);
-        alert('Error al eliminar comentario');
+        if (typeof toast !== 'undefined') toast.error('Error al eliminar comentario');
     }
 }
 
@@ -364,7 +365,7 @@ async function downloadImage(imageId, title) {
         }
     } catch (error) {
         console.error('Error downloading image:', error);
-        alert('Error al descargar la imagen');
+        if (typeof toast !== 'undefined') toast.error('Error al descargar la imagen');
     }
 }
 
@@ -381,12 +382,13 @@ async function deleteImage(imageId) {
         
         if (response.ok) {
             loadUserImages();
+            if (typeof toast !== 'undefined') toast.success('Imagen eliminada');
         } else {
-            alert('Error al eliminar la imagen');
+            if (typeof toast !== 'undefined') toast.error('Error al eliminar la imagen');
         }
     } catch (error) {
         console.error('Error deleting image:', error);
-        alert('Error al eliminar la imagen');
+        if (typeof toast !== 'undefined') toast.error('Error al eliminar la imagen');
     }
 }
 
@@ -415,6 +417,45 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// Render layer selector
+function renderLayerSelector(image) {
+    const layersSelector = document.getElementById('layersSelector');
+    const layerButtons = document.getElementById('layerButtons');
+    const modalImage = document.getElementById('modalImage');
+    
+    if (!image.layers || image.layers.length === 0) {
+        layersSelector.style.display = 'none';
+        return;
+    }
+    
+    layersSelector.style.display = 'block';
+    layerButtons.innerHTML = '';
+    
+    // Botón para ver imagen combinada
+    const combinedBtn = document.createElement('button');
+    combinedBtn.className = 'layer-btn combined active';
+    combinedBtn.textContent = '🎨 Todas las capas';
+    combinedBtn.onclick = () => {
+        modalImage.src = image.imageData;
+        document.querySelectorAll('.layer-btn').forEach(btn => btn.classList.remove('active'));
+        combinedBtn.classList.add('active');
+    };
+    layerButtons.appendChild(combinedBtn);
+    
+    // Botones para cada capa individual
+    image.layers.forEach((layer, index) => {
+        const layerBtn = document.createElement('button');
+        layerBtn.className = 'layer-btn';
+        layerBtn.textContent = layer.name || `Capa ${index}`;
+        layerBtn.onclick = () => {
+            modalImage.src = layer.imageData;
+            document.querySelectorAll('.layer-btn').forEach(btn => btn.classList.remove('active'));
+            layerBtn.classList.add('active');
+        };
+        layerButtons.appendChild(layerBtn);
+    });
 }
 
 // Close modal on background click

@@ -6,6 +6,8 @@
     <title>Panel de Administrador - PizarraCollab</title>
     <link rel='stylesheet' href='css/style.css' />
     <link rel='stylesheet' href='css/admin.css' />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
 </head>
 <body>
     <div class="admin-container">
@@ -35,6 +37,84 @@
                 <div class="stat-card">
                     <h3>Imágenes Totales</h3>
                     <p class="stat-number" id="totalImages">0</p>
+                </div>
+            </section>
+
+            <!-- Analytics Section -->
+            <section class="section analytics-section">
+                <h2>📊 Analytics - Interacciones en Tiempo Real</h2>
+                
+                <!-- Stats Cards for Analytics -->
+                <div class="analytics-stats">
+                    <div class="stat-card analytics-card">
+                        <h3>Interacciones Hoy</h3>
+                        <p class="stat-number" id="todayInteractions">0</p>
+                        <small class="stat-detail">Total de clicks y touches</small>
+                    </div>
+                    <div class="stat-card analytics-card">
+                        <h3>Clicks</h3>
+                        <p class="stat-number" id="todayClicks">0</p>
+                        <small class="stat-detail">Interacciones con mouse</small>
+                    </div>
+                    <div class="stat-card analytics-card">
+                        <h3>Touches</h3>
+                        <p class="stat-number" id="todayTouches">0</p>
+                        <small class="stat-detail">Interacciones táctiles</small>
+                    </div>
+                    <div class="stat-card analytics-card">
+                        <h3>Dibujos</h3>
+                        <p class="stat-number" id="todayDraws">0</p>
+                        <small class="stat-detail">Acciones de dibujo</small>
+                    </div>
+                </div>
+
+                <!-- Time Range Selector -->
+                <div class="time-range-selector">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="timeRange">Rango de tiempo:</label>
+                            <select id="timeRange" onchange="updateChartTimeRange()">
+                                <option value="today">Hoy</option>
+                                <option value="yesterday">Ayer</option>
+                                <option value="week">Última semana</option>
+                                <option value="month">Último mes</option>
+                                <option value="custom">Personalizado</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <button onclick="downloadAnalyticsData()" class="btn btn-primary">
+                                📥 Descargar Datos
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="customDateRange" style="display: none; margin-top: 10px;">
+                        <input type="date" id="startDate" />
+                        <span> a </span>
+                        <input type="date" id="endDate" />
+                        <button onclick="applyCustomRange()" class="btn btn-primary">Aplicar</button>
+                    </div>
+                    
+                    <!-- User Filters with Eye Icons -->
+                    <div class="user-filters-section" style="margin-top: 15px;">
+                        <label style="font-weight: 600; margin-bottom: 8px; display: block;">Filtrar por usuarios:</label>
+                        <div id="userFiltersContainer" class="user-filters-grid">
+                            <!-- Se llenará dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Container -->
+                <div class="charts-container">
+                    <div class="chart-wrapper">
+                        <h3>Interacciones por Hora</h3>
+                        <canvas id="hourlyChart"></canvas>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h3>Tipos de Interacción</h3>
+                        <canvas id="interactionTypeChart"></canvas>
+                    </div>
                 </div>
             </section>
 

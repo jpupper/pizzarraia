@@ -6,6 +6,7 @@
 var socket;
 var sessionId;
 var sessionIndicator;
+var analyticsTracker; // Tracker de analytics
 
 // Variables de color y tamaño
 var col1;
@@ -32,10 +33,11 @@ var mainCanvas; // Canvas principal
 var drawBuffer; // Buffer para dibujar los pinceles (DEPRECATED - usar layers)
 var guiBuffer;  // Buffer para dibujar la grilla
 
-// Sistema de capas (5 capas)
-var layers = []; // Array de 5 buffers de capas
-var activeLayer = 0; // Índice de la capa activa (0-4)
-var layerVisibility = [true, true, true, true, true]; // Visibilidad de cada capa
+// Sistema de capas dinámicas
+var layers = []; // Array dinámico de buffers de capas
+var activeLayer = 0; // Índice de la capa activa
+var layerVisibility = []; // Visibilidad de cada capa
+var MAX_LAYERS = 20; // Límite máximo de capas (seguridad de memoria)
 
 // Función helper para obtener la capa activa
 function getActiveLayer() {
@@ -48,7 +50,7 @@ function renderAllLayers() {
     const combined = createGraphics(windowWidth, windowHeight);
     
     // Dibujar cada capa visible en orden
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < layers.length; i++) {
         if (layerVisibility[i] && layers[i]) {
             combined.image(layers[i], 0, 0);
         }
@@ -59,7 +61,7 @@ function renderAllLayers() {
 
 // Función para toggle de visibilidad de capa
 function toggleLayerVisibility(layerIndex) {
-    if (layerIndex >= 0 && layerIndex < 5) {
+    if (layerIndex >= 0 && layerIndex < layers.length) {
         layerVisibility[layerIndex] = !layerVisibility[layerIndex];
         
         // Actualizar el botón visual si existe
@@ -76,6 +78,74 @@ function toggleLayerVisibility(layerIndex) {
         updateLayerPreviews();
         
         console.log(`Capa ${layerIndex} ${layerVisibility[layerIndex] ? 'visible' : 'oculta'}`);
+    }
+}
+
+// Agregar nueva capa
+function addLayer() {
+    if (layers.length >= MAX_LAYERS) {
+        if (typeof toast !== 'undefined') toast.warning(`Máximo de ${MAX_LAYERS} capas alcanzado`);
+        return;
+    }
+    
+    const newLayer = createGraphics(windowWidth, windowHeight);
+    newLayer.clear();
+    layers.push(newLayer);
+    layerVisibility.push(true);
+    
+    // Emitir evento por socket
+    if (socket && socket.connected) {
+        socket.emit('layer_added', {
+            sessionId: sessionId,
+            layerIndex: layers.length - 1
+        });
+    }
+    
+    // Actualizar UI
+    updateLayerUI();
+    
+    console.log(`Capa ${layers.length - 1} agregada. Total: ${layers.length}`);
+}
+
+// Eliminar capa
+function deleteLayer(layerIndex) {
+    if (layers.length <= 1) {
+        if (typeof toast !== 'undefined') toast.warning('Debe haber al menos una capa');
+        return;
+    }
+    
+    if (layerIndex < 0 || layerIndex >= layers.length) {
+        return;
+    }
+    
+    // Eliminar la capa
+    layers.splice(layerIndex, 1);
+    layerVisibility.splice(layerIndex, 1);
+    
+    // Ajustar activeLayer si es necesario
+    if (activeLayer >= layers.length) {
+        activeLayer = layers.length - 1;
+    }
+    
+    // Emitir evento por socket
+    if (socket && socket.connected) {
+        socket.emit('layer_deleted', {
+            sessionId: sessionId,
+            layerIndex: layerIndex
+        });
+    }
+    
+    // Actualizar UI
+    updateLayerUI();
+    
+    console.log(`Capa ${layerIndex} eliminada. Total: ${layers.length}`);
+}
+
+// Actualizar UI de capas
+function updateLayerUI() {
+    // Esta función se implementará en general.js
+    if (typeof window.renderLayerButtons === 'function') {
+        window.renderLayerButtons();
     }
 }
 
@@ -117,17 +187,11 @@ function setup() {
     drawBuffer = createGraphics(windowWidth, windowHeight);
     guiBuffer = createGraphics(windowWidth, windowHeight);
     
-    // Crear 5 capas
-    for (let i = 0; i < 5; i++) {
-        layers[i] = createGraphics(windowWidth, windowHeight);
-        if (i === 0) {
-            // Capa 0 empieza con fondo negro
-            layers[i].background(0);
-        } else {
-            // Capas 1-4 empiezan transparentes
-            layers[i].clear();
-        }
-    }
+    // Crear 1 capa inicial por defecto
+    const initialLayer = createGraphics(windowWidth, windowHeight);
+    initialLayer.background(0); // Fondo negro
+    layers.push(initialLayer);
+    layerVisibility.push(true);
     
     // Obtener ID de sesión desde URL
     sessionId = config.getSessionId();
@@ -154,6 +218,10 @@ function setup() {
     // Configurar evento para recibir cambios de configuración del flowfield
     socket.on("flowfield_config", receiveFlowfieldConfig);
     
+    // Configurar eventos para sincronización de capas
+    socket.on("layer_added", receiveLayerAdded);
+    socket.on("layer_deleted", receiveLayerDeleted);
+    
     // Inicializar valores
     asignarValores();
     drawBuffer.background(0);
@@ -178,6 +246,18 @@ function setup() {
     
     // Configurar controles de sockets
     setupSocketControls();
+    
+    // Inicializar analytics tracker
+    if (typeof AnalyticsTracker !== 'undefined') {
+        const currentUser = config.getCurrentUser();
+        analyticsTracker = new AnalyticsTracker(
+            socket,
+            sessionId,
+            currentUser ? currentUser.id : null,
+            currentUser ? currentUser.username : 'Anónimo'
+        );
+        console.log('Analytics tracker initialized');
+    }
 }
 
 function windowResized() {
@@ -644,6 +724,11 @@ function mousePressed() {
     const brushType = document.getElementById('brushType').value;
     if (brushType === 'line' && !isOverGui && !isOverOpenButton) {
         startLineBrush(mouseX, mouseY);
+    }
+    
+    // Track draw interaction
+    if (analyticsTracker && !isOverGui && !isOverOpenButton) {
+        analyticsTracker.trackDraw(brushType);
     }
 }
 
@@ -1486,5 +1571,49 @@ class Palabra {
     
     update() {
         this.life -= 1;
+    }
+}
+
+// Funciones para recibir eventos de capas por socket
+function receiveLayerAdded(data) {
+    if (!config.sockets.receiveEnabled) return;
+    
+    console.log('Capa agregada remotamente:', data);
+    
+    // Agregar capa sin emitir evento (para evitar loop)
+    if (layers.length < MAX_LAYERS) {
+        const newLayer = createGraphics(windowWidth, windowHeight);
+        newLayer.clear();
+        layers.push(newLayer);
+        layerVisibility.push(true);
+        
+        // Actualizar UI
+        updateLayerUI();
+        
+        console.log(`Capa ${layers.length - 1} agregada por socket. Total: ${layers.length}`);
+    }
+}
+
+function receiveLayerDeleted(data) {
+    if (!config.sockets.receiveEnabled) return;
+    
+    console.log('Capa eliminada remotamente:', data);
+    
+    const layerIndex = data.layerIndex;
+    
+    if (layers.length > 1 && layerIndex >= 0 && layerIndex < layers.length) {
+        // Eliminar la capa
+        layers.splice(layerIndex, 1);
+        layerVisibility.splice(layerIndex, 1);
+        
+        // Ajustar activeLayer si es necesario
+        if (activeLayer >= layers.length) {
+            activeLayer = layers.length - 1;
+        }
+        
+        // Actualizar UI
+        updateLayerUI();
+        
+        console.log(`Capa ${layerIndex} eliminada por socket. Total: ${layers.length}`);
     }
 }

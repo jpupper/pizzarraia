@@ -22,35 +22,45 @@ function drawBasicPixelBrush(buffer, x, y, size, cols, rows, color) {
     // Calcular el radio en celdas (basado en el tamaño del pincel)
     // Dividimos el size por el tamaño promedio de celda para obtener el radio en celdas
     const avgCellSize = (canvasGridCellWidth + canvasGridCellHeight) / 2;
-    const radiusInCells = Math.max(1, Math.floor(size / avgCellSize));
+    const radiusInCells = Math.floor(size / avgCellSize);
     
     // Configurar el modo de dibujo
     buffer.rectMode(CORNER);
     buffer.fill(color);
     buffer.noStroke();
     
-    // Dibujar todas las celdas dentro del radio
-    for (let offsetY = -radiusInCells; offsetY <= radiusInCells; offsetY++) {
-        for (let offsetX = -radiusInCells; offsetX <= radiusInCells; offsetX++) {
-            // Calcular la posición de la celda actual
-            const currentCellX = gridPos.cellX + offsetX;
-            const currentCellY = gridPos.cellY + offsetY;
-            
-            // Verificar límites de la grilla
-            if (currentCellX >= 0 && currentCellX < cols && 
-                currentCellY >= 0 && currentCellY < rows) {
+    // Si el radio es 0 o muy pequeño, dibujar solo el pixel central
+    if (radiusInCells <= 0) {
+        // Calcular la posición en el canvas
+        const pixelX = gridPos.cellX * canvasGridCellWidth;
+        const pixelY = gridPos.cellY * canvasGridCellHeight;
+        
+        // Dibujar solo el píxel central
+        buffer.rect(pixelX, pixelY, canvasGridCellWidth, canvasGridCellHeight);
+    } else {
+        // Dibujar todas las celdas dentro del radio
+        for (let offsetY = -radiusInCells; offsetY <= radiusInCells; offsetY++) {
+            for (let offsetX = -radiusInCells; offsetX <= radiusInCells; offsetX++) {
+                // Calcular la posición de la celda actual
+                const currentCellX = gridPos.cellX + offsetX;
+                const currentCellY = gridPos.cellY + offsetY;
                 
-                // Calcular distancia al centro (para forma circular)
-                const distance = Math.sqrt(offsetX * offsetX + offsetY * offsetY);
-                
-                // Solo dibujar si está dentro del radio
-                if (distance <= radiusInCells) {
-                    // Calcular la posición en el canvas
-                    const pixelX = currentCellX * canvasGridCellWidth;
-                    const pixelY = currentCellY * canvasGridCellHeight;
+                // Verificar límites de la grilla
+                if (currentCellX >= 0 && currentCellX < cols && 
+                    currentCellY >= 0 && currentCellY < rows) {
                     
-                    // Dibujar el píxel
-                    buffer.rect(pixelX, pixelY, canvasGridCellWidth, canvasGridCellHeight);
+                    // Calcular distancia al centro (para forma circular)
+                    const distance = Math.sqrt(offsetX * offsetX + offsetY * offsetY);
+                    
+                    // Solo dibujar si está dentro del radio
+                    if (distance <= radiusInCells) {
+                        // Calcular la posición en el canvas
+                        const pixelX = currentCellX * canvasGridCellWidth;
+                        const pixelY = currentCellY * canvasGridCellHeight;
+                        
+                        // Dibujar el píxel
+                        buffer.rect(pixelX, pixelY, canvasGridCellWidth, canvasGridCellHeight);
+                    }
                 }
             }
         }

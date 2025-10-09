@@ -7,6 +7,7 @@ const cors = require('cors');
 
 const User = require('./models/User');
 const Image = require('./models/Image');
+const { Interaction, HourlyStats } = require('./models/Analytics');
 
 const app = express();
 const hostname = '0.0.0.0';
@@ -199,7 +200,7 @@ app.get('/pizarraia/api/check-session', async (req, res) => {
 // Save image
 app.post('/pizarraia/api/images', isAuthenticated, async (req, res) => {
   try {
-    const { title, description, imageData, collaborators, sessionId } = req.body;
+    const { title, description, imageData, layers, collaborators, sessionId } = req.body;
     
     if (!imageData) {
       return res.status(400).json({ error: 'Datos de imagen requeridos' });
@@ -212,6 +213,7 @@ app.post('/pizarraia/api/images', isAuthenticated, async (req, res) => {
       title: title || 'Sin título',
       description: description || '',
       imageData,
+      layers: layers || [],
       savedBy: user.username,
       collaborators: collaborators || [],
       sessionId: sessionId || '0',
@@ -469,6 +471,173 @@ app.get('/pizarraia/api/admin/sessions', (req, res) => {
   }
 });
 
+// Analytics endpoints
+// Save interaction
+app.post('/pizarraia/api/analytics/interaction', async (req, res) => {
+  try {
+    const { sessionId, userId, username, interactionType, metadata } = req.body;
+    
+    const interaction = new Interaction({
+      sessionId: sessionId || '0',
+      userId: userId || null,
+      username: username || 'Anónimo',
+      interactionType: interactionType || 'click',
+      metadata: metadata || {}
+    });
+    
+    await interaction.save();
+    
+    // Update hourly stats
+    const now = new Date();
+    const dateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const hour = now.getHours();
+    
+    await HourlyStats.findOneAndUpdate(
+      {
+        date: dateOnly,
+        hour: hour,
+        sessionId: sessionId || '0'
+      },
+      {
+        $inc: {
+          totalInteractions: 1,
+          [`${interactionType}Count`]: 1
+        },
+        $addToSet: {
+          usersList: username || 'Anónimo'
+        }
+      },
+      {
+        upsert: true,
+        new: true
+      }
+    ).then(async (stats) => {
+      // Update unique users count
+      stats.uniqueUsers = stats.usersList.length;
+      await stats.save();
+    });
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error saving interaction:', error);
+    res.status(500).json({ error: 'Error al guardar interacción' });
+  }
+});
+
+// Get analytics data
+app.get('/pizarraia/api/analytics/stats', isAuthenticated, async (req, res) => {
+  try {
+    const { startDate, endDate, sessionId, username } = req.query;
+    
+    let query = {};
+    
+    if (startDate && endDate) {
+      query.date = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate)
+      };
+    }
+    
+    if (sessionId) {
+      query.sessionId = sessionId;
+    }
+    
+    if (username) {
+      query.usersList = username;
+    }
+    
+    const stats = await HourlyStats.find(query).sort({ date: 1, hour: 1 });
+    
+    res.json({ stats });
+  } catch (error) {
+    console.error('Error getting analytics:', error);
+    res.status(500).json({ error: 'Error al obtener estadísticas' });
+  }
+});
+
+// Get detailed interactions for download
+app.get('/pizarraia/api/analytics/interactions', isAuthenticated, async (req, res) => {
+  try {
+    const { startDate, endDate, sessionId, username } = req.query;
+    
+    let query = {};
+    
+    if (startDate && endDate) {
+      query.timestamp = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate)
+      };
+    }
+    
+    if (sessionId) {
+      query.sessionId = sessionId;
+    }
+    
+    if (username) {
+      query.username = username;
+    }
+    
+    const interactions = await Interaction.find(query)
+      .sort({ timestamp: -1 })
+      .limit(10000); // Limit to prevent huge downloads
+    
+    res.json({ interactions });
+  } catch (error) {
+    console.error('Error getting interactions:', error);
+    res.status(500).json({ error: 'Error al obtener interacciones' });
+  }
+});
+
+// Get real-time analytics summary
+app.get('/pizarraia/api/analytics/summary', isAuthenticated, async (req, res) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Total interactions today
+    const todayStats = await HourlyStats.aggregate([
+      {
+        $match: {
+          date: { $gte: today }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalInteractions: { $sum: '$totalInteractions' },
+          totalClicks: { $sum: '$clickCount' },
+          totalTouches: { $sum: '$touchCount' },
+          totalDraws: { $sum: '$drawCount' }
+        }
+      }
+    ]);
+    
+    // Total interactions all time
+    const allTimeStats = await HourlyStats.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalInteractions: { $sum: '$totalInteractions' }
+        }
+      }
+    ]);
+    
+    // Interactions by hour today
+    const hourlyData = await HourlyStats.find({
+      date: today
+    }).sort({ hour: 1 });
+    
+    res.json({
+      today: todayStats[0] || { totalInteractions: 0, totalClicks: 0, totalTouches: 0, totalDraws: 0 },
+      allTime: allTimeStats[0] || { totalInteractions: 0 },
+      hourlyData
+    });
+  } catch (error) {
+    console.error('Error getting analytics summary:', error);
+    res.status(500).json({ error: 'Error al obtener resumen' });
+  }
+});
+
 const server = http.createServer(app);
 
 // Adjuntar socket.io al servidor HTTP
@@ -633,6 +802,104 @@ io.on('connection', (socket) => {
     // Reenviar el mensaje a todos los clientes de la misma sesión
     io.emit('chat_message', data);
     console.log('Chat message from', data.username, ':', data.message);
+  });
+  
+  // Handle layer management
+  socket.on('layer_added', function(data) {
+    const sessionId = socket.sessionId || data.sessionId || '0';
+    
+    if (sessions[sessionId]) {
+      const sessionSockets = sessions[sessionId];
+      
+      // Broadcast to all sockets in the same session except the sender
+      sessionSockets.forEach(socketId => {
+        if (socketId !== socket.id) {
+          io.to(socketId).emit('layer_added', data);
+        }
+      });
+    }
+    
+    console.log(`Layer added in session ${sessionId}`);
+  });
+  
+  socket.on('layer_deleted', function(data) {
+    const sessionId = socket.sessionId || data.sessionId || '0';
+    
+    if (sessions[sessionId]) {
+      const sessionSockets = sessions[sessionId];
+      
+      // Broadcast to all sockets in the same session except the sender
+      sessionSockets.forEach(socketId => {
+        if (socketId !== socket.id) {
+          io.to(socketId).emit('layer_deleted', data);
+        }
+      });
+    }
+    
+    console.log(`Layer deleted in session ${sessionId}:`, data.layerIndex);
+  });
+  
+  // Handle interaction tracking
+  socket.on('track_interaction', async function(data) {
+    try {
+      const { sessionId, userId, username, interactionType, metadata } = data;
+      
+      const interaction = new Interaction({
+        sessionId: sessionId || '0',
+        userId: userId || null,
+        username: username || 'Anónimo',
+        interactionType: interactionType || 'click',
+        metadata: metadata || {}
+      });
+      
+      await interaction.save();
+      
+      // Update hourly stats
+      const now = new Date();
+      const dateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const hour = now.getHours();
+      
+      const stats = await HourlyStats.findOneAndUpdate(
+        {
+          date: dateOnly,
+          hour: hour,
+          sessionId: sessionId || '0'
+        },
+        {
+          $inc: {
+            totalInteractions: 1,
+            [`${interactionType}Count`]: 1
+          },
+          $addToSet: {
+            usersList: username || 'Anónimo'
+          }
+        },
+        {
+          upsert: true,
+          new: true
+        }
+      );
+      
+      if (stats) {
+        stats.uniqueUsers = stats.usersList.length;
+        await stats.save();
+        
+        // Broadcast updated stats to all admin clients
+        io.emit('analytics_update', {
+          sessionId: sessionId || '0',
+          stats: {
+            totalInteractions: stats.totalInteractions,
+            clickCount: stats.clickCount,
+            touchCount: stats.touchCount,
+            drawCount: stats.drawCount,
+            uniqueUsers: stats.uniqueUsers,
+            hour: stats.hour
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error tracking interaction:', error);
+    }
   });
   // Manejar la desccconexión del cliente
   socket.on('disconnect', () => {

@@ -1,10 +1,13 @@
 // Arrays para generar nombres aleatorios
+// Animales autóctonos de Sudamérica
 const animales = [
-    'Gato', 'Perro', 'León', 'Tigre', 'Águila', 'Lobo', 'Oso', 'Zorro',
-    'Panda', 'Koala', 'Delfín', 'Ballena', 'Búho', 'Halcón', 'Cuervo',
-    'Serpiente', 'Cocodrilo', 'Tortuga', 'Conejo', 'Ciervo', 'Pingüino',
-    'Flamenco', 'Pavo Real', 'Cisne', 'Mariposa', 'Libélula', 'Abeja',
-    'Pulpo', 'Tiburón', 'Foca', 'Nutria', 'Mapache', 'Ardilla', 'Camaleón'
+    'Jaguar', 'Puma', 'Cóndor', 'Guanaco', 'Vicuña', 'Llama', 'Alpaca',
+    'Capibara', 'Carpincho', 'Tapir', 'Oso Hormiguero', 'Tucán', 'Guacamayo',
+    'Yacaré', 'Anaconda', 'Ñandú', 'Armadillo', 'Tatú', 'Coatí', 'Aguará Guazú',
+    'Yaguareté', 'Ocelote', 'Margay', 'Huemul', 'Pudú', 'Vizcacha', 'Chinchilla',
+    'Flamenco Andino', 'Pingüino de Magallanes', 'Nutria Gigante', 'Delfín Rosado',
+    'Perezoso', 'Mono Aullador', 'Mono Tití', 'Boa', 'Caimán', 'Tortuga Mata Mata',
+    'Guacamayo Azul', 'Colibrí', 'Loro', 'Cacatúa', 'Piraña', 'Cuy'
 ];
 
 const adjetivos = [
