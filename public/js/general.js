@@ -185,6 +185,7 @@ function setupBrushTypeEvents() {
   const textBrushParams = document.getElementById('textBrushParams');
   const geometryBrushParams = document.getElementById('geometryBrushParams');
   const fillBrushParams = document.getElementById('fillBrushParams');
+  const imageBrushParams = document.getElementById('imageBrushParams');
   
   // Get all brush parameter containers
   const allBrushParams = document.querySelectorAll('.brushParams');
@@ -220,6 +221,9 @@ function setupBrushTypeEvents() {
         break;
       case 'fill':
         fillBrushParams.style.display = 'block';
+        break;
+      case 'image':
+        imageBrushParams.style.display = 'block';
         break;
     }
   }
@@ -1153,7 +1157,39 @@ function setRandomFirstColor() {
   console.log('Color random inicial:', randomColor);
 }
 
+// Función para cerrar el modal de bienvenida
+function closeWelcomeModal() {
+  const modal = document.getElementById('welcomeModal');
+  if (modal) {
+    modal.classList.remove('active');
+    // Guardar en localStorage que ya se mostró
+    localStorage.setItem('welcomeModalShown', 'true');
+  }
+}
+
+// Función para mostrar el modal de bienvenida solo la primera vez
+function checkWelcomeModal() {
+  const hasSeenModal = localStorage.getItem('welcomeModalShown');
+  const modal = document.getElementById('welcomeModal');
+  
+  if (!hasSeenModal && modal) {
+    // Mostrar el modal después de un pequeño delay
+    setTimeout(() => {
+      modal.classList.add('active');
+    }, 500);
+  } else if (modal) {
+    // Si ya lo vio, no mostrar
+    modal.classList.remove('active');
+  }
+}
+
 // Hacer las funciones accesibles globalmente
 window.logoutUser = logoutUser;
 window.saveImageToServer = saveImageToServer;
 window.renderLayerButtons = renderLayerButtons;
+window.closeWelcomeModal = closeWelcomeModal;
+
+// Verificar modal de bienvenida al cargar
+if (typeof window !== 'undefined') {
+  window.addEventListener('load', checkWelcomeModal);
+}

@@ -24,6 +24,7 @@
     <script src="js/textbrush.js"></script>
     <script src="js/geometrybrush.js"></script>
     <script src="js/fillbrush.js"></script>
+    <script src="js/imagebrush.js"></script>
     <script src="js/analyticsTracker.js"></script>
     <script src="js/cursorserver.js"></script>
     <script src="js/sketch.js"></script>
@@ -58,8 +59,8 @@
             </div>
         </div>
         <label>Color Picker</label><input type="color" value="#FF0000" id="c1">
-        <label>Alfa: <span id="alphaValue-value">255</span></label>
-        <input type="range" value="255" id="alphaValue" min="0" max ="255" step="1" class="jpslider" >
+        <label>Alfa: <span id="alphaValue-value">150</span></label>
+        <input type="range" value="150" id="alphaValue" min="0" max ="255" step="1" class="jpslider" >
         <label>Size: <span id="size-value">20</span></label>
         <input type="range" value="20" id="size" min="0" max ="100" step="0.1" class="jpslider" >
         <label>Efecto Kaleido: <span id="kaleidoSegments-value">1</span></label>
@@ -87,6 +88,9 @@
             </button>
             <button class="brush-btn" data-brush="fill" title="Fill/Bucket">
                 <svg viewBox="0 0 24 24"><path d="M19,11.5C19,11.5 17,13.67 17,15A2,2 0 0,0 19,17A2,2 0 0,0 21,15C21,13.67 19,11.5 19,11.5M5.21,10L10,5.21L14.79,10M16.56,8.94L7.62,0L6.21,1.41L8.59,3.79L3.44,8.94C2.85,9.53 2.85,10.5 3.44,11.09L8.94,16.59C9.23,16.88 9.62,17 10,17C10.38,17 10.77,16.88 11.06,16.59L16.56,11.09C17.15,10.5 17.15,9.53 16.56,8.94Z" fill="currentColor"/></svg>
+            </button>
+            <button class="brush-btn" data-brush="image" title="Image Brush">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M8.5,13.5L11,16.5L14.5,12L19,18H5M21,19V5C21,3.89 20.1,3 19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19Z" /></svg>
             </button>
             <button class="brush-btn" data-brush="background" onClick="cleanBackground()" title="Background">
                 <svg viewBox="0 0 24 24"><path fill="currentColor" d="M4,2H20A2,2 0 0,1 22,4V20A2,2 0 0,1 20,22H4A2,2 0 0,1 2,20V4A2,2 0 0,1 4,2M4,4V20H20V4H4Z" /></svg>
@@ -200,6 +204,22 @@
             <br>
             <p style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-top: 5px;">
                 💡 Tolerance: 0 = solo color exacto, mayor = colores similares
+            </p>
+        </div>
+        
+        <!-- Image Brush Controls -->
+        <div id="imageBrushParams" class="brushParams" style="display: none;">
+            <label>Cargar Imagen</label>
+            <input type="file" id="imageBrushFile" accept="image/*" onchange="handleImageBrushFileUpload()" class="jpinput" style="width: 90%; padding: 5px; margin-bottom: 10px;">
+            <br>
+            <div style="text-align: center; margin: 10px 0;">
+                <img id="imageBrushPreview" style="display: none; max-width: 100px; max-height: 100px; border: 2px solid var(--accent); border-radius: 5px;" />
+            </div>
+            <button onclick="clearImageBrush()" style="width: 100%; padding: 8px; background: rgba(244, 67, 54, 0.8); color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 0.9rem; margin-top: 5px;">
+                Limpiar Imagen
+            </button>
+            <p style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-top: 10px;">
+                💡 La imagen se redimensiona a 50x50 y se sincroniza con otros clientes
             </p>
         </div>
         
@@ -380,6 +400,32 @@
                     <button type="submit" class="btn btn-primary">Guardar Imagen</button>
                 </div>
             </form>
+        </div>
+    </div>
+    
+    <!-- Modal de bienvenida -->
+    <div id="welcomeModal" class="welcome-modal active">
+        <div class="welcome-modal-content">
+            <button class="welcome-modal-close" onclick="closeWelcomeModal()">×</button>
+            <div class="welcome-header">
+                <h1>🎨 PizarraCollab</h1>
+                <p class="welcome-subtitle">Dibujo colaborativo en tiempo real</p>
+            </div>
+            <div class="welcome-actions">
+                <a href="login.html" class="welcome-btn welcome-btn-primary">
+                    <svg viewBox="0 0 24 24" width="20" height="20">
+                        <path fill="currentColor" d="M10,17V14H3V10H10V7L15,12L10,17M10,2H19A2,2 0 0,1 21,4V20A2,2 0 0,1 19,22H10A2,2 0 0,1 8,20V18H10V20H19V4H10V6H8V4A2,2 0 0,1 10,2Z"/>
+                    </svg>
+                    Login
+                </a>
+                <a href="register.html" class="welcome-btn welcome-btn-secondary">
+                    <svg viewBox="0 0 24 24" width="20" height="20">
+                        <path fill="currentColor" d="M15,14C12.33,14 7,15.33 7,18V20H23V18C23,15.33 17.67,14 15,14M6,10V7H4V10H1V12H4V15H6V12H9V10M15,12A4,4 0 0,0 19,8A4,4 0 0,0 15,4A4,4 0 0,0 11,8A4,4 0 0,0 15,12Z"/>
+                    </svg>
+                    Register
+                </a>
+            </div>
+            <p class="welcome-footer">o continúa sin cuenta para dibujar libremente</p>
         </div>
     </div>
     

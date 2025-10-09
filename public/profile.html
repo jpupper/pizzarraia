@@ -47,6 +47,9 @@
                     <div id="layersSelector" class="layers-selector" style="display: none;">
                         <h4>🎨 Ver por capas:</h4>
                         <div id="layerButtons" class="layer-buttons"></div>
+                        <button id="downloadLayersBtn" class="btn btn-primary btn-small" onclick="downloadLayers()" style="margin-top: 10px; width: 100%;">
+                            📦 Descargar capas (ZIP)
+                        </button>
                     </div>
                 </div>
                 <div class="modal-sidebar">
@@ -92,6 +95,7 @@
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="js/config.js"></script>
     <script src="js/toast.js"></script>
     <script src="js/profile.js"></script>
