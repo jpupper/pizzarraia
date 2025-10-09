@@ -51,13 +51,13 @@ const config = {
     alphaValue: {
       min: 0,
       max: 255,
-      default: 255,
+      default: 50,
       step: 1
     },
     size: {
       min: 0,
       max: 100,
-      default: 20,
+      default: 10,
       step: 0.1
     },
     kaleidoSegments: {
@@ -160,6 +160,26 @@ config.getAuthHeaders = function() {
     };
   }
   return {};
+};
+
+config.saveUser = function(user) {
+  localStorage.setItem('pizarracollab_user', JSON.stringify(user));
+};
+
+config.getCurrentUser = function() {
+  const userStr = localStorage.getItem('pizarracollab_user');
+  if (userStr) {
+    try {
+      return JSON.parse(userStr);
+    } catch (e) {
+      return null;
+    }
+  }
+  return null;
+};
+
+config.removeUser = function() {
+  localStorage.removeItem('pizarracollab_user');
 };
 
 // Exponer la configuración globalmente

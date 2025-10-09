@@ -20,8 +20,14 @@ const imageSchema = new mongoose.Schema({
   },
   imageData: {
     type: String,
-    required: true  // Base64 encoded image
+    required: true  // Base64 encoded image (combined)
   },
+  layers: [{
+    index: Number,
+    name: String,
+    visible: Boolean,
+    imageData: String  // Base64 encoded layer
+  }],
   savedBy: {
     type: String,
     required: true  // Username del que guardó la imagen

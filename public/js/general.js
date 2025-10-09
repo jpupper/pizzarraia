@@ -1,6 +1,5 @@
 var GUI = document.getElementById("gui");
 var MODAL = document.getElementById("modal");
-var isModalOpen = true;
 
 window.onload = function() {
     initializeSlidersFromConfig();
@@ -9,11 +8,13 @@ window.onload = function() {
     setupBrushTypeEvents();
     setupBrushSelector();
     setupColorPalette();
+    renderLayerButtons(); // Renderizar capas dinámicamente
     setupLayerSelector();
     setupSocketControls();
     setupChat();
     setupTabs();
     checkUserAuthentication();
+    setRandomFirstColor(); // Color random en primer slot
 };
 
 // Función para inicializar sliders desde config.js
@@ -339,6 +340,11 @@ function setupBrushSelector() {
       const brushValue = this.getAttribute('data-brush');
       brushTypeInput.value = brushValue;
       
+      // Track brush change
+      if (window.analyticsTracker) {
+        window.analyticsTracker.trackBrushChange(brushValue);
+      }
+      
       // Disparar evento change para que se actualicen los parámetros
       const event = new Event('change');
       brushTypeInput.dispatchEvent(event);
@@ -437,6 +443,11 @@ function setupColorPalette() {
     // Actualizar el color del slot activo en cursorGUI
     if (window.cursorGUI) {
       window.cursorGUI.updateActivePaletteSlot(this.value);
+    }
+    
+    // Track color change
+    if (window.analyticsTracker) {
+      window.analyticsTracker.trackColorChange(this.value);
     }
   });
   
@@ -875,10 +886,10 @@ async function logoutUser() {
       window.updateChatUsername();
     }
     
-    alert('Sesión cerrada exitosamente');
+    if (typeof toast !== 'undefined') toast.success('Sesión cerrada exitosamente');
   } catch (error) {
     console.error('Error al cerrar sesión:', error);
-    alert('Error al cerrar sesión');
+    if (typeof toast !== 'undefined') toast.error('Error al cerrar sesión');
   }
 }
 
@@ -886,7 +897,7 @@ async function logoutUser() {
 async function saveImageToServer() {
   // Verificar si el usuario está logueado
   if (!currentUser) {
-    alert('Debes iniciar sesión para guardar imágenes');
+    if (typeof toast !== 'undefined') toast.warning('Debes iniciar sesión para guardar imágenes');
     // Cambiar a la pestaña de usuario
     const userTab = document.querySelector('[data-tab="user"]');
     if (userTab) userTab.click();
@@ -895,7 +906,7 @@ async function saveImageToServer() {
   
   // Verificar que renderAllLayers existe
   if (typeof window.renderAllLayers !== 'function') {
-    alert('No hay imagen para guardar');
+    if (typeof toast !== 'undefined') toast.warning('No hay imagen para guardar');
     return;
   }
   
@@ -955,6 +966,21 @@ async function submitSaveImage(event) {
     const canvas = combined.canvas;
     const imageData = canvas.toDataURL('image/png', 1.0);
     
+    // Guardar cada capa por separado
+    const layersData = [];
+    if (window.layers && window.layers.length > 0) {
+      window.layers.forEach((layer, index) => {
+        if (layer && layer.canvas) {
+          layersData.push({
+            index: index,
+            name: index === 0 ? 'Fondo' : `Capa ${index}`,
+            visible: window.layerVisibility[index] || false,
+            imageData: layer.canvas.toDataURL('image/png', 1.0)
+          });
+        }
+      });
+    }
+    
     // Obtener colaboradores y sesión actual
     const sessionResponse = await fetch(`${config.API_URL}/api/admin/sessions`, {
       headers: config.getAuthHeaders()
@@ -988,6 +1014,7 @@ async function submitSaveImage(event) {
         title,
         description,
         imageData,
+        layers: layersData,
         collaborators,
         sessionId: currentSessionId
       })
@@ -1003,14 +1030,14 @@ async function submitSaveImage(event) {
     
     if (response.ok) {
       closeSaveModal();
-      alert('¡Imagen guardada exitosamente!');
+      if (typeof toast !== 'undefined') toast.success('¡Imagen guardada exitosamente!');
       console.log('Imagen guardada:', data.image);
     } else {
-      alert('Error al guardar: ' + (data.error || 'Error desconocido'));
+      if (typeof toast !== 'undefined') toast.error('Error al guardar: ' + (data.error || 'Error desconocido'));
     }
   } catch (error) {
     console.error('Error guardando imagen:', error);
-    alert('Error al guardar la imagen. Por favor intenta de nuevo.');
+    if (typeof toast !== 'undefined') toast.error('Error al guardar la imagen. Por favor intenta de nuevo.');
     
     // Restaurar botón en caso de error
     const submitBtn = event.target.querySelector('button[type="submit"]');
@@ -1057,23 +1084,76 @@ function shareSession() {
   
   // Copiar al portapapeles
   navigator.clipboard.writeText(currentUrl).then(() => {
-    alert(`¡Link copiado! Comparte esta sesión (${sessionId}) con tus amigos:\n${currentUrl}`);
+    if (typeof toast !== 'undefined') toast.success(`¡Link copiado! Comparte esta sesión (${sessionId})`);
   }).catch(() => {
     // Fallback si no funciona el clipboard API
     prompt('Copia este link para compartir:', currentUrl);
   });
 }
 
+// Función para renderizar las capas dinámicamente
+function renderLayerButtons() {
+  const container = document.getElementById('layersContainer');
+  if (!container || typeof window.layers === 'undefined') return;
+  
+  container.innerHTML = '';
+  
+  window.layers.forEach((layer, index) => {
+    const layerItem = document.createElement('div');
+    layerItem.className = 'layer-item';
+    layerItem.style.cssText = 'display: flex; align-items: center; gap: 6px; margin-bottom: 6px; padding: 6px; background: rgba(138, 79, 191, 0.15); border-radius: 8px;';
+    
+    const isActive = window.activeLayer === index;
+    const isVisible = window.layerVisibility[index];
+    
+    layerItem.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 3px;">
+        <button class="layer-btn ${isActive ? 'active' : ''}" data-layer="${index}" style="width: 35px; height: 28px; margin: 0; font-size: 0.9rem;">${index}</button>
+        <button class="layer-visibility-btn ${isVisible ? 'active' : ''}" data-layer="${index}" title="Mostrar/Ocultar Capa" style="width: 35px; height: 28px; background: rgba(138, 79, 191, 0.3); border: 2px solid var(--accent); border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;">
+          <svg viewBox="0 0 24 24" width="16" height="16" class="eye-icon">
+            <path class="eye-open" fill="white" d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" style="${isVisible ? '' : 'display:none;'}" />
+            <path class="eye-closed" fill="white" d="M11.83,9L15,12.16C15,12.11 15,12.05 15,12A3,3 0 0,0 12,9C11.94,9 11.89,9 11.83,9M7.53,9.8L9.08,11.35C9.03,11.56 9,11.77 9,12A3,3 0 0,0 12,15C12.22,15 12.44,14.97 12.65,14.92L14.2,16.47C13.53,16.8 12.79,17 12,17A5,5 0 0,1 7,12C7,11.21 7.2,10.47 7.53,9.8M2,4.27L4.28,6.55L4.73,7C3.08,8.3 1.78,10 1,12C2.73,16.39 7,19.5 12,19.5C13.55,19.5 15.03,19.2 16.38,18.66L16.81,19.08L19.73,22L21,20.73L3.27,3M12,7A5,5 0 0,1 17,12C17,12.64 16.87,13.26 16.64,13.82L19.57,16.75C21.07,15.5 22.27,13.86 23,12C21.27,7.61 17,4.5 12,4.5C10.6,4.5 9.26,4.75 8,5.2L10.17,7.35C10.74,7.13 11.35,7 12,7Z" style="${isVisible ? 'display:none;' : ''}" />
+          </svg>
+        </button>
+      </div>
+      <canvas id="layerPreview${index}" width="100" height="56"></canvas>
+      <span style="color: rgba(255,255,255,0.7); font-size: 0.8rem; flex: 1;">${index === 0 ? 'Fondo' : `Capa ${index}`}</span>
+      ${window.layers.length > 1 ? `<button class="btn-delete-layer" onclick="deleteLayer(${index})" title="Eliminar Capa">×</button>` : ''}
+    `;
+    
+    container.appendChild(layerItem);
+  });
+  
+  // Re-attach event listeners
+  setupLayerSelector();
+  
+  // Update previews
+  if (typeof updateLayerPreviews === 'function') {
+    updateLayerPreviews();
+  }
+}
+
+// Función para establecer un color random en el primer slot de la paleta
+function setRandomFirstColor() {
+  // Generar color random
+  const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+  
+  // Aplicar al primer slot
+  const firstSlot = document.querySelector('.palette-slot[data-slot="0"]');
+  if (firstSlot) {
+    firstSlot.style.backgroundColor = randomColor;
+  }
+  
+  // Aplicar al color picker
+  const colorInput = document.getElementById('c1');
+  if (colorInput) {
+    colorInput.value = randomColor;
+  }
+  
+  console.log('Color random inicial:', randomColor);
+}
+
 // Hacer las funciones accesibles globalmente
 window.logoutUser = logoutUser;
 window.saveImageToServer = saveImageToServer;
-window.getCurrentChatUsername = getCurrentChatUsername;
-window.closeSaveModal = closeSaveModal;
-window.submitSaveImage = submitSaveImage;
-window.shareSession = shareSession;
-
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
+window.renderLayerButtons = renderLayerButtons;

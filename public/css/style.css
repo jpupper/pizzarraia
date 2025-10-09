@@ -1110,3 +1110,46 @@ canvas[id^="layerPreview"] {
         margin-top: 5px;
     }
 }
+
+/* Botón para agregar capas */
+.btn-add-layer {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--primary-light) 100%);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(138, 79, 191, 0.3);
+}
+
+.btn-add-layer:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(138, 79, 191, 0.5);
+}
+
+.btn-delete-layer {
+    background: rgba(255, 71, 87, 0.8);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    width: 20px;
+    height: 20px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-delete-layer:hover {
+    background: rgba(255, 71, 87, 1);
+    transform: scale(1.1);
+}
