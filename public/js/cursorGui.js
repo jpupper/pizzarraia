@@ -22,10 +22,11 @@ class CursorGUI {
         this.lastClickTime = 0;
         this.lastClickX = 0;
         this.lastClickY = 0;
-        this.doubleClickThreshold = 100; // ms para detectar doble click
-        this.doubleClickDistanceThreshold = 30; // píxeles de tolerancia para considerar "mismo punto"
+        this.doubleClickThreshold = 200; // ms para detectar doble click
+        this.doubleClickDistanceThreshold = 10; // píxeles de tolerancia para considerar "mismo punto"
         this.clickCount = 0;
         this.isPressing = false;
+        this.resetTimer = null; // Timer para resetear el contador
         
         // Posición inicial para detectar movimiento
         this.pressStartX = 0;
@@ -110,22 +111,44 @@ class CursorGUI {
         const distance = Math.sqrt(dx * dx + dy * dy);
         
         // Verificar si es doble click: mismo tiempo Y mismo punto
-        if (timeSinceLastClick < this.doubleClickThreshold && 
+        if (this.lastClickTime > 0 && 
+            timeSinceLastClick < this.doubleClickThreshold && 
             distance < this.doubleClickDistanceThreshold) {
             // Es un doble click en el mismo punto!
             this.show(x, y);
+            
+            // Resetear todo
             this.clickCount = 0;
             this.lastClickTime = 0;
             this.lastClickX = 0;
             this.lastClickY = 0;
+            
+            // Cancelar timer de reset
+            if (this.resetTimer) {
+                clearTimeout(this.resetTimer);
+                this.resetTimer = null;
+            }
         } else {
-            // Primer click - guardar posición y tiempo
+            // Primer click o click fuera de rango - guardar posición y tiempo
             this.clickCount = 1;
             this.lastClickTime = currentTime;
             this.lastClickX = x;
             this.lastClickY = y;
             this.pressStartX = x;
             this.pressStartY = y;
+            
+            // Cancelar timer anterior si existe
+            if (this.resetTimer) {
+                clearTimeout(this.resetTimer);
+            }
+            
+            // Crear nuevo timer para resetear después del threshold
+            this.resetTimer = setTimeout(() => {
+                this.lastClickTime = 0;
+                this.lastClickX = 0;
+                this.lastClickY = 0;
+                this.clickCount = 0;
+            }, this.doubleClickThreshold);
         }
         
         this.isPressing = true;
