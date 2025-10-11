@@ -761,9 +761,18 @@ function mouseReleased() {
         // Obtener el número de segmentos para el efecto caleidoscopio
         const kaleidoSegments = parseInt(document.getElementById('kaleidoSegments').value) || 1;
         
-        // Dibujar localmente primero en la capa activa
+        // Dibujar localmente primero en la capa activa usando el nuevo sistema
         const brushSize = parseInt(document.getElementById('size').value);
-        drawLineBrush(getActiveLayer(), mouseX, mouseY, lineStartX, lineStartY, brushSize, col, kaleidoSegments);
+        const lineBrush = brushRegistry ? brushRegistry.get('line') : null;
+        if (lineBrush) {
+            lineBrush.draw(getActiveLayer(), mouseX, mouseY, {
+                size: brushSize,
+                color: col,
+                kaleidoSegments: kaleidoSegments,
+                startX: lineStartX,
+                startY: lineStartY
+            });
+        }
         
         // Preparar datos para enviar por socket
         const data = {
@@ -1036,6 +1045,21 @@ function dibujarCoso(buffer, x, y, data) {
                 });
             }
             break;
+        case 'flower':
+            // Flower brush - usar el nuevo sistema de clases
+            const flowerBrush = brushRegistry ? brushRegistry.get('flower') : null;
+            if (flowerBrush) {
+                flowerBrush.draw(buffer, x, y, {
+                    size: brushSize,
+                    color: col,
+                    kaleidoSegments: data.kaleidoSegments || 1,
+                    petalCount: data.petalCount || 5,
+                    petalLength: data.petalLength || 1.0,
+                    petalWidth: data.petalWidth || 0.6,
+                    centerSize: data.centerSize || 0.3
+                });
+            }
+            break;
         case 'classic':
         default:
             // Classic circle brush with kaleidoscope effect
@@ -1208,28 +1232,13 @@ function newDrawing(data2) {
         const targetLayer = layers[data2.layer !== undefined ? data2.layer : 0];
         
         // Dibujar en la capa correcta usando los parámetros recibidos
-        if (data2.bt === 'line') {
-            // Manejo especial para Line Brush
-            const startX = data2.pmouseX * windowWidth;
-            const startY = data2.pmouseY * windowHeight;
-            const col = convertToP5Color(data2.c1);
-            col.setAlpha(parseInt(data2.av));
-            const brushSize = parseInt(data2.s);
-            
-            // Obtener el número de segmentos para el efecto caleidoscopio
-            const kaleidoSegments = data2.kaleidoSegments || 1;
-            
-            console.log('DIBUJANDO LINE BRUSH EN CAPA', data2.layer, ':', startX, startY, 'to', canvasX, canvasY, 'con', kaleidoSegments, 'segmentos');
-            drawLineBrush(targetLayer, canvasX, canvasY, startX, startY, brushSize, col, kaleidoSegments);
-        } else {
-            // Otros pinceles - dibujar en la capa correcta
-            dibujarCoso(
-                targetLayer,
-                canvasX,
-                canvasY,
-                data2
-            );
-        }
+        // Todos los brushes ahora usan dibujarCoso con el nuevo sistema de clases
+        dibujarCoso(
+            targetLayer,
+            canvasX,
+            canvasY,
+            data2
+        );
         
         // Restaurar las posiciones anteriores globales
         window.pmouseXGlobal = tempPmouseX;
