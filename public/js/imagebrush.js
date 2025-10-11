@@ -180,29 +180,71 @@ function drawImageStamp(buffer, x, y, size, image, alpha) {
 }
 
 /**
+ * Función helper para dibujar con una imagen específica (con kaleidoscopio)
+ * @param {p5.Graphics} buffer - Buffer donde dibujar
+ * @param {number} x - Posición X
+ * @param {number} y - Posición Y
+ * @param {number} size - Tamaño del pincel
+ * @param {p5.Image} image - Imagen a dibujar
+ * @param {number} alpha - Transparencia (0-255)
+ * @param {number} segments - Número de segmentos para kaleidoscopio
+ * @param {number} centerX - Centro X del kaleidoscopio
+ * @param {number} centerY - Centro Y del kaleidoscopio
+ */
+function drawImageStampWithImage(buffer, x, y, size, image, alpha, segments = 1, centerX = null, centerY = null) {
+    if (!image) return;
+    
+    if (segments <= 1) {
+        // Sin efecto caleidoscopio, dibujar normalmente
+        drawImageStamp(buffer, x, y, size, image, alpha);
+    } else {
+        // Con efecto caleidoscopio
+        const kCenterX = centerX !== null ? centerX : windowWidth / 2;
+        const kCenterY = centerY !== null ? centerY : windowHeight / 2;
+        
+        // Usar la función de kaleidoscopio para dibujar
+        drawKaleidoscope(
+            buffer,
+            x, y,
+            kCenterX, kCenterY,
+            segments,
+            drawImageStamp,
+            size, image, alpha
+        );
+    }
+}
+
+/**
  * Dibujar el Image Brush con posible efecto caleidoscopio
  * @param {p5.Graphics} buffer - Buffer donde dibujar
  * @param {number} x - Posición X del mouse
  * @param {number} y - Posición Y del mouse
  * @param {number} size - Tamaño del pincel
  * @param {number} alpha - Transparencia (0-255)
- * @param {string} imageData - Data URL de la imagen (opcional, para sincronización)
+ * @param {string} imageData - Data URL de la imagen (para dibujar lo que otros clientes dibujan)
  * @param {number} segments - Número de segmentos para el efecto caleidoscopio
+ * @param {number} centerX - Centro X del kaleidoscopio (opcional, para sincronización)
+ * @param {number} centerY - Centro Y del kaleidoscopio (opcional, para sincronización)
  */
-function drawImageBrush(buffer, x, y, size, alpha, imageData = null, segments = 1) {
+function drawImageBrush(buffer, x, y, size, alpha, imageData = null, segments = 1, centerX = null, centerY = null) {
     const manager = getImageBrushManager();
     
-    // Si se proporciona imageData y no coincide con la imagen actual, cargarla
+    // Si viene imageData de otro cliente, usarlo TEMPORALMENTE solo para este dibujo
+    let imageToUse = manager.currentImage;
+    
     if (imageData && imageData !== manager.getImageData()) {
-        manager.loadImageFromData(imageData).catch(err => {
-            console.error('Error al cargar imagen sincronizada:', err);
+        // Cargar la imagen del otro cliente TEMPORALMENTE para este frame
+        // Crear una imagen temporal sin afectar la selección local
+        loadImage(imageData, (tempImage) => {
+            // Dibujar con la imagen temporal del otro cliente
+            drawImageStampWithImage(buffer, x, y, size, tempImage, alpha, segments, centerX, centerY);
         });
-        return; // Esperar a que se cargue la imagen
+        return;
     }
     
-    // Verificar que hay una imagen cargada
+    // Verificar que hay una imagen cargada localmente
     if (!manager.hasImage()) {
-        console.warn('No hay imagen cargada en el Image Brush');
+        // No dibujar si no hay imagen local
         return;
     }
     
@@ -215,15 +257,15 @@ function drawImageBrush(buffer, x, y, size, alpha, imageData = null, segments = 
         // Sin efecto caleidoscopio, dibujar normalmente
         drawImageStamp(buffer, x, y, size, image, alpha);
     } else {
-        // Con efecto caleidoscopio
-        const centerX = kaleidoCenterX !== null ? kaleidoCenterX : windowWidth / 2;
-        const centerY = kaleidoCenterY !== null ? kaleidoCenterY : windowHeight / 2;
+        // Con efecto caleidoscopio - usar coordenadas recibidas o las locales
+        const kCenterX = centerX !== null ? centerX : (kaleidoCenterX !== null ? kaleidoCenterX : windowWidth / 2);
+        const kCenterY = centerY !== null ? centerY : (kaleidoCenterY !== null ? kaleidoCenterY : windowHeight / 2);
         
         // Usar la función de kaleidoscopio para dibujar
         drawKaleidoscope(
             buffer,
             x, y,
-            centerX, centerY,
+            kCenterX, kCenterY,
             segments,
             drawImageStamp,
             size, image, alpha
@@ -255,8 +297,8 @@ function handleImageBrushFileUpload() {
                 toast.success('Imagen cargada (50x50)');
             }
             
-            // Sincronizar la imagen con otros clientes
-            syncImageBrushToOthers(result.imageData);
+            // NO sincronizar - cada cliente mantiene su propia selección
+            // syncImageBrushToOthers(result.imageData);
         })
         .catch((err) => {
             console.error('Error al cargar imagen:', err);
@@ -323,4 +365,47 @@ function clearImageBrush() {
     if (typeof toast !== 'undefined') {
         toast.info('Imagen del brush eliminada');
     }
+}
+
+/**
+ * Cargar un emoji como preset para el image brush
+ * @param {string} emoji - El emoji a cargar
+ */
+function loadEmojiPreset(emoji) {
+    // Crear un canvas temporal para renderizar el emoji
+    const tempCanvas = document.createElement('canvas');
+    const size = 50; // Tamaño fijo 50x50
+    tempCanvas.width = size;
+    tempCanvas.height = size;
+    const ctx = tempCanvas.getContext('2d');
+    
+    // Fondo transparente
+    ctx.clearRect(0, 0, size, size);
+    
+    // Configurar el texto del emoji
+    ctx.font = '40px Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // Dibujar el emoji en el centro
+    ctx.fillText(emoji, size / 2, size / 2);
+    
+    // Convertir a data URL
+    const imageData = tempCanvas.toDataURL('image/png');
+    
+    // Cargar en el image brush manager
+    const manager = getImageBrushManager();
+    manager.loadImageFromData(imageData)
+        .then(() => {
+            console.log('Emoji preset cargado:', emoji);
+            if (typeof toast !== 'undefined') {
+                toast.success(`Emoji ${emoji} cargado`);
+            }
+        })
+        .catch((err) => {
+            console.error('Error al cargar emoji preset:', err);
+            if (typeof toast !== 'undefined') {
+                toast.error('Error al cargar emoji');
+            }
+        });
 }
