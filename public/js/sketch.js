@@ -580,7 +580,8 @@ function draw() {
             data.fillTolerance = parseInt(document.getElementById('fillTolerance').value);
             break;
         case 'image':
-            // Añadir parámetros para image brush
+            // Enviar imageData para que otros clientes vean el mismo dibujo
+            // pero NO cambiará su selección local de emoji
             const imageBrushMgr = getImageBrushManager();
             if (imageBrushMgr.hasImage()) {
                 data.imageData = imageBrushMgr.getImageData();
@@ -1024,7 +1025,16 @@ function dibujarCoso(buffer, x, y, data) {
             const imageKaleidoSegments = data.kaleidoSegments || 1;
             const imageAlpha = parseInt(data.av);
             const imageData = data.imageData || null;
-            drawImageBrush(buffer, x, y, brushSize, imageAlpha, imageData, imageKaleidoSegments);
+            
+            // Obtener las coordenadas del centro del kaleidoscopio si están disponibles
+            const imageCenterX = data.kaleidoCenterX !== null && data.kaleidoCenterX !== undefined 
+                ? data.kaleidoCenterX * windowWidth 
+                : null;
+            const imageCenterY = data.kaleidoCenterY !== null && data.kaleidoCenterY !== undefined 
+                ? data.kaleidoCenterY * windowHeight 
+                : null;
+            
+            drawImageBrush(buffer, x, y, brushSize, imageAlpha, imageData, imageKaleidoSegments, imageCenterX, imageCenterY);
             break;
         case 'classic':
         default:

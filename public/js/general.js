@@ -361,12 +361,15 @@ function setupLayerSelector() {
   const layerButtons = document.querySelectorAll('.layer-btn');
   const visibilityButtons = document.querySelectorAll('.layer-visibility-btn');
   const layerPreviews = document.querySelectorAll('[id^="layerPreview"]');
+  const layerItems = document.querySelectorAll('.layer-item');
   
   if (!layerButtons || layerButtons.length === 0) return;
   
   // Event listeners para botones de selección de capa
   layerButtons.forEach((button, index) => {
-    button.addEventListener('click', function() {
+    button.addEventListener('click', function(e) {
+      e.stopPropagation(); // Evitar que se propague al contenedor
+      
       // Remover clase active de todos los botones
       layerButtons.forEach(btn => btn.classList.remove('active'));
       
@@ -384,7 +387,9 @@ function setupLayerSelector() {
   
   // Event listeners para botones de visibilidad
   visibilityButtons.forEach((button, index) => {
-    button.addEventListener('click', function() {
+    button.addEventListener('click', function(e) {
+      e.stopPropagation(); // Evitar que se propague al contenedor
+      
       const layerIndex = parseInt(this.getAttribute('data-layer'));
       
       // Toggle visibilidad
@@ -405,7 +410,9 @@ function setupLayerSelector() {
   
   // Event listeners para previsualizaciones (clickear para seleccionar capa)
   layerPreviews.forEach((preview, index) => {
-    preview.addEventListener('click', function() {
+    preview.addEventListener('click', function(e) {
+      e.stopPropagation(); // Evitar que se propague al contenedor
+      
       const layerIndex = parseInt(this.id.replace('layerPreview', ''));
       
       // Remover clase active de todos los botones
@@ -426,6 +433,36 @@ function setupLayerSelector() {
     
     // Cambiar cursor al pasar sobre el preview
     preview.style.cursor = 'pointer';
+  });
+  
+  // Event listeners para el contenedor completo de cada capa (NUEVO)
+  layerItems.forEach((item, index) => {
+    item.style.cursor = 'pointer';
+    
+    item.addEventListener('click', function(e) {
+      // Solo procesar si no se clickeó en botones específicos
+      if (e.target.closest('.layer-visibility-btn') || e.target.closest('.btn-delete-layer')) {
+        return; // No hacer nada si se clickeó el botón de visibilidad o eliminar
+      }
+      
+      // Obtener el índice de la capa desde el botón dentro del contenedor
+      const layerBtn = this.querySelector('.layer-btn');
+      if (!layerBtn) return;
+      
+      const layerIndex = parseInt(layerBtn.getAttribute('data-layer'));
+      
+      // Remover clase active de todos los botones
+      layerButtons.forEach(btn => btn.classList.remove('active'));
+      
+      // Agregar clase active al botón correspondiente
+      layerBtn.classList.add('active');
+      
+      // Actualizar la capa activa
+      if (typeof window.activeLayer !== 'undefined') {
+        window.activeLayer = layerIndex;
+        console.log('Capa activa cambiada a:', layerIndex, '(desde contenedor)');
+      }
+    });
   });
 }
 
@@ -1162,24 +1199,35 @@ function closeWelcomeModal() {
   const modal = document.getElementById('welcomeModal');
   if (modal) {
     modal.classList.remove('active');
-    // Guardar en localStorage que ya se mostró
-    localStorage.setItem('welcomeModalShown', 'true');
+    // Ya NO guardamos en localStorage porque queremos que siempre aparezca
+    // para usuarios no logueados
   }
 }
 
-// Función para mostrar el modal de bienvenida solo la primera vez
+// Función para mostrar el modal de bienvenida
 function checkWelcomeModal() {
-  const hasSeenModal = localStorage.getItem('welcomeModalShown');
   const modal = document.getElementById('welcomeModal');
   
-  if (!hasSeenModal && modal) {
-    // Mostrar el modal después de un pequeño delay
-    setTimeout(() => {
-      modal.classList.add('active');
-    }, 500);
-  } else if (modal) {
-    // Si ya lo vio, no mostrar
-    modal.classList.remove('active');
+  // Verificar si hay parámetro modalintro=true en la URL (fuerza mostrar)
+  const urlParams = new URLSearchParams(window.location.search);
+  const forceModal = urlParams.get('modalintro') === 'true';
+  
+  // Verificar si el usuario está logueado
+  const isUserLoggedIn = currentUser !== null && currentUser !== undefined;
+  
+  if (modal) {
+    // Mostrar el modal si:
+    // 1. Se fuerza con modalintro=true, O
+    // 2. El usuario NO está logueado
+    if (forceModal || !isUserLoggedIn) {
+      // Mostrar el modal después de un pequeño delay
+      setTimeout(() => {
+        modal.classList.add('active');
+      }, 500);
+    } else {
+      // Si está logueado, no mostrar
+      modal.classList.remove('active');
+    }
   }
 }
 

@@ -92,8 +92,8 @@
             <button class="brush-btn" data-brush="image" title="Image Brush">
                 <svg viewBox="0 0 24 24"><path fill="currentColor" d="M8.5,13.5L11,16.5L14.5,12L19,18H5M21,19V5C21,3.89 20.1,3 19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19Z" /></svg>
             </button>
-            <button class="brush-btn" data-brush="background" onClick="cleanBackground()" title="Background">
-                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M4,2H20A2,2 0 0,1 22,4V20A2,2 0 0,1 20,22H4A2,2 0 0,1 2,20V4A2,2 0 0,1 4,2M4,4V20H20V4H4Z" /></svg>
+            <button class="brush-btn" data-brush="background" onClick="cleanBackground()" title="Limpiar Canvas">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M19.36,2.72L20.78,4.14L15.06,9.85C16.13,11.39 16.28,13.24 15.38,14.44L9.06,8.12C10.26,7.22 12.11,7.37 13.65,8.44L19.36,2.72M5.93,17.57C3.92,15.56 2.69,13.16 2.35,10.92L7.23,8.83L14.67,16.27L12.58,21.15C10.34,20.81 7.94,19.58 5.93,17.57Z" /></svg>
             </button>
         </div>
         <input type="hidden" id="brushType" value="classic">
@@ -209,7 +209,28 @@
         
         <!-- Image Brush Controls -->
         <div id="imageBrushParams" class="brushParams" style="display: none;">
-            <label>Cargar Imagen</label>
+            <h4 style="margin-top: 0; margin-bottom: 10px; color: var(--text); font-size: 0.95rem;">Emojis Presets</h4>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px;">
+                <button onclick="loadEmojiPreset('😀')" class="emoji-preset-btn" title="Cara Feliz">😀</button>
+                <button onclick="loadEmojiPreset('❤️')" class="emoji-preset-btn" title="Corazón">❤️</button>
+                <button onclick="loadEmojiPreset('⭐')" class="emoji-preset-btn" title="Estrella">⭐</button>
+                <button onclick="loadEmojiPreset('🔥')" class="emoji-preset-btn" title="Fuego">🔥</button>
+                <button onclick="loadEmojiPreset('✨')" class="emoji-preset-btn" title="Brillos">✨</button>
+                <button onclick="loadEmojiPreset('🎨')" class="emoji-preset-btn" title="Paleta">🎨</button>
+                <button onclick="loadEmojiPreset('🌈')" class="emoji-preset-btn" title="Arcoíris">🌈</button>
+                <button onclick="loadEmojiPreset('🦋')" class="emoji-preset-btn" title="Mariposa">🦋</button>
+                <button onclick="loadEmojiPreset('🌸')" class="emoji-preset-btn" title="Flor">🌸</button>
+                <button onclick="loadEmojiPreset('🍕')" class="emoji-preset-btn" title="Pizza">🍕</button>
+                <button onclick="loadEmojiPreset('🎭')" class="emoji-preset-btn" title="Teatro">🎭</button>
+                <button onclick="loadEmojiPreset('🎪')" class="emoji-preset-btn" title="Circo">🎪</button>
+            </div>
+            
+            <h4 style="margin-top: 15px; margin-bottom: 10px; color: var(--text); font-size: 0.95rem;">Mis Imágenes Guardadas</h4>
+            <div id="savedImagesContainer" style="margin-bottom: 15px;">
+                <p style="font-size: 0.8rem; color: rgba(255,255,255,0.5); text-align: center;">No hay imágenes guardadas</p>
+            </div>
+            
+            <h4 style="margin-top: 15px; margin-bottom: 10px; color: var(--text); font-size: 0.95rem;">Cargar Imagen</h4>
             <input type="file" id="imageBrushFile" accept="image/*" onchange="handleImageBrushFileUpload()" class="jpinput" style="width: 90%; padding: 5px; margin-bottom: 10px;">
             <br>
             <div style="text-align: center; margin: 10px 0;">
@@ -219,7 +240,7 @@
                 Limpiar Imagen
             </button>
             <p style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-top: 10px;">
-                💡 La imagen se redimensiona a 50x50 y se sincroniza con otros clientes
+                💡 La imagen se redimensiona a 50x50. El dibujo se sincroniza pero tu selección de emoji es personal
             </p>
         </div>
         
@@ -368,13 +389,11 @@
         </button>
     </div>
     
-    <button id="opengui" class="jpboton animated-button" onClick="openGui()" style="display: block;">
+    <button id="opengui" class="animated-button" onClick="openGui()">
         <svg viewBox="0 0 24 24">
             <path fill="currentColor" d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"/>
         </svg>
     </button>
-    
-    <input type="button" value="Close GUI" onClick="closeGui()" id="closegui" class="jpboton">
     
     <!-- Modal para guardar imagen -->
     <div id="saveImageModal" class="save-modal">
@@ -426,6 +445,24 @@
                 </a>
             </div>
             <p class="welcome-footer">o continúa sin cuenta para dibujar libremente</p>
+            
+            <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid rgba(138, 79, 191, 0.2);">
+                <p style="color: rgba(0,0,0,0.6); font-size: 0.9rem; margin-bottom: 12px; text-align: center;">Explora más:</p>
+                <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                    <a href="gallery.html" class="welcome-link" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; font-size: 0.9rem; font-weight: 500; transition: transform 0.2s;">
+                        <svg viewBox="0 0 24 24" width="18" height="18">
+                            <path fill="currentColor" d="M22,16V4A2,2 0 0,0 20,2H8A2,2 0 0,0 6,4V16A2,2 0 0,0 8,18H20A2,2 0 0,0 22,16M11,12L13.03,14.71L16,11L20,16H8M2,6V20A2,2 0 0,0 4,22H18V20H4V6"/>
+                        </svg>
+                        Galería Global
+                    </a>
+                    <a href="profile.html" class="welcome-link" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: rgba(138, 79, 191, 0.15); color: #764ba2; text-decoration: none; border-radius: 8px; font-size: 0.9rem; font-weight: 500; border: 2px solid rgba(138, 79, 191, 0.3); transition: transform 0.2s;">
+                        <svg viewBox="0 0 24 24" width="18" height="18">
+                            <path fill="currentColor" d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
+                        </svg>
+                        Mi Perfil
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
     

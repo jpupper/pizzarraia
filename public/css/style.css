@@ -678,6 +678,32 @@ select option {
     stroke: currentColor !important;
 }
 
+/* Estilos para los botones de emoji presets */
+.emoji-preset-btn {
+    width: 100%;
+    height: 50px;
+    padding: 8px;
+    background: rgba(138, 79, 191, 0.2);
+    border: 2px solid rgba(138, 79, 191, 0.4);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.emoji-preset-btn:hover {
+    background: rgba(138, 79, 191, 0.4);
+    border-color: var(--accent);
+    transform: scale(1.05);
+}
+
+.emoji-preset-btn:active {
+    transform: scale(0.95);
+}
+
 /* Estilos para los controles de sockets */
 .socket-controls {
     margin: 15px 0;
@@ -1300,6 +1326,11 @@ canvas[id^="layerPreview"] {
     color: rgba(255, 255, 255, 0.6);
     font-size: 0.9rem;
     margin: 0;
+}
+
+.welcome-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 /* Responsive para móvil */
