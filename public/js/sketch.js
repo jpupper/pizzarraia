@@ -572,8 +572,14 @@ function draw() {
             data.textFont = document.getElementById('textFont').value;
             break;
         case 'geometry':
-            // Añadir parámetros para geometry brush
-            data.polygonSides = parseInt(document.getElementById('polygonSides').value);
+            // Añadir parámetros para spirograph brush
+            data.spiroRadius = parseFloat(document.getElementById('spiroRadius').value);
+            data.spiroModulo = parseFloat(document.getElementById('spiroModulo').value);
+            data.spiroInc = parseFloat(document.getElementById('spiroInc').value);
+            data.npoints1 = parseInt(document.getElementById('npoints1').value);
+            data.npoints2 = parseInt(document.getElementById('npoints2').value);
+            data.borderSize = parseFloat(document.getElementById('borderSize').value);
+            data.borderAlpha = parseFloat(document.getElementById('borderAlpha').value);
             break;
         case 'fill':
             // Añadir parámetros para fill brush
@@ -1003,14 +1009,21 @@ function dibujarCoso(buffer, x, y, data) {
             }
             break;
         case 'geometry':
-            // Geometry brush - usar el nuevo sistema de clases
+            // Spirograph brush - usar el nuevo sistema de clases
             const geometryBrush = brushRegistry ? brushRegistry.get('geometry') : null;
             if (geometryBrush) {
                 geometryBrush.draw(buffer, x, y, {
                     size: brushSize,
                     color: col,
                     kaleidoSegments: data.kaleidoSegments || 1,
-                    polygonSides: data.polygonSides || 5
+                    spiroRadius: data.spiroRadius || 50,
+                    spiroModulo: data.spiroModulo || 30,
+                    spiroInc: data.spiroInc || 2,
+                    npoints1: data.npoints1 || 5,
+                    npoints2: data.npoints2 || 3,
+                    borderSize: data.borderSize || 2,
+                    borderAlpha: data.borderAlpha || 255,
+                    syncAnim: data.syncAnim
                 });
             }
             break;

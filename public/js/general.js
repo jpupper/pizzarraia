@@ -311,20 +311,96 @@ function setupBrushTypeEvents() {
     updateSliderValue('textSize');
   });
   
-  // Add event listeners for geometry brush parameters
-  const polygonSidesInput = document.getElementById('polygonSides');
+  // Add event listeners for spirograph brush parameters
+  const spiroRadiusInput = document.getElementById('spiroRadius');
+  const spiroModuloInput = document.getElementById('spiroModulo');
+  const spiroIncInput = document.getElementById('spiroInc');
+  const npoints1Input = document.getElementById('npoints1');
+  const npoints2Input = document.getElementById('npoints2');
+  const borderSizeInput = document.getElementById('borderSize');
+  const borderAlphaInput = document.getElementById('borderAlpha');
   
-  polygonSidesInput.addEventListener('input', function() {
-    updateSliderValue('polygonSides');
-  });
+  if (spiroRadiusInput) {
+    spiroRadiusInput.addEventListener('input', function() {
+      updateSliderValue('spiroRadius');
+    });
+  }
+  
+  if (spiroModuloInput) {
+    spiroModuloInput.addEventListener('input', function() {
+      updateSliderValue('spiroModulo');
+    });
+  }
+  
+  if (spiroIncInput) {
+    spiroIncInput.addEventListener('input', function() {
+      updateSliderValue('spiroInc');
+    });
+  }
+  
+  if (npoints1Input) {
+    npoints1Input.addEventListener('input', function() {
+      updateSliderValue('npoints1');
+    });
+  }
+  
+  if (npoints2Input) {
+    npoints2Input.addEventListener('input', function() {
+      updateSliderValue('npoints2');
+    });
+  }
+  
+  if (borderSizeInput) {
+    borderSizeInput.addEventListener('input', function() {
+      updateSliderValue('borderSize');
+    });
+  }
+  
+  if (borderAlphaInput) {
+    borderAlphaInput.addEventListener('input', function() {
+      updateSliderValue('borderAlpha');
+    });
+  }
   
   // Add event listeners for fill brush parameters
   const fillToleranceInput = document.getElementById('fillTolerance');
   
-  fillToleranceInput.addEventListener('input', function() {
-    updateSliderValue('fillTolerance');
-    updateArtBrushParameters({ fillTolerance: parseInt(this.value) });
-  });
+  if (fillToleranceInput) {
+    fillToleranceInput.addEventListener('input', function() {
+      updateSliderValue('fillTolerance');
+      updateArtBrushParameters({ fillTolerance: parseInt(this.value) });
+    });
+  }
+  
+  // Add event listeners for flower brush parameters
+  const petalCountInput = document.getElementById('petalCount');
+  const petalLengthInput = document.getElementById('petalLength');
+  const petalWidthInput = document.getElementById('petalWidth');
+  const centerSizeInput = document.getElementById('centerSize');
+  
+  if (petalCountInput) {
+    petalCountInput.addEventListener('input', function() {
+      updateSliderValue('petalCount');
+    });
+  }
+  
+  if (petalLengthInput) {
+    petalLengthInput.addEventListener('input', function() {
+      updateSliderValue('petalLength');
+    });
+  }
+  
+  if (petalWidthInput) {
+    petalWidthInput.addEventListener('input', function() {
+      updateSliderValue('petalWidth');
+    });
+  }
+  
+  if (centerSizeInput) {
+    centerSizeInput.addEventListener('input', function() {
+      updateSliderValue('centerSize');
+    });
+  }
 }
 
 // Función para configurar el selector visual de pinceles
