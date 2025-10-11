@@ -225,7 +225,7 @@
         <!-- Spirograph Brush Controls -->
         <div id="geometryBrushParams" class="brushParams" style="display: none;">
             <p style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-bottom: 10px;">
-                💡 El tamaño del brush controla el radio del spirograph
+                💡 El tamaño del brush controla el radio principal
             </p>
             <label>Módulo: <span id="spiroModulo-value">30</span></label>
             <input type="range" value="30" id="spiroModulo" min="5" max="300" step="5" class="jpslider"
@@ -235,17 +235,17 @@
             <input type="range" value="2" id="spiroInc" min="0.1" max="10" step="0.1" class="jpslider"
                    oninput="document.getElementById('spiroInc-value').textContent = this.value">
             <br>
-            <label>Puntas 1: <span id="npoints1-value">5</span></label>
+            <label>Radio 2 (Estrella): <span id="radius2-value">0.6</span></label>
+            <input type="range" value="0.6" id="radius2" min="0.1" max="2" step="0.1" class="jpslider"
+                   oninput="document.getElementById('radius2-value').textContent = this.value">
+            <br>
+            <label>Puntas: <span id="npoints1-value">5</span></label>
             <input type="range" value="5" id="npoints1" min="3" max="12" step="1" class="jpslider"
                    oninput="document.getElementById('npoints1-value').textContent = this.value">
             <br>
-            <label>Puntas 2 (Estrella): <span id="npoints2-value">3</span></label>
-            <input type="range" value="3" id="npoints2" min="3" max="12" step="1" class="jpslider"
-                   oninput="document.getElementById('npoints2-value').textContent = this.value">
-            <br>
-            <label>Grosor Borde: <span id="borderSize-value">2</span></label>
-            <input type="range" value="2" id="borderSize" min="0" max="20" step="1" class="jpslider"
-                   oninput="document.getElementById('borderSize-value').textContent = this.value">
+            <label>Escala Borde: <span id="borderScale-value">1.1</span></label>
+            <input type="range" value="1.1" id="borderScale" min="1" max="2" step="0.05" class="jpslider"
+                   oninput="document.getElementById('borderScale-value').textContent = this.value">
             <br>
             <label>Alpha Borde: <span id="borderAlpha-value">255</span></label>
             <input type="range" value="255" id="borderAlpha" min="0" max="255" step="5" class="jpslider"
@@ -268,9 +268,13 @@
         
         <!-- Flower Brush Controls -->
         <div id="flowerBrushParams" class="brushParams" style="display: none;">
-            <label>Tamaño: <span id="flowerSize-value">12</span></label>
-            <input type="range" value="12" id="flowerSize" min="5" max="30" step="1" class="jpslider"
-                   oninput="document.getElementById('flowerSize-value').textContent = this.value">
+            <label>Tamaño Mínimo: <span id="minSize-value">5</span></label>
+            <input type="range" value="5" id="minSize" min="1" max="20" step="1" class="jpslider"
+                   oninput="document.getElementById('minSize-value').textContent = this.value">
+            <br>
+            <label>Tamaño Máximo: <span id="maxSize-value">30</span></label>
+            <input type="range" value="30" id="maxSize" min="10" max="50" step="1" class="jpslider"
+                   oninput="document.getElementById('maxSize-value').textContent = this.value">
             <br>
             <label>Frecuencia: <span id="frequency-value">5</span></label>
             <input type="range" value="5" id="frequency" min="3" max="12" step="1" class="jpslider"
@@ -280,16 +284,20 @@
             <input type="range" value="0.065" id="animSpeed" min="0.01" max="0.15" step="0.005" class="jpslider"
                    oninput="document.getElementById('animSpeed-value').textContent = this.value">
             <br>
-            <label>Vidas: <span id="flowerLives-value">5</span></label>
-            <input type="range" value="5" id="flowerLives" min="1" max="20" step="1" class="jpslider"
-                   oninput="document.getElementById('flowerLives-value').textContent = this.value">
-            <br>
             <label>Grosor Trazo: <span id="flowerStrokeWeight-value">1</span></label>
             <input type="range" value="1" id="flowerStrokeWeight" min="1" max="5" step="1" class="jpslider"
                    oninput="document.getElementById('flowerStrokeWeight-value').textContent = this.value">
             <br>
+            <label>Alpha Trazo: <span id="strokeAlpha-value">15</span></label>
+            <input type="range" value="15" id="strokeAlpha" min="5" max="100" step="5" class="jpslider"
+                   oninput="document.getElementById('strokeAlpha-value').textContent = this.value">
+            <br>
+            <label>Velocidad Encogimiento: <span id="shrinkSpeed-value">0.5</span></label>
+            <input type="range" value="0.5" id="shrinkSpeed" min="0.1" max="2" step="0.1" class="jpslider"
+                   oninput="document.getElementById('shrinkSpeed-value').textContent = this.value">
+            <br>
             <p style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-top: 10px;">
-                🌸 Click para crear flores animadas que viven y se desvanecen
+                🌸 Dibuja flores que se encogen y resetean continuamente
             </p>
         </div>
         
@@ -312,9 +320,9 @@
             </div>
             
             <h4 style="margin-top: 15px; margin-bottom: 10px; color: var(--text); font-size: 0.95rem;">Buscador de Imágenes</h4>
-            <div style="display: flex; gap: 5px; margin-bottom: 10px;">
-                <input type="text" id="imageSearchInput" placeholder="Buscar imágenes..." class="jpinput" style="flex: 1; padding: 8px;">
-                <button onclick="searchImages()" style="padding: 8px 15px; background: var(--accent); color: var(--bg); border: none; border-radius: 5px; cursor: pointer; font-weight: 600;">
+            <div style="display: flex; gap: 5px; margin-bottom: 10px; align-items: stretch;">
+                <input type="text" id="imageSearchInput" placeholder="Buscar imágenes..." class="jpinput" style="flex: 1; padding: 8px; height: auto;">
+                <button onclick="searchImages()" style="padding: 8px 12px; background: var(--accent); color: var(--bg); border: none; border-radius: 5px; cursor: pointer; font-weight: 600; font-size: 1.2rem; display: flex; align-items: center; justify-content: center;">
                     🔍
                 </button>
             </div>

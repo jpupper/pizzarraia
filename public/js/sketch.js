@@ -572,12 +572,12 @@ function draw() {
             data.textFont = document.getElementById('textFont').value;
             break;
         case 'geometry':
-            // Añadir parámetros para spirograph brush (size global controla spiroRadius)
+            // Añadir parámetros para spirograph brush (size global controla radio principal)
             data.spiroModulo = parseFloat(document.getElementById('spiroModulo').value);
             data.spiroInc = parseFloat(document.getElementById('spiroInc').value);
+            data.radius2 = parseFloat(document.getElementById('radius2').value);
             data.npoints1 = parseInt(document.getElementById('npoints1').value);
-            data.npoints2 = parseInt(document.getElementById('npoints2').value);
-            data.borderSize = parseFloat(document.getElementById('borderSize').value);
+            data.borderScale = parseFloat(document.getElementById('borderScale').value);
             data.borderAlpha = parseFloat(document.getElementById('borderAlpha').value);
             break;
         case 'fill':
@@ -594,11 +594,13 @@ function draw() {
             break;
         case 'flower':
             // Añadir parámetros para flower brush
-            data.flowerSize = parseFloat(document.getElementById('flowerSize').value);
+            data.minSize = parseFloat(document.getElementById('minSize').value);
+            data.maxSize = parseFloat(document.getElementById('maxSize').value);
             data.frequency = parseFloat(document.getElementById('frequency').value);
             data.animSpeed = parseFloat(document.getElementById('animSpeed').value);
-            data.lives = parseInt(document.getElementById('flowerLives').value);
             data.strokeWeight = parseFloat(document.getElementById('flowerStrokeWeight').value);
+            data.strokeAlpha = parseFloat(document.getElementById('strokeAlpha').value);
+            data.shrinkSpeed = parseFloat(document.getElementById('shrinkSpeed').value);
             break;
     }
     
@@ -1020,14 +1022,14 @@ function dibujarCoso(buffer, x, y, data) {
             const geometryBrush = brushRegistry ? brushRegistry.get('geometry') : null;
             if (geometryBrush) {
                 geometryBrush.draw(buffer, x, y, {
-                    size: brushSize, // size controla spiroRadius
+                    size: brushSize, // size controla radio principal
                     color: col,
                     kaleidoSegments: data.kaleidoSegments || 1,
                     spiroModulo: data.spiroModulo || 30,
                     spiroInc: data.spiroInc || 2,
+                    radius2: data.radius2 || 0.6,
                     npoints1: data.npoints1 || 5,
-                    npoints2: data.npoints2 || 3,
-                    borderSize: data.borderSize || 2,
+                    borderScale: data.borderScale || 1.1,
                     borderAlpha: data.borderAlpha || 255,
                     syncAnim: data.syncAnim
                 });
@@ -1070,11 +1072,13 @@ function dibujarCoso(buffer, x, y, data) {
             if (flowerBrush) {
                 flowerBrush.draw(buffer, x, y, {
                     color: col,
-                    flowerSize: data.flowerSize || 12,
+                    minSize: data.minSize || 5,
+                    maxSize: data.maxSize || 30,
                     frequency: data.frequency || 5,
                     animSpeed: data.animSpeed || 0.065,
-                    lives: data.lives || 5,
-                    strokeWeight: data.strokeWeight || 1
+                    strokeWeight: data.strokeWeight || 1,
+                    strokeAlpha: data.strokeAlpha || 15,
+                    shrinkSpeed: data.shrinkSpeed || 0.5
                 });
             }
             break;

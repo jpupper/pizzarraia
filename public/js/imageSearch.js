@@ -1,7 +1,20 @@
 /**
  * Sistema de búsqueda de imágenes para ImageBrush
- * Usa Lorem Picsum (API gratuita sin autenticación)
+ * Usa Lorem Picsum con IDs basados en hash del query para consistencia
  */
+
+/**
+ * Genera un hash simple de un string
+ */
+function simpleHash(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash);
+}
 
 /**
  * Busca imágenes usando Lorem Picsum
@@ -20,17 +33,18 @@ async function searchImages() {
     resultsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: rgba(255,255,255,0.7); font-size: 0.8rem;">Buscando...</p>';
     
     try {
-        // Usar Lorem Picsum para obtener imágenes aleatorias
-        // Como no tiene búsqueda por keywords, generamos IDs basados en el query
-        const seed = query.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        // Usar Lorem Picsum con IDs basados en hash del query
+        const baseHash = simpleHash(query);
         const images = [];
         
         for (let i = 0; i < 9; i++) {
-            const imageId = (seed + i * 13) % 1000; // Generar IDs pseudo-aleatorios
+            // Generar IDs consistentes basados en el query
+            const imageId = (baseHash + i * 37) % 1000; // 0-999
+            const cacheBuster = Date.now(); // Para forzar recarga
             images.push({
                 id: imageId,
-                url: `https://picsum.photos/id/${imageId}/200/200`,
-                download_url: `https://picsum.photos/id/${imageId}/400/400`
+                url: `https://picsum.photos/id/${imageId}/200/200?t=${cacheBuster}`,
+                download_url: `https://picsum.photos/id/${imageId}/400/400?t=${cacheBuster}`
             });
         }
         

@@ -20,7 +20,10 @@ class CursorGUI {
         
         // Timer para detectar doble click/touch
         this.lastClickTime = 0;
-        this.doubleClickThreshold = 200; // ms para detectar doble click
+        this.lastClickX = 0;
+        this.lastClickY = 0;
+        this.doubleClickThreshold = 100; // ms para detectar doble click
+        this.doubleClickDistanceThreshold = 30; // píxeles de tolerancia para considerar "mismo punto"
         this.clickCount = 0;
         this.isPressing = false;
         
@@ -93,7 +96,7 @@ class CursorGUI {
     }
     
     /**
-     * Detectar doble click/touch
+     * Detectar doble click/touch en el mismo punto
      */
     startLongPress(x, y) {
         if (this.isVisible) return; // Ya está visible
@@ -101,15 +104,26 @@ class CursorGUI {
         const currentTime = Date.now();
         const timeSinceLastClick = currentTime - this.lastClickTime;
         
-        if (timeSinceLastClick < this.doubleClickThreshold) {
-            // Es un doble click!
+        // Calcular distancia desde el último click
+        const dx = x - this.lastClickX;
+        const dy = y - this.lastClickY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        // Verificar si es doble click: mismo tiempo Y mismo punto
+        if (timeSinceLastClick < this.doubleClickThreshold && 
+            distance < this.doubleClickDistanceThreshold) {
+            // Es un doble click en el mismo punto!
             this.show(x, y);
             this.clickCount = 0;
             this.lastClickTime = 0;
+            this.lastClickX = 0;
+            this.lastClickY = 0;
         } else {
-            // Primer click
+            // Primer click - guardar posición y tiempo
             this.clickCount = 1;
             this.lastClickTime = currentTime;
+            this.lastClickX = x;
+            this.lastClickY = y;
             this.pressStartX = x;
             this.pressStartY = y;
         }

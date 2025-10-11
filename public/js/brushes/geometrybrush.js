@@ -12,12 +12,11 @@ class GeometryBrush extends BaseBrush {
             icon: '<polygon points="12,4 20,20 4,20" fill="currentColor"/>',
             supportsKaleidoscope: true,
             parameters: {
-                spiroRadius: { min: 10, max: 200, default: 50, step: 5, label: 'Radio' },
                 spiroModulo: { min: 5, max: 300, default: 30, step: 5, label: 'Módulo' },
                 spiroInc: { min: 0.1, max: 10, default: 2, step: 0.1, label: 'Velocidad Rotación' },
-                npoints1: { min: 3, max: 12, default: 5, step: 1, label: 'Puntas 1' },
-                npoints2: { min: 3, max: 12, default: 3, step: 1, label: 'Puntas 2 (Estrella)' },
-                borderSize: { min: 0, max: 20, default: 2, step: 1, label: 'Grosor Borde' },
+                radius2: { min: 0.1, max: 2, default: 0.6, step: 0.1, label: 'Radio 2 (Estrella)' },
+                npoints1: { min: 3, max: 12, default: 5, step: 1, label: 'Puntas' },
+                borderScale: { min: 1, max: 2, default: 1.1, step: 0.05, label: 'Escala Borde' },
                 borderAlpha: { min: 0, max: 255, default: 255, step: 5, label: 'Alpha Borde' }
             }
         });
@@ -38,17 +37,17 @@ class GeometryBrush extends BaseBrush {
             <input type="range" value="2" id="spiroInc" min="0.1" max="10" step="0.1" class="jpslider"
                    oninput="document.getElementById('spiroInc-value').textContent = this.value">
             <br>
-            <label>Puntas 1: <span id="npoints1-value">5</span></label>
+            <label>Radio 2 (Estrella): <span id="radius2-value">0.6</span></label>
+            <input type="range" value="0.6" id="radius2" min="0.1" max="2" step="0.1" class="jpslider"
+                   oninput="document.getElementById('radius2-value').textContent = this.value">
+            <br>
+            <label>Puntas: <span id="npoints1-value">5</span></label>
             <input type="range" value="5" id="npoints1" min="3" max="12" step="1" class="jpslider"
                    oninput="document.getElementById('npoints1-value').textContent = this.value">
             <br>
-            <label>Puntas 2 (Estrella): <span id="npoints2-value">3</span></label>
-            <input type="range" value="3" id="npoints2" min="3" max="12" step="1" class="jpslider"
-                   oninput="document.getElementById('npoints2-value').textContent = this.value">
-            <br>
-            <label>Grosor Borde: <span id="borderSize-value">2</span></label>
-            <input type="range" value="2" id="borderSize" min="0" max="20" step="1" class="jpslider"
-                   oninput="document.getElementById('borderSize-value').textContent = this.value">
+            <label>Escala Borde: <span id="borderScale-value">1.1</span></label>
+            <input type="range" value="1.1" id="borderScale" min="1" max="2" step="0.05" class="jpslider"
+                   oninput="document.getElementById('borderScale-value').textContent = this.value">
             <br>
             <label>Alpha Borde: <span id="borderAlpha-value">255</span></label>
             <input type="range" value="255" id="borderAlpha" min="0" max="255" step="5" class="jpslider"
@@ -87,14 +86,15 @@ class GeometryBrush extends BaseBrush {
             color,
             spiroModulo = 30,
             spiroInc = 2,
+            radius2 = 0.6,
             npoints1 = 5,
-            npoints2 = 3,
-            borderSize = 2,
+            borderScale = 1.1,
             borderAlpha = 255
         } = params;
         
-        // El size global controla el spiroRadius
+        // El size global controla el radio principal
         const spiroRadius = size;
+        const spiroRadius2 = spiroRadius * radius2;
 
         // Calcular posición del spirograph basado en la fase de animación
         const angulo = animPhase * -10;
@@ -114,8 +114,8 @@ class GeometryBrush extends BaseBrush {
         const animatedB = lerp(blue(color), 0, lerpAmount);
         const animatedAlpha = alpha(color);
 
-        // Dibujar borde (figura más grande 1.1x)
-        if (borderSize > 0) {
+        // Dibujar borde (figura escalada)
+        if (borderScale > 1) {
             // Borde más oscuro
             buffer.fill(animatedR * 0.5, animatedG * 0.5, animatedB * 0.5, borderAlpha);
             buffer.noStroke();
@@ -123,8 +123,8 @@ class GeometryBrush extends BaseBrush {
                 buffer,
                 spiroModulo + spiroModulo / 2,
                 spiroModulo - spiroModulo / 2,
-                spiroRadius * 1.1,
-                (spiroRadius * 1.1) * (npoints2 / npoints1),
+                spiroRadius * borderScale,
+                spiroRadius2 * borderScale,
                 npoints1
             );
         }
@@ -137,7 +137,7 @@ class GeometryBrush extends BaseBrush {
             spiroModulo + spiroModulo / 2,
             spiroModulo - spiroModulo / 2,
             spiroRadius,
-            spiroRadius * (npoints2 / npoints1),
+            spiroRadius2,
             npoints1
         );
 

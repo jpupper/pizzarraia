@@ -186,6 +186,7 @@ function setupBrushTypeEvents() {
   const geometryBrushParams = document.getElementById('geometryBrushParams');
   const fillBrushParams = document.getElementById('fillBrushParams');
   const imageBrushParams = document.getElementById('imageBrushParams');
+  const flowerBrushParams = document.getElementById('flowerBrushParams');
   
   // Get all brush parameter containers
   const allBrushParams = document.querySelectorAll('.brushParams');
@@ -224,6 +225,9 @@ function setupBrushTypeEvents() {
         break;
       case 'image':
         imageBrushParams.style.display = 'block';
+        break;
+      case 'flower':
+        flowerBrushParams.style.display = 'block';
         break;
     }
   }
@@ -314,9 +318,9 @@ function setupBrushTypeEvents() {
   // Add event listeners for spirograph brush parameters
   const spiroModuloInput = document.getElementById('spiroModulo');
   const spiroIncInput = document.getElementById('spiroInc');
+  const radius2Input = document.getElementById('radius2');
   const npoints1Input = document.getElementById('npoints1');
-  const npoints2Input = document.getElementById('npoints2');
-  const borderSizeInput = document.getElementById('borderSize');
+  const borderScaleInput = document.getElementById('borderScale');
   const borderAlphaInput = document.getElementById('borderAlpha');
   
   if (spiroModuloInput) {
@@ -331,21 +335,21 @@ function setupBrushTypeEvents() {
     });
   }
   
+  if (radius2Input) {
+    radius2Input.addEventListener('input', function() {
+      updateSliderValue('radius2');
+    });
+  }
+  
   if (npoints1Input) {
     npoints1Input.addEventListener('input', function() {
       updateSliderValue('npoints1');
     });
   }
   
-  if (npoints2Input) {
-    npoints2Input.addEventListener('input', function() {
-      updateSliderValue('npoints2');
-    });
-  }
-  
-  if (borderSizeInput) {
-    borderSizeInput.addEventListener('input', function() {
-      updateSliderValue('borderSize');
+  if (borderScaleInput) {
+    borderScaleInput.addEventListener('input', function() {
+      updateSliderValue('borderScale');
     });
   }
   
@@ -366,15 +370,23 @@ function setupBrushTypeEvents() {
   }
   
   // Add event listeners for flower brush parameters
-  const flowerSizeInput = document.getElementById('flowerSize');
+  const minSizeInput = document.getElementById('minSize');
+  const maxSizeInput = document.getElementById('maxSize');
   const frequencyInput = document.getElementById('frequency');
   const animSpeedInput = document.getElementById('animSpeed');
-  const flowerLivesInput = document.getElementById('flowerLives');
   const flowerStrokeWeightInput = document.getElementById('flowerStrokeWeight');
+  const strokeAlphaInput = document.getElementById('strokeAlpha');
+  const shrinkSpeedInput = document.getElementById('shrinkSpeed');
   
-  if (flowerSizeInput) {
-    flowerSizeInput.addEventListener('input', function() {
-      updateSliderValue('flowerSize');
+  if (minSizeInput) {
+    minSizeInput.addEventListener('input', function() {
+      updateSliderValue('minSize');
+    });
+  }
+  
+  if (maxSizeInput) {
+    maxSizeInput.addEventListener('input', function() {
+      updateSliderValue('maxSize');
     });
   }
   
@@ -390,15 +402,21 @@ function setupBrushTypeEvents() {
     });
   }
   
-  if (flowerLivesInput) {
-    flowerLivesInput.addEventListener('input', function() {
-      updateSliderValue('flowerLives');
-    });
-  }
-  
   if (flowerStrokeWeightInput) {
     flowerStrokeWeightInput.addEventListener('input', function() {
       updateSliderValue('flowerStrokeWeight');
+    });
+  }
+  
+  if (strokeAlphaInput) {
+    strokeAlphaInput.addEventListener('input', function() {
+      updateSliderValue('strokeAlpha');
+    });
+  }
+  
+  if (shrinkSpeedInput) {
+    shrinkSpeedInput.addEventListener('input', function() {
+      updateSliderValue('shrinkSpeed');
     });
   }
 }
