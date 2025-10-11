@@ -525,6 +525,11 @@ function draw() {
     // Dibujar el flowfield en el GUI buffer si está activado
     drawArtBrushFlowfield(guiBuffer);
     
+    // Dibujar FPS counter en el GUI buffer si está activado
+    if (window.showFPS) {
+        drawFPSCounter(guiBuffer);
+    }
+    
     // Mostrar el buffer GUI siempre (encima de todas las capas)
     image(guiBuffer, 0, 0);
     
@@ -743,7 +748,7 @@ function mousePressed() {
     if (!isOverGui && !isOverOpenButton) {
         kaleidoCenterX = mouseX;
         kaleidoCenterY = mouseY;
-        console.log('Punto central del caleidoscopio establecido en:', kaleidoCenterX, kaleidoCenterY);
+        // console.log('Punto central del caleidoscopio establecido en:', kaleidoCenterX, kaleidoCenterY);
     }
     
     // Si es line brush, guardar el punto inicial
@@ -808,7 +813,7 @@ function mouseReleased() {
         };
         
         // Enviar por socket si el envío está habilitado
-        console.log('ENVIANDO LINE POR SOCKET:', data);
+        // console.log('ENVIANDO LINE POR SOCKET:', data);
         if (config.sockets.sendEnabled && socket && socket.connected) {
             socket.emit('mouse', data);
         }
@@ -1159,9 +1164,9 @@ function newDrawing(data2) {
         
         // Log para debugging de Line Brush
         if (data2.bt === 'line') {
-            console.log('RECIBIENDO LINE BRUSH EN NEWDRAWING:', data2);
-            console.log('sessionId:', sessionId);
-            console.log('socket.id:', socket.id);
+            // console.log('RECIBIENDO LINE BRUSH EN NEWDRAWING:', data2);
+            // console.log('sessionId:', sessionId);
+            // console.log('socket.id:', socket.id);
         }
         
         // Convertir coordenadas normalizadas a coordenadas del canvas
@@ -1180,7 +1185,7 @@ function newDrawing(data2) {
         if (data2.kaleidoCenterX !== null && data2.kaleidoCenterY !== null) {
             kaleidoCenterX = map(data2.kaleidoCenterX, 0, 1, 0, windowWidth);
             kaleidoCenterY = map(data2.kaleidoCenterY, 0, 1, 0, windowHeight);
-            console.log('Punto central del caleidoscopio recibido:', kaleidoCenterX, kaleidoCenterY);
+            // console.log('Punto central del caleidoscopio recibido:', kaleidoCenterX, kaleidoCenterY);
         }
         
         // Guardar temporalmente las posiciones anteriores globales
@@ -1682,5 +1687,37 @@ function receiveLayerDeleted(data) {
         updateLayerUI();
         
         console.log(`Capa ${layerIndex} eliminada por socket. Total: ${layers.length}`);
+    }
+}
+
+// ============================================================
+// FPS COUNTER
+// ============================================================
+// Variable global para controlar visibilidad del FPS
+window.showFPS = false;
+
+function drawFPSCounter(buffer) {
+    const fps = frameRate();
+    
+    buffer.push();
+    // Fondo semi-transparente
+    buffer.fill(0, 0, 0, 180);
+    buffer.noStroke();
+    buffer.rect(buffer.width - 120, 10, 110, 40, 5);
+    
+    // Texto FPS
+    buffer.fill(255);
+    buffer.textSize(22);
+    buffer.textAlign(RIGHT, TOP);
+    buffer.text(`FPS: ${fps.toFixed(1)}`, buffer.width - 15, 18);
+    buffer.pop();
+}
+
+function toggleFPS() {
+    window.showFPS = !window.showFPS;
+    const button = document.getElementById('toggleFPSBtn');
+    if (button) {
+        button.textContent = window.showFPS ? 'Hide FPS' : 'Show FPS';
+        button.style.background = window.showFPS ? 'rgba(76, 175, 80, 0.8)' : 'rgba(138, 79, 191, 0.8)';
     }
 }

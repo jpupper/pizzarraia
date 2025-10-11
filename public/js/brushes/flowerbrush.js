@@ -67,7 +67,7 @@ class FlowerBrush extends BaseBrush {
      * Dibuja la forma de la flor
      */
     drawShape(buffer, x, y, size, frequency, animSpeed, brushColor, strokeWeight, strokeAlpha) {
-        const cnt = 250;
+        const cnt = 100; // Reducido de 250 a 100 para mejor performance
         
         // Extraer componentes del color y crear nuevo color con alpha parametrizable
         const r = red(brushColor);
@@ -95,7 +95,9 @@ class FlowerBrush extends BaseBrush {
         }
         buffer.endShape(CLOSE);
         
-        // Sombras
+        // Sombras desactivadas para mejor performance
+        // Si quieres reactivarlas, descomenta este código
+        /*
         const sp = 4;
         buffer.stroke(255, 255, 255, 5);
         buffer.beginShape();
@@ -128,6 +130,7 @@ class FlowerBrush extends BaseBrush {
             buffer.vertex(xx, yy);
         }
         buffer.endShape(CLOSE);
+        */
     }
 
     /**

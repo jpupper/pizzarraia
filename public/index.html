@@ -280,9 +280,9 @@
             <input type="range" value="5" id="frequency" min="3" max="12" step="1" class="jpslider"
                    oninput="document.getElementById('frequency-value').textContent = this.value">
             <br>
-            <label>Velocidad Anim: <span id="animSpeed-value">0.065</span></label>
+            <label>Velocidad Anim: <span id="animSpeed-value">0.07</span></label>
             <input type="range" value="0.065" id="animSpeed" min="0.01" max="0.15" step="0.005" class="jpslider"
-                   oninput="document.getElementById('animSpeed-value').textContent = this.value">
+                   oninput="document.getElementById('animSpeed-value').textContent = parseFloat(this.value).toFixed(2)">
             <br>
             <label>Grosor Trazo: <span id="flowerStrokeWeight-value">1</span></label>
             <input type="range" value="1" id="flowerStrokeWeight" min="1" max="5" step="1" class="jpslider"
@@ -292,9 +292,9 @@
             <input type="range" value="15" id="strokeAlpha" min="5" max="100" step="5" class="jpslider"
                    oninput="document.getElementById('strokeAlpha-value').textContent = this.value">
             <br>
-            <label>Velocidad Encogimiento: <span id="shrinkSpeed-value">0.5</span></label>
+            <label>Velocidad Encogimiento: <span id="shrinkSpeed-value">0.50</span></label>
             <input type="range" value="0.5" id="shrinkSpeed" min="0.1" max="2" step="0.1" class="jpslider"
-                   oninput="document.getElementById('shrinkSpeed-value').textContent = this.value">
+                   oninput="document.getElementById('shrinkSpeed-value').textContent = parseFloat(this.value).toFixed(2)">
             <br>
             <p style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-top: 10px;">
                 🌸 Dibuja flores que se encogen y resetean continuamente
@@ -375,6 +375,11 @@
                     </svg>
                 </button>
             </div>
+            
+            <!-- Botón FPS -->
+            <button id="toggleFPSBtn" onclick="toggleFPS()" style="width: 100%; padding: 10px; margin-top: 10px; background: rgba(138, 79, 191, 0.8); color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 0.9rem; font-weight: 600;">
+                Show FPS
+            </button>
         </div>
         </div>
         
