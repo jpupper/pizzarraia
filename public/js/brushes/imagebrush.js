@@ -171,8 +171,8 @@ function drawImageStamp(buffer, x, y, size, image, alpha) {
     buffer.imageMode(CENTER);
     buffer.tint(255, alpha);
     
-    // Escalar la imagen según el tamaño del pincel
-    const scaledSize = size;
+    // Escalar la imagen x2 según el tamaño del pincel (resolución sigue siendo 100x100)
+    const scaledSize = size * 2;
     buffer.image(image, x, y, scaledSize, scaledSize);
     
     buffer.noTint();
