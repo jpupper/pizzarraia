@@ -572,8 +572,7 @@ function draw() {
             data.textFont = document.getElementById('textFont').value;
             break;
         case 'geometry':
-            // Añadir parámetros para spirograph brush
-            data.spiroRadius = parseFloat(document.getElementById('spiroRadius').value);
+            // Añadir parámetros para spirograph brush (size global controla spiroRadius)
             data.spiroModulo = parseFloat(document.getElementById('spiroModulo').value);
             data.spiroInc = parseFloat(document.getElementById('spiroInc').value);
             data.npoints1 = parseInt(document.getElementById('npoints1').value);
@@ -590,8 +589,16 @@ function draw() {
             // pero NO cambiará su selección local de emoji
             const imageBrushMgr = getImageBrushManager();
             if (imageBrushMgr.hasImage()) {
-                data.imageData = imageBrushMgr.getImageData();
+                data.imageData = imageBrushMgr.imageData;
             }
+            break;
+        case 'flower':
+            // Añadir parámetros para flower brush
+            data.flowerSize = parseFloat(document.getElementById('flowerSize').value);
+            data.frequency = parseFloat(document.getElementById('frequency').value);
+            data.animSpeed = parseFloat(document.getElementById('animSpeed').value);
+            data.lives = parseInt(document.getElementById('flowerLives').value);
+            data.strokeWeight = parseFloat(document.getElementById('flowerStrokeWeight').value);
             break;
     }
     
@@ -1013,10 +1020,9 @@ function dibujarCoso(buffer, x, y, data) {
             const geometryBrush = brushRegistry ? brushRegistry.get('geometry') : null;
             if (geometryBrush) {
                 geometryBrush.draw(buffer, x, y, {
-                    size: brushSize,
+                    size: brushSize, // size controla spiroRadius
                     color: col,
                     kaleidoSegments: data.kaleidoSegments || 1,
-                    spiroRadius: data.spiroRadius || 50,
                     spiroModulo: data.spiroModulo || 30,
                     spiroInc: data.spiroInc || 2,
                     npoints1: data.npoints1 || 5,
@@ -1059,17 +1065,16 @@ function dibujarCoso(buffer, x, y, data) {
             }
             break;
         case 'flower':
-            // Flower brush - usar el nuevo sistema de clases
+            // Flower brush - usar el nuevo sistema de clases (Silksun style)
             const flowerBrush = brushRegistry ? brushRegistry.get('flower') : null;
             if (flowerBrush) {
                 flowerBrush.draw(buffer, x, y, {
-                    size: brushSize,
                     color: col,
-                    kaleidoSegments: data.kaleidoSegments || 1,
-                    petalCount: data.petalCount || 5,
-                    petalLength: data.petalLength || 1.0,
-                    petalWidth: data.petalWidth || 0.6,
-                    centerSize: data.centerSize || 0.3
+                    flowerSize: data.flowerSize || 12,
+                    frequency: data.frequency || 5,
+                    animSpeed: data.animSpeed || 0.065,
+                    lives: data.lives || 5,
+                    strokeWeight: data.strokeWeight || 1
                 });
             }
             break;

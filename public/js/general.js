@@ -312,19 +312,12 @@ function setupBrushTypeEvents() {
   });
   
   // Add event listeners for spirograph brush parameters
-  const spiroRadiusInput = document.getElementById('spiroRadius');
   const spiroModuloInput = document.getElementById('spiroModulo');
   const spiroIncInput = document.getElementById('spiroInc');
   const npoints1Input = document.getElementById('npoints1');
   const npoints2Input = document.getElementById('npoints2');
   const borderSizeInput = document.getElementById('borderSize');
   const borderAlphaInput = document.getElementById('borderAlpha');
-  
-  if (spiroRadiusInput) {
-    spiroRadiusInput.addEventListener('input', function() {
-      updateSliderValue('spiroRadius');
-    });
-  }
   
   if (spiroModuloInput) {
     spiroModuloInput.addEventListener('input', function() {
@@ -373,32 +366,39 @@ function setupBrushTypeEvents() {
   }
   
   // Add event listeners for flower brush parameters
-  const petalCountInput = document.getElementById('petalCount');
-  const petalLengthInput = document.getElementById('petalLength');
-  const petalWidthInput = document.getElementById('petalWidth');
-  const centerSizeInput = document.getElementById('centerSize');
+  const flowerSizeInput = document.getElementById('flowerSize');
+  const frequencyInput = document.getElementById('frequency');
+  const animSpeedInput = document.getElementById('animSpeed');
+  const flowerLivesInput = document.getElementById('flowerLives');
+  const flowerStrokeWeightInput = document.getElementById('flowerStrokeWeight');
   
-  if (petalCountInput) {
-    petalCountInput.addEventListener('input', function() {
-      updateSliderValue('petalCount');
+  if (flowerSizeInput) {
+    flowerSizeInput.addEventListener('input', function() {
+      updateSliderValue('flowerSize');
     });
   }
   
-  if (petalLengthInput) {
-    petalLengthInput.addEventListener('input', function() {
-      updateSliderValue('petalLength');
+  if (frequencyInput) {
+    frequencyInput.addEventListener('input', function() {
+      updateSliderValue('frequency');
     });
   }
   
-  if (petalWidthInput) {
-    petalWidthInput.addEventListener('input', function() {
-      updateSliderValue('petalWidth');
+  if (animSpeedInput) {
+    animSpeedInput.addEventListener('input', function() {
+      updateSliderValue('animSpeed');
     });
   }
   
-  if (centerSizeInput) {
-    centerSizeInput.addEventListener('input', function() {
-      updateSliderValue('centerSize');
+  if (flowerLivesInput) {
+    flowerLivesInput.addEventListener('input', function() {
+      updateSliderValue('flowerLives');
+    });
+  }
+  
+  if (flowerStrokeWeightInput) {
+    flowerStrokeWeightInput.addEventListener('input', function() {
+      updateSliderValue('flowerStrokeWeight');
     });
   }
 }
