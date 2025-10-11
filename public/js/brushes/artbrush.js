@@ -705,3 +705,89 @@ function updateFlowfieldConfig(sendToOthers = true) {
         sendFlowfieldConfigUpdate();
     }
 }
+
+/**
+ * ArtBrush - Pincel artístico con partículas
+ * Sistema de partículas con flowfield opcional
+ */
+class ArtBrush extends BaseBrush {
+    constructor() {
+        super({
+            id: 'art',
+            name: 'Art Brush',
+            title: 'Art Brush',
+            icon: '<circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/><circle cx="16" cy="8" r="1.5" fill="currentColor"/><circle cx="8" cy="16" r="1.5" fill="currentColor"/><circle cx="16" cy="16" r="1.5" fill="currentColor"/>',
+            supportsKaleidoscope: true,
+            parameters: {
+                particleCount: { min: 1, max: 30, default: 10, step: 1, label: 'Partículas' },
+                speedForce: { min: 0.1, max: 2.0, default: 0.5, step: 0.1, label: 'Fuerza' },
+                maxSpeed: { min: 0.1, max: 3.0, default: 0.5, step: 0.1, label: 'Velocidad Máx' },
+                particleLife: { min: 50, max: 1000, default: 255, step: 10, label: 'Vida' },
+                particleMaxSize: { min: 1, max: 20, default: 8, step: 1, label: 'Tamaño' }
+            }
+        });
+    }
+
+    renderControls() {
+        return `
+            <label>Particle Count: <span id="particleCount-value">10</span></label>
+            <input type="range" value="10" id="particleCount" min="1" max="30" step="1" class="jpslider">
+            <br>
+            <label>Speed Force: <span id="speedForce-value">0.5</span></label>
+            <input type="range" value="0.5" id="speedForce" min="0.1" max="2.0" step="0.1" class="jpslider">
+            <br>
+            <label>Max Speed: <span id="maxSpeed-value">0.5</span></label>
+            <input type="range" value="0.5" id="maxSpeed" min="0.1" max="3.0" step="0.1" class="jpslider">
+            <br>
+            <label>Life: <span id="particleLife-value">255</span></label>
+            <input type="range" value="255" id="particleLife" min="50" max="1000" step="10" class="jpslider">
+            <br>
+            <label>Particle Size: <span id="particleMaxSize-value">8</span></label>
+            <input type="range" value="8" id="particleMaxSize" min="1" max="20" step="1" class="jpslider">
+            <br>
+            <h4 style="margin-top: 15px; margin-bottom: 10px; color: var(--text); font-size: 0.95rem;">Flowfield</h4>
+            <label>Activate Flowfield</label>
+            <input type="checkbox" id="activateFlowfield" class="jpcheckbox" onchange="toggleFlowfield()">
+            <br>
+            <div id="flowfieldControls" style="display: none;">
+                <label>Show Flowfield</label>
+                <input type="checkbox" id="showFlowfield" class="jpcheckbox" onchange="updateFlowfieldConfig(false)">
+                <br>
+                <label>Flowfield Cols: <span id="flowfieldCols-value">20</span></label>
+                <input type="range" value="20" id="flowfieldCols" min="5" max="50" step="1" class="jpslider" oninput="updateFlowfieldConfig()">
+                <br>
+                <label>Flowfield Rows: <span id="flowfieldRows-value">20</span></label>
+                <input type="range" value="20" id="flowfieldRows" min="5" max="50" step="1" class="jpslider" oninput="updateFlowfieldConfig()">
+                <br>
+                <label>Flowfield Strength: <span id="flowfieldStrength-value">0.1</span></label>
+                <input type="range" value="0.1" id="flowfieldStrength" min="0" max="1" step="0.05" class="jpslider" oninput="updateFlowfieldConfig()">
+                <br>
+                <label>Flowfield Speed: <span id="flowfieldSpeed-value">0.003</span></label>
+                <input type="range" value="0.003" id="flowfieldSpeed" min="0" max="0.02" step="0.001" class="jpslider" oninput="updateFlowfieldConfig()">
+                <br>
+                <button onclick="sendFlowfieldSync()" style="margin-top: 10px; padding: 8px 15px; background: var(--accent); color: var(--bg); border: none; border-radius: 5px; cursor: pointer; font-size: 0.9rem;">
+                    Sincronizar Flowfield
+                </button>
+                <br>
+            </div>
+        `;
+    }
+
+    draw(buffer, x, y, params) {
+        const { pmouseX = pmouseXGlobal, pmouseY = pmouseYGlobal, particleCount = 10, color, kaleidoSegments = 1, syncParams = null } = params;
+        
+        // Usar la función legacy
+        if (typeof drawArtBrush === 'function') {
+            return drawArtBrush(buffer, x, y, pmouseX, pmouseY, particleCount, params.size, color, syncParams, kaleidoSegments);
+        }
+    }
+
+    getSyncData(params) {
+        return { particleCount: params.particleCount || 10 };
+    }
+}
+
+// Registrar el brush automáticamente
+if (typeof window !== 'undefined' && window.brushRegistry) {
+    window.brushRegistry.register(new ArtBrush());
+}

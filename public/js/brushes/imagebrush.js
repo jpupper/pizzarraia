@@ -409,3 +409,74 @@ function loadEmojiPreset(emoji) {
             }
         });
 }
+
+/**
+ * ImageBrush - Pincel de imágenes/emojis
+ * Dibuja imágenes cargadas o emojis
+ */
+class ImageBrush extends BaseBrush {
+    constructor() {
+        super({
+            id: 'image',
+            name: 'Image Brush',
+            title: 'Image Brush',
+            icon: '<path fill="currentColor" d="M8.5,13.5L11,16.5L14.5,12L19,18H5M21,19V5C21,3.89 20.1,3 19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19Z" />',
+            supportsKaleidoscope: true,
+            parameters: {}
+        });
+    }
+
+    renderControls() {
+        return `
+            <h4 style="margin-top: 0; margin-bottom: 10px; color: var(--text); font-size: 0.95rem;">Emojis Presets</h4>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px;">
+                <button onclick="loadEmojiPreset('😀')" class="emoji-preset-btn" title="Cara Feliz">😀</button>
+                <button onclick="loadEmojiPreset('❤️')" class="emoji-preset-btn" title="Corazón">❤️</button>
+                <button onclick="loadEmojiPreset('⭐')" class="emoji-preset-btn" title="Estrella">⭐</button>
+                <button onclick="loadEmojiPreset('🔥')" class="emoji-preset-btn" title="Fuego">🔥</button>
+                <button onclick="loadEmojiPreset('✨')" class="emoji-preset-btn" title="Brillos">✨</button>
+                <button onclick="loadEmojiPreset('🎨')" class="emoji-preset-btn" title="Paleta">🎨</button>
+                <button onclick="loadEmojiPreset('🌈')" class="emoji-preset-btn" title="Arcoíris">🌈</button>
+                <button onclick="loadEmojiPreset('🦋')" class="emoji-preset-btn" title="Mariposa">🦋</button>
+                <button onclick="loadEmojiPreset('🌸')" class="emoji-preset-btn" title="Flor">🌸</button>
+                <button onclick="loadEmojiPreset('🍕')" class="emoji-preset-btn" title="Pizza">🍕</button>
+                <button onclick="loadEmojiPreset('🎭')" class="emoji-preset-btn" title="Teatro">🎭</button>
+                <button onclick="loadEmojiPreset('🎪')" class="emoji-preset-btn" title="Circo">🎪</button>
+            </div>
+            <h4 style="margin-top: 15px; margin-bottom: 10px; color: var(--text); font-size: 0.95rem;">Cargar Imagen</h4>
+            <input type="file" id="imageBrushFile" accept="image/*" onchange="handleImageBrushFileUpload()" class="jpinput" style="width: 90%; padding: 5px; margin-bottom: 10px;">
+            <br>
+            <div style="text-align: center; margin: 10px 0;">
+                <img id="imageBrushPreview" style="display: none; max-width: 100px; max-height: 100px; border: 2px solid var(--accent); border-radius: 5px;" />
+            </div>
+            <button onclick="clearImageBrush()" style="width: 100%; padding: 8px; background: rgba(244, 67, 54, 0.8); color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 0.9rem; margin-top: 5px;">
+                Limpiar Imagen
+            </button>
+            <p style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-top: 10px;">
+                💡 La imagen se redimensiona a 50x50. El dibujo se sincroniza pero tu selección de emoji es personal
+            </p>
+        `;
+    }
+
+    draw(buffer, x, y, params) {
+        const { size, alpha, kaleidoSegments = 1, imageData = null, kaleidoCenterX = null, kaleidoCenterY = null } = params;
+        
+        // Usar la función legacy
+        if (typeof drawImageBrush === 'function') {
+            drawImageBrush(buffer, x, y, size, alpha, imageData, kaleidoSegments, kaleidoCenterX, kaleidoCenterY);
+        }
+    }
+
+    getSyncData(params) {
+        const manager = getImageBrushManager();
+        if (manager && manager.hasImage()) {
+            return { imageData: manager.getImageData() };
+        }
+        return {};
+    }
+}
+
+// Registrar el brush automáticamente
+if (typeof window !== 'undefined' && window.brushRegistry) {
+    window.brushRegistry.register(new ImageBrush());
+}

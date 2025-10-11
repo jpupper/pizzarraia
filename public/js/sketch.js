@@ -932,115 +932,124 @@ function dibujarCoso(buffer, x, y, data) {
     // Dibujar según el tipo de pincel
     switch (brushType) {
         case 'line':
-            // Line brush - dibuja una línea entre dos puntos
-            // Calcular coordenadas de inicio
-            const startX = data.pmouseX * windowWidth;
-            const startY = data.pmouseY * windowHeight;
-            
-            // Obtener el número de segmentos para el efecto caleidoscopio
-            const lineKaleidoSegments = data.kaleidoSegments || 1;
-            
-            console.log('RECIBIENDO LINE POR SOCKET:', startX, startY, 'to', x, y, 'con', lineKaleidoSegments, 'segmentos');
-            drawLineBrush(buffer, x, y, startX, startY, brushSize, col, lineKaleidoSegments);
+            // Line brush - usar el nuevo sistema de clases
+            const lineBrush = brushRegistry ? brushRegistry.get('line') : null;
+            if (lineBrush) {
+                const startX = data.pmouseX * windowWidth;
+                const startY = data.pmouseY * windowHeight;
+                
+                lineBrush.draw(buffer, x, y, {
+                    size: brushSize,
+                    color: col,
+                    kaleidoSegments: data.kaleidoSegments || 1,
+                    startX: startX,
+                    startY: startY
+                });
+            }
             break;
         case 'art':
-            // Art brush - sistema de partículas
-            // Obtener el número de segmentos para el efecto caleidoscopio
-            const artKaleidoSegments = data.kaleidoSegments || 1;
-            
-            // Usar el valor de particleCount del dato recibido
-            // Si hay parámetros de sincronización, usarlos
-            if (data.syncParams) {
-                drawArtBrush(
-                    buffer, 
-                    x, y, 
-                    pmouseXGlobal, pmouseYGlobal, 
-                    data.particleCount, 
-                    brushSize, 
-                    col,
-                    data.syncParams,
-                    artKaleidoSegments
-                );
-            } else {
-                // Generar nuevas partículas y obtener los parámetros para sincronización
-                const syncParams = drawArtBrush(
-                    buffer, 
-                    x, y, 
-                    pmouseXGlobal, pmouseYGlobal, 
-                    data.particleCount, 
-                    brushSize, 
-                    col,
-                    null,
-                    artKaleidoSegments
-                );
+            // Art brush - usar el nuevo sistema de clases
+            const artBrush = brushRegistry ? brushRegistry.get('art') : null;
+            if (artBrush) {
+                const result = artBrush.draw(buffer, x, y, {
+                    pmouseX: pmouseXGlobal,
+                    pmouseY: pmouseYGlobal,
+                    particleCount: data.particleCount || 10,
+                    size: brushSize,
+                    color: col,
+                    kaleidoSegments: data.kaleidoSegments || 1,
+                    syncParams: data.syncParams || null
+                });
                 
-                // Guardar los parámetros de sincronización para enviarlos por socket
-                data.syncParams = syncParams;
+                // Guardar los parámetros de sincronización si se generaron
+                if (result && !data.syncParams) {
+                    data.syncParams = result;
+                }
             }
             break;
         case 'pixel':
-            // Pixel brush - dibuja cuadrados en la grilla dentro del radio
-            // Obtener el número de segmentos para el efecto caleidoscopio
-            const pixelKaleidoSegments = data.kaleidoSegments || 1;
-            
-            // Usar los valores de cols y rows del dato recibido
-            if (data.cols && data.rows) {
-                // El nuevo drawPixelBrush dibuja todos los píxeles dentro del radio
-                drawPixelBrush(buffer, x, y, brushSize, data.cols, data.rows, col, pixelKaleidoSegments);
-                console.log('Dibujando pixel brush con size:', brushSize, 'y segmentos:', pixelKaleidoSegments);
-            } else {
-                drawPixelBrush(buffer, x, y, brushSize, gridCols, gridRows, col, pixelKaleidoSegments);
+            // Pixel brush - usar el nuevo sistema de clases
+            const pixelBrush = brushRegistry ? brushRegistry.get('pixel') : null;
+            if (pixelBrush) {
+                pixelBrush.draw(buffer, x, y, {
+                    size: brushSize,
+                    color: col,
+                    cols: data.cols || 32,
+                    rows: data.rows || 32,
+                    kaleidoSegments: data.kaleidoSegments || 1
+                });
             }
             break;
         case 'text':
-            // Text brush - dibuja texto
-            // Obtener el número de segmentos para el efecto caleidoscopio
-            const textKaleidoSegments = data.kaleidoSegments || 1;
-            
-            if (data.textContent && data.textSize && data.textFont) {
-                drawTextBrush(buffer, x, y, data.textContent, data.textSize, data.textFont, col, textKaleidoSegments);
-            } else {
-                // Valores por defecto si no se especifican
-                const textContent = data.textContent || 'TEXTO';
-                const textSize = data.textSize || 40;
-                const textFont = data.textFont || 'Arial';
-                drawTextBrush(buffer, x, y, textContent, textSize, textFont, col, textKaleidoSegments);
+            // Text brush - usar el nuevo sistema de clases
+            const textBrush = brushRegistry ? brushRegistry.get('text') : null;
+            if (textBrush) {
+                textBrush.draw(buffer, x, y, {
+                    color: col,
+                    kaleidoSegments: data.kaleidoSegments || 1,
+                    textContent: data.textContent || 'TEXTO',
+                    textSize: data.textSize || 40,
+                    textFont: data.textFont || 'Arial'
+                });
             }
             break;
         case 'geometry':
-            // Geometry brush - dibuja polígonos
-            // Obtener el número de segmentos para el efecto caleidoscopio
-            const geoKaleidoSegments = data.kaleidoSegments || 1;
-            
-            const sides = data.polygonSides || 5;
-            drawGeometryBrush(buffer, x, y, brushSize, sides, col, geoKaleidoSegments);
+            // Geometry brush - usar el nuevo sistema de clases
+            const geometryBrush = brushRegistry ? brushRegistry.get('geometry') : null;
+            if (geometryBrush) {
+                geometryBrush.draw(buffer, x, y, {
+                    size: brushSize,
+                    color: col,
+                    kaleidoSegments: data.kaleidoSegments || 1,
+                    polygonSides: data.polygonSides || 5
+                });
+            }
             break;
         case 'fill':
-            // Fill brush - rellena área contigua
-            const tolerance = data.fillTolerance || 0;
-            drawFillBrush(buffer, x, y, col, tolerance);
+            // Fill brush - usar el nuevo sistema de clases
+            const fillBrush = brushRegistry ? brushRegistry.get('fill') : null;
+            if (fillBrush) {
+                fillBrush.draw(buffer, x, y, {
+                    color: col,
+                    fillTolerance: data.fillTolerance || 0
+                });
+            }
             break;
         case 'image':
-            // Image brush - dibuja con una imagen cargada
-            const imageKaleidoSegments = data.kaleidoSegments || 1;
-            const imageAlpha = parseInt(data.av);
-            const imageData = data.imageData || null;
-            
-            // Obtener las coordenadas del centro del kaleidoscopio si están disponibles
-            const imageCenterX = data.kaleidoCenterX !== null && data.kaleidoCenterX !== undefined 
-                ? data.kaleidoCenterX * windowWidth 
-                : null;
-            const imageCenterY = data.kaleidoCenterY !== null && data.kaleidoCenterY !== undefined 
-                ? data.kaleidoCenterY * windowHeight 
-                : null;
-            
-            drawImageBrush(buffer, x, y, brushSize, imageAlpha, imageData, imageKaleidoSegments, imageCenterX, imageCenterY);
+            // Image brush - usar el nuevo sistema de clases
+            const imageBrush = brushRegistry ? brushRegistry.get('image') : null;
+            if (imageBrush) {
+                const imageCenterX = data.kaleidoCenterX !== null && data.kaleidoCenterX !== undefined 
+                    ? data.kaleidoCenterX * windowWidth 
+                    : null;
+                const imageCenterY = data.kaleidoCenterY !== null && data.kaleidoCenterY !== undefined 
+                    ? data.kaleidoCenterY * windowHeight 
+                    : null;
+                
+                imageBrush.draw(buffer, x, y, {
+                    size: brushSize,
+                    alpha: parseInt(data.av),
+                    kaleidoSegments: data.kaleidoSegments || 1,
+                    imageData: data.imageData || null,
+                    kaleidoCenterX: imageCenterX,
+                    kaleidoCenterY: imageCenterY
+                });
+            }
             break;
         case 'classic':
         default:
             // Classic circle brush with kaleidoscope effect
             const kaleidoSegments = data.kaleidoSegments || 1;
-            drawStandardBrush(buffer, x, y, brushSize, col, kaleidoSegments);
+            const brush = brushRegistry ? brushRegistry.get('classic') : null;
+            if (brush) {
+                brush.draw(buffer, x, y, {
+                    size: brushSize,
+                    color: col,
+                    kaleidoSegments,
+                    pmouseX: pmouseXGlobal,
+                    pmouseY: pmouseYGlobal
+                });
+            }
             break;
     }
 }
