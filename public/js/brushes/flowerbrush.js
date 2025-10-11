@@ -1,6 +1,6 @@
 /**
- * FlowerBrush - Pincel de flores
- * Dibuja flores con pétalos personalizables
+ * FlowerBrush - Pincel de flores animadas (basado en Silksun)
+ * Crea objetos con vida que se animan hasta desaparecer
  */
 class FlowerBrush extends BaseBrush {
     constructor() {
@@ -11,134 +11,95 @@ class FlowerBrush extends BaseBrush {
             icon: '<path fill="currentColor" d="M12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22M12,5A2,2 0 0,0 10,7C10,7.5 10.2,8 10.5,8.5C9.6,8.3 8.7,8.2 8,8.2C6.5,8.2 5.2,9.2 5,10.6C4.8,12 5.8,13.3 7.2,13.5C7.7,13.6 8.2,13.5 8.7,13.3C8.3,13.7 8,14.3 8,15A2,2 0 0,0 10,17H14A2,2 0 0,0 16,15C16,14.3 15.7,13.7 15.3,13.3C15.8,13.5 16.3,13.6 16.8,13.5C18.2,13.3 19.2,12 19,10.6C18.8,9.2 17.5,8.2 16,8.2C15.3,8.2 14.4,8.3 13.5,8.5C13.8,8 14,7.5 14,7A2,2 0 0,0 12,5Z"/>',
             supportsKaleidoscope: true,
             parameters: {
-                petalCount: { min: 3, max: 12, default: 5, step: 1, label: 'Pétalos' },
-                petalLength: { min: 0.5, max: 2.0, default: 1.0, step: 0.1, label: 'Largo Pétalos' },
-                petalWidth: { min: 0.3, max: 1.5, default: 0.6, step: 0.1, label: 'Ancho Pétalos' },
-                centerSize: { min: 0.1, max: 0.8, default: 0.3, step: 0.05, label: 'Centro' }
+                flowerSize: { min: 5, max: 30, default: 12, step: 1, label: 'Tamaño' },
+                frequency: { min: 3, max: 12, default: 5, step: 1, label: 'Frecuencia' },
+                animSpeed: { min: 0.01, max: 0.15, default: 0.065, step: 0.005, label: 'Velocidad Anim' },
+                lives: { min: 1, max: 20, default: 5, step: 1, label: 'Vidas' },
+                strokeWeight: { min: 1, max: 5, default: 1, step: 1, label: 'Grosor Trazo' }
             }
         });
+        
+        // Array de flores vivas
+        this.flowers = [];
+        this.lastClickTime = 0;
     }
 
     renderControls() {
         return `
-            <label>Petal Count: <span id="petalCount-value">5</span></label>
-            <input type="range" value="5" id="petalCount" min="3" max="12" step="1" class="jpslider"
-                   oninput="document.getElementById('petalCount-value').textContent = this.value">
+            <label>Tamaño: <span id="flowerSize-value">12</span></label>
+            <input type="range" value="12" id="flowerSize" min="5" max="30" step="1" class="jpslider"
+                   oninput="document.getElementById('flowerSize-value').textContent = this.value">
             <br>
-            <label>Petal Length: <span id="petalLength-value">1.0</span></label>
-            <input type="range" value="1.0" id="petalLength" min="0.5" max="2.0" step="0.1" class="jpslider"
-                   oninput="document.getElementById('petalLength-value').textContent = this.value">
+            <label>Frecuencia: <span id="frequency-value">5</span></label>
+            <input type="range" value="5" id="frequency" min="3" max="12" step="1" class="jpslider"
+                   oninput="document.getElementById('frequency-value').textContent = this.value">
             <br>
-            <label>Petal Width: <span id="petalWidth-value">0.6</span></label>
-            <input type="range" value="0.6" id="petalWidth" min="0.3" max="1.5" step="0.1" class="jpslider"
-                   oninput="document.getElementById('petalWidth-value').textContent = this.value">
+            <label>Velocidad Anim: <span id="animSpeed-value">0.065</span></label>
+            <input type="range" value="0.065" id="animSpeed" min="0.01" max="0.15" step="0.005" class="jpslider"
+                   oninput="document.getElementById('animSpeed-value').textContent = this.value">
             <br>
-            <label>Center Size: <span id="centerSize-value">0.3</span></label>
-            <input type="range" value="0.3" id="centerSize" min="0.1" max="0.8" step="0.05" class="jpslider"
-                   oninput="document.getElementById('centerSize-value').textContent = this.value">
+            <label>Vidas: <span id="flowerLives-value">5</span></label>
+            <input type="range" value="5" id="flowerLives" min="1" max="20" step="1" class="jpslider"
+                   oninput="document.getElementById('flowerLives-value').textContent = this.value">
+            <br>
+            <label>Grosor Trazo: <span id="flowerStrokeWeight-value">1</span></label>
+            <input type="range" value="1" id="flowerStrokeWeight" min="1" max="5" step="1" class="jpslider"
+                   oninput="document.getElementById('flowerStrokeWeight-value').textContent = this.value">
             <br>
             <p style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-top: 10px;">
-                🌸 Personaliza tu flor ajustando pétalos, tamaño y proporciones
+                🌸 Click para crear flores animadas que viven y se desvanecen
             </p>
         `;
     }
 
     /**
-     * Método update - Se llama antes de dibujar
-     * Puedes usarlo para preparar datos o animaciones
+     * Actualiza todas las flores vivas
      */
-    update(params) {
-        // Aquí puedes agregar lógica de actualización
-        // Por ejemplo: animaciones, cálculos previos, etc.
-        
-        // Ejemplo: rotar pétalos con el tiempo
-        if (!this.rotation) {
-            this.rotation = 0;
+    updateFlowers(buffer) {
+        for (let i = this.flowers.length - 1; i >= 0; i--) {
+            const flower = this.flowers[i];
+            flower.update();
+            flower.display(buffer);
+            
+            // Eliminar flores muertas
+            if (flower.life < 0) {
+                flower.restartLife();
+                if (flower.lives < 0) {
+                    this.flowers.splice(i, 1);
+                }
+            }
         }
-        this.rotation += 0.01; // Incremento de rotación
-        
-        return params;
     }
 
     /**
-     * Dibuja una flor individual
+     * Crea una nueva flor en la posición del click
      */
-    drawFlower(buffer, x, y, size, color, petalCount, petalLength, petalWidth, centerSize) {
-        buffer.push();
-        buffer.translate(x, y);
-        
-        // Aplicar rotación si existe
-        if (this.rotation) {
-            buffer.rotate(this.rotation);
-        }
-        
-        // Dibujar pétalos
-        const angleStep = TWO_PI / petalCount;
-        for (let i = 0; i < petalCount; i++) {
-            const angle = angleStep * i;
-            
-            buffer.push();
-            buffer.rotate(angle);
-            
-            // Pétalo como elipse
-            buffer.fill(color);
-            buffer.noStroke();
-            buffer.ellipse(
-                size * petalLength * 0.5, 
-                0, 
-                size * petalLength, 
-                size * petalWidth
-            );
-            
-            buffer.pop();
-        }
-        
-        // Dibujar centro de la flor
-        buffer.push();
-        buffer.fill(255, 200, 50, alpha(color)); // Amarillo para el centro con alpha del color principal
-        buffer.noStroke();
-        buffer.ellipse(0, 0, size * centerSize, size * centerSize);
-        buffer.pop();
-        
-        buffer.pop();
-    }
-
-    /**
-     * Método draw principal - Se llama cuando el usuario dibuja
-     */
-    draw(buffer, x, y, params) {
-        // Llamar a update primero
-        params = this.update(params);
-        
+    createFlower(x, y, params) {
         const {
-            size,
             color,
-            kaleidoSegments = 1,
-            petalCount = 5,
-            petalLength = 1.0,
-            petalWidth = 0.6,
-            centerSize = 0.3
+            flowerSize = 12,
+            frequency = 5,
+            animSpeed = 0.065,
+            lives = 5,
+            strokeWeight = 1
         } = params;
         
-        if (kaleidoSegments <= 1) {
-            // Sin kaleidoscopio
-            this.drawFlower(buffer, x, y, size, color, petalCount, petalLength, petalWidth, centerSize);
-        } else {
-            // Con kaleidoscopio
-            const centerX = kaleidoCenterX !== null ? kaleidoCenterX : windowWidth / 2;
-            const centerY = kaleidoCenterY !== null ? kaleidoCenterY : windowHeight / 2;
-            const dx = x - centerX;
-            const dy = y - centerY;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            const angle = Math.atan2(dy, dx);
-            const angleStep = (Math.PI * 2) / kaleidoSegments;
-            
-            for (let i = 0; i < kaleidoSegments; i++) {
-                const segmentAngle = angleStep * i;
-                const newX = centerX + Math.cos(angle + segmentAngle) * distance;
-                const newY = centerY + Math.sin(angle + segmentAngle) * distance;
-                this.drawFlower(buffer, newX, newY, size, color, petalCount, petalLength, petalWidth, centerSize);
-            }
+        const flower = new SilkFlower(x, y, flowerSize, color, frequency, animSpeed, lives, strokeWeight);
+        this.flowers.push(flower);
+    }
+
+    /**
+     * Método draw principal - Solo crea flores en clicks, no dibuja continuamente
+     */
+    draw(buffer, x, y, params) {
+        // Actualizar y dibujar todas las flores existentes
+        this.updateFlowers(buffer);
+        
+        // Crear nueva flor solo si es un click (no arrastre)
+        const currentTime = millis();
+        if (currentTime - this.lastClickTime > 100) { // Debounce de 100ms
+            this.createFlower(x, y, params);
+            this.lastClickTime = currentTime;
         }
     }
 
@@ -147,11 +108,91 @@ class FlowerBrush extends BaseBrush {
      */
     getSyncData(params) {
         return {
-            petalCount: params.petalCount || 5,
-            petalLength: params.petalLength || 1.0,
-            petalWidth: params.petalWidth || 0.6,
-            centerSize: params.centerSize || 0.3
+            flowerSize: params.flowerSize || 12,
+            frequency: params.frequency || 5,
+            animSpeed: params.animSpeed || 0.065,
+            lives: params.lives || 5,
+            strokeWeight: params.strokeWeight || 1
         };
+    }
+}
+
+/**
+ * Clase SilkFlower - Representa una flor animada individual
+ */
+class SilkFlower {
+    constructor(x, y, size, color, frequency, animSpeed, lives, strokeWeight) {
+        this.x = x;
+        this.y = y;
+        this.size = size;
+        this.color = color;
+        this.frequency = frequency;
+        this.animSpeed = animSpeed;
+        this.lives = lives;
+        this.maxLives = lives;
+        this.strokeWeight = strokeWeight;
+        this.life = 255;
+        this.frameCounter = 0;
+    }
+    
+    update() {
+        this.life -= 2.1;
+        this.frameCounter++;
+    }
+    
+    display(buffer) {
+        // Color con alpha basado en vida
+        const col = color(red(this.color), green(this.color), blue(this.color), 15);
+        buffer.stroke(col);
+        buffer.noFill();
+        buffer.strokeWeight(this.strokeWeight);
+        
+        // Dibujar forma principal
+        this.drawShape(buffer, this.x, this.y);
+        
+        // Sombras (opcional)
+        const sp = 4;
+        buffer.stroke(255, 255, 255, 5);
+        this.drawShape(buffer, this.x - sp, this.y - sp);
+        
+        buffer.stroke(0, 0, 0, 5);
+        this.drawShape(buffer, this.x + sp, this.y + sp);
+    }
+    
+    drawShape(buffer, x, y) {
+        const cnt = 250;
+        buffer.beginShape();
+        
+        for (let i = 0; i < cnt; i++) {
+            const a = map(i, 0, cnt - 1, 0, TWO_PI);
+            const lf = map(this.life, 0, 255, 0, 1);
+            
+            let sf;
+            if (this.lives % 2 === 0) {
+                sf = this.size * map(
+                    sin(a * this.frequency + this.frameCounter * this.animSpeed) * 0.5 + 0.5,
+                    0, 1,
+                    this.size, this.size * 2
+                ) * lf;
+            } else {
+                sf = this.size * map(
+                    sin(a * this.frequency - this.frameCounter * this.animSpeed) * 0.5 + 0.5,
+                    0, 1,
+                    this.size, this.size * 2
+                ) * lf;
+            }
+            
+            const xx = x + sin(a) * sf;
+            const yy = y + cos(a) * sf;
+            buffer.vertex(xx, yy);
+        }
+        
+        buffer.endShape(CLOSE);
+    }
+    
+    restartLife() {
+        this.lives--;
+        this.life = 255;
     }
 }
 

@@ -1,13 +1,10 @@
 /**
  * Sistema de búsqueda de imágenes para ImageBrush
- * Usa la API de Pixabay (gratuita, sin autenticación)
+ * Usa Lorem Picsum (API gratuita sin autenticación)
  */
 
-// API Key de Pixabay (pública, limitada a 100 requests/min)
-const PIXABAY_API_KEY = '47609563-e2e5e5f7e5d9e5e5e5e5e5e5'; // Reemplazar con tu propia key
-
 /**
- * Busca imágenes en Pixabay
+ * Busca imágenes usando Lorem Picsum
  */
 async function searchImages() {
     const searchInput = document.getElementById('imageSearchInput');
@@ -23,20 +20,21 @@ async function searchImages() {
     resultsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: rgba(255,255,255,0.7); font-size: 0.8rem;">Buscando...</p>';
     
     try {
-        // Usar Pixabay API
-        const response = await fetch(`https://pixabay.com/api/?key=${PIXABAY_API_KEY}&q=${encodeURIComponent(query)}&image_type=photo&per_page=9&safesearch=true`);
+        // Usar Lorem Picsum para obtener imágenes aleatorias
+        // Como no tiene búsqueda por keywords, generamos IDs basados en el query
+        const seed = query.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        const images = [];
         
-        if (!response.ok) {
-            throw new Error('Error en la búsqueda');
+        for (let i = 0; i < 9; i++) {
+            const imageId = (seed + i * 13) % 1000; // Generar IDs pseudo-aleatorios
+            images.push({
+                id: imageId,
+                url: `https://picsum.photos/id/${imageId}/200/200`,
+                download_url: `https://picsum.photos/id/${imageId}/400/400`
+            });
         }
         
-        const data = await response.json();
-        
-        if (data.hits && data.hits.length > 0) {
-            renderImageResults(data.hits);
-        } else {
-            resultsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: rgba(255,255,255,0.5); font-size: 0.8rem;">No se encontraron imágenes</p>';
-        }
+        renderImageResults(images);
     } catch (error) {
         console.error('Error buscando imágenes:', error);
         resultsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: rgba(255,67,54,0.8); font-size: 0.8rem;">Error al buscar. Intenta de nuevo.</p>';
@@ -55,26 +53,29 @@ function renderImageResults(images) {
         imgElement.style.cssText = `
             width: 100%;
             aspect-ratio: 1;
-            background-image: url('${img.previewURL}');
+            background-image: url('${img.url}');
             background-size: cover;
             background-position: center;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
-            border: 2px solid transparent;
-            transition: all 0.2s ease;
+            border: 2px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         `;
         
         imgElement.onmouseover = () => {
             imgElement.style.border = '2px solid var(--accent)';
-            imgElement.style.transform = 'scale(1.05)';
+            imgElement.style.transform = 'scale(1.08)';
+            imgElement.style.boxShadow = '0 4px 16px rgba(138, 79, 191, 0.4)';
         };
         
         imgElement.onmouseout = () => {
-            imgElement.style.border = '2px solid transparent';
+            imgElement.style.border = '2px solid rgba(255,255,255,0.1)';
             imgElement.style.transform = 'scale(1)';
+            imgElement.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
         };
         
-        imgElement.onclick = () => loadImageFromUrl(img.webformatURL);
+        imgElement.onclick = () => loadImageFromUrl(img.download_url);
         
         resultsContainer.appendChild(imgElement);
     });
@@ -130,8 +131,8 @@ async function loadImageFromUrl(imageUrl) {
             }
         };
         
-        // Usar proxy para evitar CORS
-        img.src = `https://corsproxy.io/?${encodeURIComponent(imageUrl)}`;
+        // Lorem Picsum no necesita proxy
+        img.src = imageUrl;
         
     } catch (error) {
         console.error('Error cargando imagen:', error);

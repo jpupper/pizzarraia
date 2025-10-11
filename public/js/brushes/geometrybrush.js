@@ -13,7 +13,7 @@ class GeometryBrush extends BaseBrush {
             supportsKaleidoscope: true,
             parameters: {
                 spiroRadius: { min: 10, max: 200, default: 50, step: 5, label: 'Radio' },
-                spiroModulo: { min: 5, max: 100, default: 30, step: 5, label: 'Módulo' },
+                spiroModulo: { min: 5, max: 300, default: 30, step: 5, label: 'Módulo' },
                 spiroInc: { min: 0.1, max: 10, default: 2, step: 0.1, label: 'Velocidad Rotación' },
                 npoints1: { min: 3, max: 12, default: 5, step: 1, label: 'Puntas 1' },
                 npoints2: { min: 3, max: 12, default: 3, step: 1, label: 'Puntas 2 (Estrella)' },
@@ -31,7 +31,7 @@ class GeometryBrush extends BaseBrush {
                    oninput="document.getElementById('spiroRadius-value').textContent = this.value">
             <br>
             <label>Módulo: <span id="spiroModulo-value">30</span></label>
-            <input type="range" value="30" id="spiroModulo" min="5" max="100" step="5" class="jpslider"
+            <input type="range" value="30" id="spiroModulo" min="5" max="300" step="5" class="jpslider"
                    oninput="document.getElementById('spiroModulo-value').textContent = this.value">
             <br>
             <label>Velocidad Rotación: <span id="spiroInc-value">2</span></label>
@@ -85,7 +85,6 @@ class GeometryBrush extends BaseBrush {
         const {
             size,
             color,
-            spiroRadius = 50,
             spiroModulo = 30,
             spiroInc = 2,
             npoints1 = 5,
@@ -93,6 +92,9 @@ class GeometryBrush extends BaseBrush {
             borderSize = 2,
             borderAlpha = 255
         } = params;
+        
+        // El size global controla el spiroRadius
+        const spiroRadius = size;
 
         // Calcular posición del spirograph basado en la fase de animación
         const angulo = animPhase * -10;
@@ -105,10 +107,17 @@ class GeometryBrush extends BaseBrush {
         buffer.translate(x - spiroModulo + spirox, y - spiroy);
         buffer.rotate(radians(angulo_fijo));
 
+        // Calcular color animado: lerp entre color activo y negro
+        const lerpAmount = sin(animPhase * 0.1) * 0.5 + 0.5;
+        const animatedR = lerp(red(color), 0, lerpAmount);
+        const animatedG = lerp(green(color), 0, lerpAmount);
+        const animatedB = lerp(blue(color), 0, lerpAmount);
+        const animatedAlpha = alpha(color);
+
         // Dibujar borde (figura más grande 1.1x)
         if (borderSize > 0) {
-            // Usar directamente RGB con alpha para evitar problemas de scope
-            buffer.fill(red(color) * 0.5, green(color) * 0.5, blue(color) * 0.5, borderAlpha);
+            // Borde más oscuro
+            buffer.fill(animatedR * 0.5, animatedG * 0.5, animatedB * 0.5, borderAlpha);
             buffer.noStroke();
             this.drawStar(
                 buffer,
@@ -120,8 +129,8 @@ class GeometryBrush extends BaseBrush {
             );
         }
 
-        // Dibujar fill principal
-        buffer.fill(color);
+        // Dibujar fill principal con color animado
+        buffer.fill(animatedR, animatedG, animatedB, animatedAlpha);
         buffer.noStroke();
         this.drawStar(
             buffer,

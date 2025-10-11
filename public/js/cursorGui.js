@@ -18,10 +18,10 @@ class CursorGUI {
         this.sizeBarY = 0; // Posición Y de la barra de tamaño (abajo)
         this.brushButtonsY = 0; // Posición Y de los botones de pincel
         
-        // Timer para detectar long press
-        this.pressStartTime = 0;
-        this.longPressThreshold = 500; 
-        this.longPressTimer = null;
+        // Timer para detectar doble click/touch
+        this.lastClickTime = 0;
+        this.doubleClickThreshold = 200; // ms para detectar doble click
+        this.clickCount = 0;
         this.isPressing = false;
         
         // Posición inicial para detectar movimiento
@@ -93,24 +93,30 @@ class CursorGUI {
     }
     
     /**
-     * Iniciar el temporizador de long press
+     * Detectar doble click/touch
      */
     startLongPress(x, y) {
         if (this.isVisible) return; // Ya está visible
         
+        const currentTime = Date.now();
+        const timeSinceLastClick = currentTime - this.lastClickTime;
+        
+        if (timeSinceLastClick < this.doubleClickThreshold) {
+            // Es un doble click!
+            this.show(x, y);
+            this.clickCount = 0;
+            this.lastClickTime = 0;
+        } else {
+            // Primer click
+            this.clickCount = 1;
+            this.lastClickTime = currentTime;
+            this.pressStartX = x;
+            this.pressStartY = y;
+        }
+        
         this.isPressing = true;
-        this.pressStartTime = Date.now();
-        this.pressStartX = x;
-        this.pressStartY = y;
         this.centerX = x;
         this.centerY = y;
-        
-        // Iniciar timer
-        this.longPressTimer = setTimeout(() => {
-            if (this.isPressing && this.checkIfStill()) {
-                this.show(x, y);
-            }
-        }, this.longPressThreshold);
     }
     
     /**
@@ -143,10 +149,7 @@ class CursorGUI {
      */
     cancelLongPress() {
         this.isPressing = false;
-        if (this.longPressTimer) {
-            clearTimeout(this.longPressTimer);
-            this.longPressTimer = null;
-        }
+        // No hay timer que cancelar en el sistema de doble click
     }
     
     /**
