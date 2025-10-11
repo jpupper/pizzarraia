@@ -94,11 +94,11 @@ class FlowerBrush extends BaseBrush {
         }
         
         // Dibujar centro de la flor
-        const centerColor = color(255, 200, 50); // Amarillo para el centro
-        centerColor.setAlpha(alpha(color));
-        buffer.fill(centerColor);
+        buffer.push();
+        buffer.fill(255, 200, 50, alpha(color)); // Amarillo para el centro con alpha del color principal
         buffer.noStroke();
         buffer.ellipse(0, 0, size * centerSize, size * centerSize);
+        buffer.pop();
         
         buffer.pop();
     }

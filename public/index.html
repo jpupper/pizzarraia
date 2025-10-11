@@ -118,6 +118,9 @@
             <button class="brush-btn" data-brush="image" title="Image Brush">
                 <svg viewBox="0 0 24 24"><path fill="currentColor" d="M8.5,13.5L11,16.5L14.5,12L19,18H5M21,19V5C21,3.89 20.1,3 19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19Z" /></svg>
             </button>
+            <button class="brush-btn" data-brush="flower" title="Flower Brush">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22M12,5A2,2 0 0,0 10,7C10,7.5 10.2,8 10.5,8.5C9.6,8.3 8.7,8.2 8,8.2C6.5,8.2 5.2,9.2 5,10.6C4.8,12 5.8,13.3 7.2,13.5C7.7,13.6 8.2,13.5 8.7,13.3C8.3,13.7 8,14.3 8,15A2,2 0 0,0 10,17H14A2,2 0 0,0 16,15C16,14.3 15.7,13.7 15.3,13.3C15.8,13.5 16.3,13.6 16.8,13.5C18.2,13.3 19.2,12 19,10.6C18.8,9.2 17.5,8.2 16,8.2C15.3,8.2 14.4,8.3 13.5,8.5C13.8,8 14,7.5 14,7A2,2 0 0,0 12,5Z"/></svg>
+            </button>
             <button class="brush-btn" data-brush="background" onClick="cleanBackground()" title="Limpiar Canvas">
                 <svg viewBox="0 0 24 24"><path fill="currentColor" d="M19.36,2.72L20.78,4.14L15.06,9.85C16.13,11.39 16.28,13.24 15.38,14.44L9.06,8.12C10.26,7.22 12.11,7.37 13.65,8.44L19.36,2.72M5.93,17.57C3.92,15.56 2.69,13.16 2.35,10.92L7.23,8.83L14.67,16.27L12.58,21.15C10.34,20.81 7.94,19.58 5.93,17.57Z" /></svg>
             </button>
@@ -230,6 +233,29 @@
             <br>
             <p style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-top: 5px;">
                 💡 Tolerance: 0 = solo color exacto, mayor = colores similares
+            </p>
+        </div>
+        
+        <!-- Flower Brush Controls -->
+        <div id="flowerBrushParams" class="brushParams" style="display: none;">
+            <label>Petal Count: <span id="petalCount-value">5</span></label>
+            <input type="range" value="5" id="petalCount" min="3" max="12" step="1" class="jpslider"
+                   oninput="document.getElementById('petalCount-value').textContent = this.value">
+            <br>
+            <label>Petal Length: <span id="petalLength-value">1.0</span></label>
+            <input type="range" value="1.0" id="petalLength" min="0.5" max="2.0" step="0.1" class="jpslider"
+                   oninput="document.getElementById('petalLength-value').textContent = this.value">
+            <br>
+            <label>Petal Width: <span id="petalWidth-value">0.6</span></label>
+            <input type="range" value="0.6" id="petalWidth" min="0.3" max="1.5" step="0.1" class="jpslider"
+                   oninput="document.getElementById('petalWidth-value').textContent = this.value">
+            <br>
+            <label>Center Size: <span id="centerSize-value">0.3</span></label>
+            <input type="range" value="0.3" id="centerSize" min="0.1" max="0.8" step="0.05" class="jpslider"
+                   oninput="document.getElementById('centerSize-value').textContent = this.value">
+            <br>
+            <p style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-top: 10px;">
+                🌸 Personaliza tu flor ajustando pétalos, tamaño y proporciones
             </p>
         </div>
         
