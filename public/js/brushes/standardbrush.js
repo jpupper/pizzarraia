@@ -21,7 +21,7 @@ class StandardBrush extends BaseBrush {
     drawLine(buffer, x1, y1, x2, y2, size, color) {
         buffer.stroke(color);
         buffer.strokeWeight(size);
-        buffer.strokeCap(PROJECT);
+        buffer.strokeCap(ROUND);
         buffer.line(x1, y1, x2, y2);
     }
 

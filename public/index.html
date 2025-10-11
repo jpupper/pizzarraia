@@ -35,6 +35,7 @@
     <script src="js/brushes/geometrybrush.js"></script>
     <script src="js/brushes/fillbrush.js"></script>
     <script src="js/brushes/imagebrush.js"></script>
+    <script src="js/brushes/flowerbrush.js"></script>
     
     <!-- Legacy brushes (COMENTADOS - ya migrados a clases) -->
     <!-- <script src="js/brushes/standardbrush.js"></script> -->
@@ -63,22 +64,24 @@
         
         <!-- Contenido de la pestaña: Interfaz de dibujo -->
         <div id="tab-drawing" class="tab-content active">
-        <label>Color Palette</label>
-        <div class="color-palette-slots" style="display: flex; gap: 8px; margin-bottom: 10px;">
-            <div class="palette-slot active" data-slot="0" style="width: 40px; height: 40px; border-radius: 8px; background-color: #FF0000; border: 3px solid white; cursor: pointer; position: relative;">
-                <span style="position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); font-size: 10px; color: white;">1</span>
-            </div>
-            <div class="palette-slot" data-slot="1" style="width: 40px; height: 40px; border-radius: 8px; background-color: #00FF00; border: 2px solid rgba(255,255,255,0.3); cursor: pointer; position: relative;">
-                <span style="position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); font-size: 10px; color: white;">2</span>
-            </div>
-            <div class="palette-slot" data-slot="2" style="width: 40px; height: 40px; border-radius: 8px; background-color: #0000FF; border: 2px solid rgba(255,255,255,0.3); cursor: pointer; position: relative;">
-                <span style="position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); font-size: 10px; color: white;">3</span>
-            </div>
-            <div class="palette-slot" data-slot="3" style="width: 40px; height: 40px; border-radius: 8px; background-color: #FFFF00; border: 2px solid rgba(255,255,255,0.3); cursor: pointer; position: relative;">
-                <span style="position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); font-size: 10px; color: white;">4</span>
-            </div>
-            <div class="palette-slot" data-slot="4" style="width: 40px; height: 40px; border-radius: 8px; background-color: #FF00FF; border: 2px solid rgba(255,255,255,0.3); cursor: pointer; position: relative;">
-                <span style="position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); font-size: 10px; color: white;">5</span>
+        <div class="color-palette-section" style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin-bottom: 15px;">
+            <label style="font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 1.1rem; color: rgba(255,255,255,0.95); margin-bottom: 12px; display: block;">Color Palette</label>
+            <div class="color-palette-slots" style="display: flex; gap: 10px; margin-bottom: 0;">
+                <div class="palette-slot active" data-slot="0" style="width: 42px; height: 42px; border-radius: 10px; background-color: #FF0000; border: 3px solid white; cursor: pointer; position: relative; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+                    <span style="position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.8); font-family: 'Poppins', sans-serif;">1</span>
+                </div>
+                <div class="palette-slot" data-slot="1" style="width: 42px; height: 42px; border-radius: 10px; background-color: #00FF00; border: 2px solid rgba(255,255,255,0.3); cursor: pointer; position: relative; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+                    <span style="position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.8); font-family: 'Poppins', sans-serif;">2</span>
+                </div>
+                <div class="palette-slot" data-slot="2" style="width: 42px; height: 42px; border-radius: 10px; background-color: #0000FF; border: 2px solid rgba(255,255,255,0.3); cursor: pointer; position: relative; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+                    <span style="position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.8); font-family: 'Poppins', sans-serif;">3</span>
+                </div>
+                <div class="palette-slot" data-slot="3" style="width: 42px; height: 42px; border-radius: 10px; background-color: #FFFF00; border: 2px solid rgba(255,255,255,0.3); cursor: pointer; position: relative; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+                    <span style="position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.8); font-family: 'Poppins', sans-serif;">4</span>
+                </div>
+                <div class="palette-slot" data-slot="4" style="width: 42px; height: 42px; border-radius: 10px; background-color: #FF00FF; border: 2px solid rgba(255,255,255,0.3); cursor: pointer; position: relative; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+                    <span style="position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.8); font-family: 'Poppins', sans-serif;">5</span>
+                </div>
             </div>
         </div>
         <label>Color Picker</label><input type="color" value="#FF0000" id="c1">

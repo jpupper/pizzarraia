@@ -34,7 +34,13 @@ class PixelBrush extends BaseBrush {
         
         const cellWidth = windowWidth / cols;
         const cellHeight = windowHeight / rows;
-        const radiusInCells = Math.ceil(size / Math.max(cellWidth, cellHeight));
+        
+        // Calcular el radio en celdas basado en el tamaño del brush
+        // Usar un mínimo de 0 para permitir pintar un solo píxel
+        const avgCellSize = (cellWidth + cellHeight) / 2;
+        const radiusInCells = Math.max(0, Math.floor(size / avgCellSize));
+        
+        // Calcular la celda donde está el cursor
         const centerCol = Math.floor(x / cellWidth);
         const centerRow = Math.floor(y / cellHeight);
         
@@ -43,25 +49,42 @@ class PixelBrush extends BaseBrush {
         buffer.noStroke();
         
         if (kaleidoSegments <= 1) {
-            for (let i = -radiusInCells; i <= radiusInCells; i++) {
-                for (let j = -radiusInCells; j <= radiusInCells; j++) {
-                    const col = centerCol + i;
-                    const row = centerRow + j;
-                    
-                    if (col >= 0 && col < cols && row >= 0 && row < rows) {
-                        const px = col * cellWidth;
-                        const py = row * cellHeight;
-                        const dx = px + cellWidth/2 - x;
-                        const dy = py + cellHeight/2 - y;
-                        const distance = Math.sqrt(dx*dx + dy*dy);
+            // Sin kaleidoscopio
+            if (radiusInCells === 0) {
+                // Pintar solo el píxel bajo el cursor
+                if (centerCol >= 0 && centerCol < cols && centerRow >= 0 && centerRow < rows) {
+                    const px = centerCol * cellWidth;
+                    const py = centerRow * cellHeight;
+                    buffer.rect(px, py, cellWidth, cellHeight);
+                }
+            } else {
+                // Pintar múltiples píxeles en un radio
+                for (let i = -radiusInCells; i <= radiusInCells; i++) {
+                    for (let j = -radiusInCells; j <= radiusInCells; j++) {
+                        const col = centerCol + i;
+                        const row = centerRow + j;
                         
-                        if (distance <= size) {
-                            buffer.rect(px, py, cellWidth, cellHeight);
+                        if (col >= 0 && col < cols && row >= 0 && row < rows) {
+                            const px = col * cellWidth;
+                            const py = row * cellHeight;
+                            
+                            // Calcular distancia desde el centro del píxel al cursor
+                            const pixelCenterX = px + cellWidth / 2;
+                            const pixelCenterY = py + cellHeight / 2;
+                            const dx = pixelCenterX - x;
+                            const dy = pixelCenterY - y;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+                            
+                            // Pintar si está dentro del radio
+                            if (distance <= size) {
+                                buffer.rect(px, py, cellWidth, cellHeight);
+                            }
                         }
                     }
                 }
             }
         } else {
+            // Con kaleidoscopio
             const centerX = kaleidoCenterX !== null ? kaleidoCenterX : windowWidth / 2;
             const centerY = kaleidoCenterY !== null ? kaleidoCenterY : windowHeight / 2;
             const dx = x - centerX;
@@ -78,20 +101,32 @@ class PixelBrush extends BaseBrush {
                 const newCenterCol = Math.floor(newX / cellWidth);
                 const newCenterRow = Math.floor(newY / cellHeight);
                 
-                for (let ii = -radiusInCells; ii <= radiusInCells; ii++) {
-                    for (let jj = -radiusInCells; jj <= radiusInCells; jj++) {
-                        const col = newCenterCol + ii;
-                        const row = newCenterRow + jj;
-                        
-                        if (col >= 0 && col < cols && row >= 0 && row < rows) {
-                            const px = col * cellWidth;
-                            const py = row * cellHeight;
-                            const ddx = px + cellWidth/2 - newX;
-                            const ddy = py + cellHeight/2 - newY;
-                            const dist = Math.sqrt(ddx*ddx + ddy*ddy);
+                if (radiusInCells === 0) {
+                    // Pintar solo el píxel bajo el cursor reflejado
+                    if (newCenterCol >= 0 && newCenterCol < cols && newCenterRow >= 0 && newCenterRow < rows) {
+                        const px = newCenterCol * cellWidth;
+                        const py = newCenterRow * cellHeight;
+                        buffer.rect(px, py, cellWidth, cellHeight);
+                    }
+                } else {
+                    // Pintar múltiples píxeles
+                    for (let ii = -radiusInCells; ii <= radiusInCells; ii++) {
+                        for (let jj = -radiusInCells; jj <= radiusInCells; jj++) {
+                            const col = newCenterCol + ii;
+                            const row = newCenterRow + jj;
                             
-                            if (dist <= size) {
-                                buffer.rect(px, py, cellWidth, cellHeight);
+                            if (col >= 0 && col < cols && row >= 0 && row < rows) {
+                                const px = col * cellWidth;
+                                const py = row * cellHeight;
+                                const pixelCenterX = px + cellWidth / 2;
+                                const pixelCenterY = py + cellHeight / 2;
+                                const ddx = pixelCenterX - newX;
+                                const ddy = pixelCenterY - newY;
+                                const dist = Math.sqrt(ddx * ddx + ddy * ddy);
+                                
+                                if (dist <= size) {
+                                    buffer.rect(px, py, cellWidth, cellHeight);
+                                }
                             }
                         }
                     }
