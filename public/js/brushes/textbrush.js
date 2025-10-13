@@ -19,9 +19,8 @@ class TextBrush extends BaseBrush {
     }
 
     getCursorGUIControls() {
-        return [
-            { id: 'textSize', label: 'Tamaño', min: 10, max: 100, default: 40, step: 5 }
-        ];
+        // TextBrush usa el size general del brush, no necesita parámetro específico
+        return [];
     }
     
     drawCursorGUIPreview(buffer, x, y, size, color) {
@@ -75,10 +74,11 @@ class TextBrush extends BaseBrush {
     }
 
     draw(buffer, x, y, params) {
-        const { color, kaleidoSegments = 1, textContent = 'TEXTO', textSize = 40, textFont = 'Arial' } = params;
+        // Usar size general del brush en lugar de textSize específico
+        const { color, size = 40, kaleidoSegments = 1, textContent = 'TEXTO', textFont = 'Arial' } = params;
         
         if (kaleidoSegments <= 1) {
-            this.drawBasicText(buffer, x, y, textContent, textSize, textFont, color);
+            this.drawBasicText(buffer, x, y, textContent, size, textFont, color);
         } else {
             const centerX = kaleidoCenterX !== null ? kaleidoCenterX : windowWidth / 2;
             const centerY = kaleidoCenterY !== null ? kaleidoCenterY : windowHeight / 2;
@@ -92,7 +92,7 @@ class TextBrush extends BaseBrush {
                 const segmentAngle = angleStep * i;
                 const newX = centerX + Math.cos(angle + segmentAngle) * distance;
                 const newY = centerY + Math.sin(angle + segmentAngle) * distance;
-                this.drawBasicText(buffer, newX, newY, textContent, textSize, textFont, color);
+                this.drawBasicText(buffer, newX, newY, textContent, size, textFont, color);
             }
         }
     }

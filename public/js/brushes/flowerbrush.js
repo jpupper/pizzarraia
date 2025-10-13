@@ -11,7 +11,6 @@ class FlowerBrush extends BaseBrush {
             icon: '<path fill="currentColor" d="M12,22A1,1 0 0,1 11,21V19H10A2,2 0 0,1 8,17V15A4,4 0 0,1 4,11A4,4 0 0,1 8,7H9A2,2 0 0,1 11,5V3A1,1 0 0,1 12,2A1,1 0 0,1 13,3V5A2,2 0 0,1 15,7H16A4,4 0 0,1 20,11A4,4 0 0,1 16,15V17A2,2 0 0,1 14,19H13V21A1,1 0 0,1 12,22M12,7A2,2 0 0,0 10,9A2,2 0 0,0 12,11A2,2 0 0,0 14,9A2,2 0 0,0 12,7M12,13A2,2 0 0,0 10,15A2,2 0 0,0 12,17A2,2 0 0,0 14,15A2,2 0 0,0 12,13Z"/>',
             supportsKaleidoscope: true,
             parameters: {
-                minSize: { min: 1, max: 20, default: 2, step: 1, label: 'Tamaño Mínimo' },
                 maxSize: { min: 10, max: 50, default: 14, step: 1, label: 'Tamaño Máximo' },
                 frequency: { min: 3, max: 12, default: 6, step: 1, label: 'Frecuencia' },
                 animSpeed: { min: 0, max: 0.15, default: 0.1, step: 0.005, label: 'Velocidad Anim' },
@@ -30,7 +29,6 @@ class FlowerBrush extends BaseBrush {
 
     getCursorGUIControls() {
         return [
-            { id: 'minSize', label: 'Min Size', min: 1, max: 20, default: 2, step: 1 },
             { id: 'maxSize', label: 'Max Size', min: 10, max: 50, default: 14, step: 1 },
             { id: 'frequency', label: 'Freq', min: 3, max: 12, default: 6, step: 1 },
             { id: 'animSpeed', label: 'Anim', min: 0, max: 0.15, default: 0.1, step: 0.005 },
@@ -59,10 +57,6 @@ class FlowerBrush extends BaseBrush {
     
     renderControls() {
         return `
-            <label>Tamaño Mínimo: <span id="minSize-value">2</span></label>
-            <input type="range" value="2" id="minSize" min="1" max="20" step="1" class="jpslider"
-                   oninput="document.getElementById('minSize-value').textContent = this.value">
-            <br>
             <label>Tamaño Máximo: <span id="maxSize-value">14</span></label>
             <input type="range" value="14" id="maxSize" min="10" max="50" step="1" class="jpslider"
                    oninput="document.getElementById('maxSize-value').textContent = this.value">
@@ -173,7 +167,6 @@ class FlowerBrush extends BaseBrush {
     draw(buffer, x, y, params) {
         const {
             color,
-            minSize = 2,
             maxSize = 14,
             frequency = 6,
             animSpeed = 0.1,
@@ -188,8 +181,8 @@ class FlowerBrush extends BaseBrush {
             // Actualizar tamaño (encoger)
             this.currentSize -= shrinkSpeed;
             
-            // Resetear cuando llega al mínimo
-            if (this.currentSize < minSize) {
+            // Resetear cuando llega al mínimo (fijo en 1)
+            if (this.currentSize < 1) {
                 this.currentSize = maxSize;
             }
         }
@@ -216,7 +209,6 @@ class FlowerBrush extends BaseBrush {
      */
     getSyncData(params) {
         return {
-            minSize: params.minSize || 2,
             maxSize: params.maxSize || 14,
             frequency: params.frequency || 6,
             animSpeed: params.animSpeed || 0.1,
