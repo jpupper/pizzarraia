@@ -30,8 +30,13 @@ class FlowerBrush extends BaseBrush {
 
     getCursorGUIControls() {
         return [
+            { id: 'minSize', label: 'Min Size', min: 1, max: 20, default: 2, step: 1 },
+            { id: 'maxSize', label: 'Max Size', min: 10, max: 50, default: 14, step: 1 },
             { id: 'frequency', label: 'Freq', min: 3, max: 12, default: 6, step: 1 },
             { id: 'animSpeed', label: 'Anim', min: 0, max: 0.15, default: 0.1, step: 0.005 },
+            { id: 'flowerStrokeWeight', label: 'Grosor', min: 1, max: 5, default: 4, step: 1 },
+            { id: 'strokeAlpha', label: 'Alpha', min: 5, max: 100, default: 45, step: 5 },
+            { id: 'shrinkSpeed', label: 'Shrink', min: 0, max: 2, default: 0.15, step: 0.01 },
             { id: 'shadowOffset', label: 'Shadow', min: 0, max: 15, default: 10, step: 1 }
         ];
     }

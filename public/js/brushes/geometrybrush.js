@@ -26,8 +26,11 @@ class GeometryBrush extends BaseBrush {
     getCursorGUIControls() {
         return [
             { id: 'spiroModulo', label: 'Módulo', min: 5, max: 300, default: 30, step: 5 },
+            { id: 'spiroInc', label: 'Vel Rot', min: 0.1, max: 10, default: 2, step: 0.1 },
+            { id: 'radius2', label: 'Radio2', min: 0.1, max: 2, default: 0.6, step: 0.1 },
             { id: 'npoints1', label: 'Puntas', min: 3, max: 12, default: 5, step: 1 },
-            { id: 'radius2', label: 'Radio2', min: 0.1, max: 2, default: 0.6, step: 0.1 }
+            { id: 'borderScale', label: 'Esc Borde', min: 1, max: 2, default: 1.1, step: 0.05 },
+            { id: 'borderAlpha', label: 'Alpha Borde', min: 0, max: 255, default: 255, step: 5 }
         ];
     }
     
