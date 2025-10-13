@@ -122,7 +122,17 @@
                 <svg viewBox="0 0 24 24"><path fill="currentColor" d="M8.5,13.5L11,16.5L14.5,12L19,18H5M21,19V5C21,3.89 20.1,3 19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19Z" /></svg>
             </button>
             <button class="brush-btn" data-brush="flower" title="Flower Brush">
-                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12,2C11.5,2 11,2.19 10.59,2.59L2.59,10.59C1.8,11.37 1.8,12.63 2.59,13.41L10.59,21.41C11.37,22.2 12.63,22.2 13.41,21.41L21.41,13.41C22.2,12.63 22.2,11.37 21.41,10.59L13.41,2.59C13,2.19 12.5,2 12,2M12,4L20,12L12,20L4,12L12,4M12,7C10.89,7 10,7.89 10,9C10,10.11 10.89,11 12,11C13.11,11 14,10.11 14,9C14,7.89 13.11,7 12,7M9,13C7.89,13 7,13.89 7,15C7,16.11 7.89,17 9,17C10.11,17 11,16.11 11,15C11,13.89 10.11,13 9,13M15,13C13.89,13 13,13.89 13,15C13,16.11 13.89,17 15,17C16.11,17 17,16.11 17,15C17,13.89 16.11,13 15,13Z"/></svg>
+                <svg viewBox="0 0 24 24">
+                    <!-- Pétalos alrededor -->
+                    <circle cx="12" cy="5" r="2.5" fill="currentColor"/>
+                    <circle cx="18" cy="8.5" r="2.5" fill="currentColor"/>
+                    <circle cx="19" cy="15.5" r="2.5" fill="currentColor"/>
+                    <circle cx="12" cy="19" r="2.5" fill="currentColor"/>
+                    <circle cx="5" cy="15.5" r="2.5" fill="currentColor"/>
+                    <circle cx="6" cy="8.5" r="2.5" fill="currentColor"/>
+                    <!-- Centro -->
+                    <circle cx="12" cy="12" r="3" fill="currentColor"/>
+                </svg>
             </button>
             <button class="brush-btn" data-brush="background" onClick="cleanBackground()" title="Limpiar Canvas">
                 <svg viewBox="0 0 24 24">

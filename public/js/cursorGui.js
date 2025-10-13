@@ -102,6 +102,15 @@ class CursorGUI {
                 brush: brush
             });
         }
+        
+        // Agregar botón de background (bomba) al final
+        this.brushButtons.push({
+            id: 'background',
+            name: 'Limpiar Canvas',
+            icon: null,
+            brush: null,
+            isAction: true // Flag para indicar que es una acción, no un brush
+        });
     }
     
     /**
@@ -427,11 +436,25 @@ class CursorGUI {
     }
     
     /**
-     * Seleccionar un pincel
+     * Seleccionar un pincel o ejecutar acción
      */
     selectBrush(index) {
         if (index >= 0 && index < this.brushButtons.length) {
             const brush = this.brushButtons[index];
+            
+            // Si es una acción (como background/bomba)
+            if (brush.isAction) {
+                if (brush.id === 'background') {
+                    // Ejecutar función de limpiar canvas
+                    if (typeof cleanBackground === 'function') {
+                        cleanBackground();
+                    }
+                    console.log('Canvas limpiado');
+                }
+                return;
+            }
+            
+            // Si es un brush normal
             const brushTypeInput = document.getElementById('brushType');
             
             if (brushTypeInput) {
@@ -1028,7 +1051,11 @@ class CursorGUI {
         const barX = this.centerX - this.sizeBarWidth / 2;
         let currentSliderY = this.dynamicSlidersY;
         
+        console.log('Checking dynamic sliders. Click Y:', y, 'First slider Y:', currentSliderY, 'Controls:', brushControls.length);
+        
         for (const control of brushControls) {
+            console.log(`Checking ${control.id}: barX=${barX}, barX+width=${barX + this.sizeBarWidth}, y range=${currentSliderY}-${currentSliderY + this.sizeBarHeight}`);
+            
             if (x >= barX && x <= barX + this.sizeBarWidth &&
                 y >= currentSliderY && y <= currentSliderY + this.sizeBarHeight) {
                 
@@ -1037,6 +1064,11 @@ class CursorGUI {
                 const newValue = control.min + (control.max - control.min) * percentage;
                 const steppedValue = Math.round(newValue / control.step) * control.step;
                 const clampedValue = Math.max(control.min, Math.min(control.max, steppedValue));
+                
+                // Inicializar brushParams si no existe
+                if (!this.brushParams[this.currentBrushType]) {
+                    this.brushParams[this.currentBrushType] = {};
+                }
                 
                 // Actualizar valor en brushParams
                 this.brushParams[this.currentBrushType][control.id] = clampedValue;
