@@ -730,7 +730,11 @@ class ArtBrush extends BaseBrush {
 
     getCursorGUIControls() {
         return [
-            { id: 'particleCount', label: 'Partículas', min: 1, max: 30, default: 10, step: 1 }
+            { id: 'particleCount', label: 'Partículas', min: 1, max: 30, default: 10, step: 1 },
+            { id: 'speedForce', label: 'Speed Force', min: 0.1, max: 2.0, default: 0.5, step: 0.1 },
+            { id: 'maxSpeed', label: 'Max Speed', min: 0.1, max: 3.0, default: 0.5, step: 0.1 },
+            { id: 'particleLife', label: 'Life', min: 50, max: 1000, default: 255, step: 10 },
+            { id: 'particleMaxSize', label: 'Size', min: 1, max: 20, default: 8, step: 1 }
         ];
     }
     

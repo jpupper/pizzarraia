@@ -754,9 +754,6 @@ class CursorGUI {
             return true;
         }
         
-        // Debug: log de la posición Y del click
-        console.log('Click en Y:', y, 'Barras - Hue:', this.hueBarY, 'Sat:', this.saturationBarY, 'Bright:', this.brightnessBarY, 'Alpha:', this.alphaBarY, 'Size:', this.sizeBarY, 'Brushes:', this.brushButtonsY);
-        
         // Verificar si hizo click en un botón de pincel (primero)
         const brushButton = this.getBrushButtonAt(x, y);
         if (brushButton !== null) {
@@ -1051,11 +1048,7 @@ class CursorGUI {
         const barX = this.centerX - this.sizeBarWidth / 2;
         let currentSliderY = this.dynamicSlidersY;
         
-        console.log('Checking dynamic sliders. Click Y:', y, 'First slider Y:', currentSliderY, 'Controls:', brushControls.length);
-        
         for (const control of brushControls) {
-            console.log(`Checking ${control.id}: barX=${barX}, barX+width=${barX + this.sizeBarWidth}, y range=${currentSliderY}-${currentSliderY + this.sizeBarHeight}`);
-            
             if (x >= barX && x <= barX + this.sizeBarWidth &&
                 y >= currentSliderY && y <= currentSliderY + this.sizeBarHeight) {
                 
