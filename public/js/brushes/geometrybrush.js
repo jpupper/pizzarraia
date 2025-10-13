@@ -23,6 +23,33 @@ class GeometryBrush extends BaseBrush {
         this.anim = 0; // Variable de animación global
     }
 
+    getCursorGUIControls() {
+        return [
+            { id: 'spiroModulo', label: 'Módulo', min: 5, max: 300, default: 30, step: 5 },
+            { id: 'npoints1', label: 'Puntas', min: 3, max: 12, default: 5, step: 1 },
+            { id: 'radius2', label: 'Radio2', min: 0.1, max: 2, default: 0.6, step: 0.1 }
+        ];
+    }
+    
+    drawCursorGUIPreview(buffer, x, y, size, color) {
+        buffer.push();
+        buffer.noFill();
+        buffer.stroke(color);
+        buffer.strokeWeight(2);
+        // Dibujar una estrella simple
+        const points = 5;
+        buffer.beginShape();
+        for (let i = 0; i < points * 2; i++) {
+            const angle = (TWO_PI / (points * 2)) * i - HALF_PI;
+            const r = i % 2 === 0 ? size * 0.5 : size * 0.25;
+            const px = x + cos(angle) * r;
+            const py = y + sin(angle) * r;
+            buffer.vertex(px, py);
+        }
+        buffer.endShape(CLOSE);
+        buffer.pop();
+    }
+
     renderControls() {
         return `
             <label>Radio: <span id="spiroRadius-value">50</span></label>

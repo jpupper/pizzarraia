@@ -28,6 +28,30 @@ class FlowerBrush extends BaseBrush {
         this.isDrawing = false; // Flag para saber si está dibujando
     }
 
+    getCursorGUIControls() {
+        return [
+            { id: 'frequency', label: 'Freq', min: 3, max: 12, default: 6, step: 1 },
+            { id: 'animSpeed', label: 'Anim', min: 0, max: 0.15, default: 0.1, step: 0.005 },
+            { id: 'shadowOffset', label: 'Shadow', min: 0, max: 15, default: 10, step: 1 }
+        ];
+    }
+    
+    drawCursorGUIPreview(buffer, x, y, size, color) {
+        buffer.push();
+        buffer.noFill();
+        buffer.stroke(color);
+        buffer.strokeWeight(2);
+        // Dibujar una flor simple
+        const petals = 6;
+        for (let i = 0; i < petals; i++) {
+            const angle = (TWO_PI / petals) * i;
+            const px = x + cos(angle) * size * 0.4;
+            const py = y + sin(angle) * size * 0.4;
+            buffer.ellipse(px, py, size * 0.3, size * 0.3);
+        }
+        buffer.pop();
+    }
+    
     renderControls() {
         return `
             <label>Tamaño Mínimo: <span id="minSize-value">2</span></label>
