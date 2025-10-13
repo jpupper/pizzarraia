@@ -12,7 +12,7 @@ fetch(`${config.API_URL}/api/check-session`, {
     .then(res => res.json())
     .then(data => {
         if (data.authenticated) {
-            window.location.href = 'index.html';
+            window.location.href = 'index.html?sesion=3000';
         }
     });
 
@@ -86,7 +86,7 @@ registerForm.addEventListener('submit', async (e) => {
             
             showSuccess('¡Cuenta creada exitosamente! Redirigiendo...');
             setTimeout(() => {
-                window.location.href = 'index.html';
+                window.location.href = 'index.html?sesion=3000';
             }, 1500);
         } else {
             showError(data.error || 'Error al crear la cuenta');

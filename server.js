@@ -35,9 +35,9 @@ app.use(cors({
   exposedHeaders: ['set-cookie']
 }));
 
-// Middleware
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+// Middleware - Aumentar límite para imágenes con múltiples capas
+app.use(express.json({ limit: '100mb' }));
+app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 
 // Session storage in memory (simple approach)
 // Maps sessionToken -> userId
@@ -202,6 +202,17 @@ app.post('/pizarraia/api/images', isAuthenticated, async (req, res) => {
   try {
     const { title, description, imageData, layers, collaborators, sessionId } = req.body;
     
+    // Logs de debug
+    console.log('=== RECIBIENDO IMAGEN EN SERVIDOR ===');
+    console.log('Límite configurado: 100MB');
+    console.log('Título:', title);
+    console.log('Número de capas:', layers ? layers.length : 0);
+    console.log('Número de colaboradores:', collaborators ? collaborators.length : 0);
+    
+    // Calcular tamaño del payload
+    const payloadSize = JSON.stringify(req.body).length / (1024 * 1024);
+    console.log('Tamaño del payload recibido:', payloadSize.toFixed(2), 'MB');
+    
     if (!imageData) {
       return res.status(400).json({ error: 'Datos de imagen requeridos' });
     }
@@ -223,6 +234,8 @@ app.post('/pizarraia/api/images', isAuthenticated, async (req, res) => {
     
     await image.save();
     
+    console.log('✅ Imagen guardada exitosamente. ID:', image._id);
+    
     res.json({ 
       success: true, 
       image: {
@@ -233,8 +246,13 @@ app.post('/pizarraia/api/images', isAuthenticated, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error guardando imagen:', error);
-    res.status(500).json({ error: 'Error al guardar la imagen' });
+    console.error('❌ Error guardando imagen:', error.message);
+    if (error.message.includes('PayloadTooLargeError')) {
+      console.error('El payload supera el límite de 100MB');
+      res.status(413).json({ error: 'Imagen demasiado grande. Intenta con "Solo imagen final"' });
+    } else {
+      res.status(500).json({ error: 'Error al guardar la imagen' });
+    }
   }
 });
 
@@ -450,6 +468,29 @@ app.get('/pizarraia/api/admin/connected', (req, res) => {
   }
 });
 
+// Public endpoint for sessions (no auth required)
+app.get('/pizarraia/api/sessions', (req, res) => {
+  try {
+    // Get active sessions with user count
+    const activeSessions = Object.keys(sessions)
+      .filter(sessionId => sessions[sessionId] && sessions[sessionId].length > 0)
+      .map(sessionId => ({
+        sessionId,
+        userCount: sessions[sessionId].length,
+        users: sessions[sessionId].map(socketId => {
+          const userInfo = connectedUsers.get(socketId);
+          return userInfo || { socketId, username: 'Anónimo' };
+        })
+      }));
+    
+    res.json({ sessions: activeSessions });
+  } catch (error) {
+    console.error('Error getting sessions:', error);
+    res.status(500).json({ error: 'Error al obtener sesiones' });
+  }
+});
+
+// Admin endpoint (kept for backwards compatibility)
 app.get('/pizarraia/api/admin/sessions', (req, res) => {
   try {
     // Get active sessions with user count

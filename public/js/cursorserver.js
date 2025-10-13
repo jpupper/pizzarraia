@@ -171,28 +171,29 @@ class CursorServer {
             if (cursor.username) {
                 buffer.push();
                 
-                // Configurar texto
+                // Configurar texto - MUCHO MÁS GRANDE
                 buffer.textAlign(CENTER, BOTTOM);
-                buffer.textSize(14);
+                buffer.textSize(24); // Aumentado de 14 a 24
                 buffer.textFont('Arial');
+                buffer.textStyle(BOLD); // Texto en negrita
                 
                 // Fondo semi-transparente para el texto
                 const textWidth = buffer.textWidth(cursor.username);
-                const padding = 6;
+                const padding = 10; // Aumentado de 6 a 10
                 const bgX = cursor.x - textWidth / 2 - padding;
-                const bgY = cursor.y - cursor.brushSize / 2 - 25;
+                const bgY = cursor.y - cursor.brushSize / 2 - 38; // Ajustado para texto más grande
                 const bgWidth = textWidth + padding * 2;
-                const bgHeight = 20;
+                const bgHeight = 32; // Aumentado de 20 a 32
                 
                 // Dibujar fondo
                 buffer.noStroke();
-                buffer.fill(0, 0, 0, 150); // Negro semi-transparente
-                buffer.rect(bgX, bgY, bgWidth, bgHeight, 4); // Bordes redondeados
+                buffer.fill(0, 0, 0, 180); // Negro más opaco
+                buffer.rect(bgX, bgY, bgWidth, bgHeight, 6); // Bordes redondeados más grandes
                 
                 // Dibujar texto
                 buffer.fill(cursor.isDrawing ? color(100, 255, 100) : color(100, 150, 255));
                 buffer.noStroke();
-                buffer.text(cursor.username, cursor.x, cursor.y - cursor.brushSize / 2 - 10);
+                buffer.text(cursor.username, cursor.x, cursor.y - cursor.brushSize / 2 - 12);
                 
                 buffer.pop();
             }
