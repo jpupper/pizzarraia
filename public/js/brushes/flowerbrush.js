@@ -164,7 +164,17 @@ class FlowerBrush extends BaseBrush {
             this.frameCounter++;
         }
         
-        // Dibujar la flor
+        let offset = 10
+
+        // Dibujar sombra negra
+        const blackColor = buffer.color(0, 0, 0);
+        this.drawShape(buffer, x-offset, y-offset, this.currentSize, frequency, animSpeed, blackColor, strokeWeight, strokeAlpha);
+
+        // Dibujar sombra blanca
+        const whiteColor = buffer.color(255);
+        this.drawShape(buffer, x+offset, y+offset, this.currentSize, frequency, animSpeed, whiteColor, strokeWeight, strokeAlpha);
+
+        // Dibujar la flor con el color principal
         this.drawShape(buffer, x, y, this.currentSize, frequency, animSpeed, color, strokeWeight, strokeAlpha);
     }
 
