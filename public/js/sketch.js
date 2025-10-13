@@ -892,8 +892,28 @@ function touchStarted(event) {
         cursorGUI.startLongPress(mouseX, mouseY);
     }
     
-    // Llamar a mousePressed para mantener compatibilidad
-    mousePressed();
+    // NO llamar a mousePressed() aquí porque causa doble ejecución de startLongPress()
+    // En su lugar, ejecutar solo la lógica necesaria de mousePressed
+    isMousePressed = true;
+    pmouseXGlobal = mouseX;
+    pmouseYGlobal = mouseY;
+    
+    // Establecer punto central del caleidoscopio
+    if (!isOverGui && !isOverOpenButton) {
+        kaleidoCenterX = mouseX;
+        kaleidoCenterY = mouseY;
+    }
+    
+    // Si es line brush, guardar el punto inicial
+    const brushType = document.getElementById('brushType').value;
+    if (brushType === 'line' && !isOverGui && !isOverOpenButton) {
+        startLineBrush(mouseX, mouseY);
+    }
+    
+    // Track draw interaction
+    if (analyticsTracker && !isOverGui && !isOverOpenButton) {
+        analyticsTracker.trackDrawInteraction();
+    }
     
     // Prevenir comportamiento por defecto en el canvas
     return false;
@@ -1077,13 +1097,13 @@ function dibujarCoso(buffer, x, y, data) {
             if (flowerBrush) {
                 flowerBrush.draw(buffer, x, y, {
                     color: col,
-                    minSize: data.minSize || 5,
-                    maxSize: data.maxSize || 30,
-                    frequency: data.frequency || 5,
-                    animSpeed: data.animSpeed || 0.065,
-                    strokeWeight: data.strokeWeight || 1,
-                    strokeAlpha: data.strokeAlpha || 15,
-                    shrinkSpeed: data.shrinkSpeed || 0.5
+                    minSize: data.minSize || 2,
+                    maxSize: data.maxSize || 14,
+                    frequency: data.frequency || 6,
+                    animSpeed: data.animSpeed || 0.1,
+                    strokeWeight: data.strokeWeight || 4,
+                    strokeAlpha: data.strokeAlpha || 45,
+                    shrinkSpeed: data.shrinkSpeed || 0.15
                 });
             }
             break;

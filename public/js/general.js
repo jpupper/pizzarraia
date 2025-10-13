@@ -64,6 +64,9 @@ function updateSliderValue(sliderId) {
         // Formatear según el tipo de slider
         if (sliderId === 'size' || sliderId === 'speedForce' || sliderId === 'maxSpeed') {
             value = parseFloat(value).toFixed(1);
+        } else if (sliderId === 'shrinkSpeed' || sliderId === 'animSpeed') {
+            // FlowerBrush sliders con 2 decimales
+            value = parseFloat(value).toFixed(2);
         } else {
             value = parseInt(value);
         }
@@ -73,7 +76,7 @@ function updateSliderValue(sliderId) {
 
 // Función para actualizar todos los valores numéricos
 function updateAllSliderValues() {
-    const sliderIds = ['alphaValue', 'size', 'kaleidoSegments', 'gridCols', 'gridRows', 'particleCount', 'speedForce', 'maxSpeed', 'particleLife', 'particleMaxSize', 'textSize', 'polygonSides', 'fillTolerance'];
+    const sliderIds = ['alphaValue', 'size', 'kaleidoSegments', 'gridCols', 'gridRows', 'particleCount', 'speedForce', 'maxSpeed', 'particleLife', 'particleMaxSize', 'textSize', 'polygonSides', 'fillTolerance', 'shrinkSpeed', 'animSpeed'];
     sliderIds.forEach(sliderId => updateSliderValue(sliderId));
 }
 
@@ -976,6 +979,9 @@ async function checkUserAuthentication() {
     console.error('Error checking authentication:', error);
     showUserNotLoggedIn();
   }
+  
+  // Verificar modal de bienvenida DESPUÉS de verificar autenticación
+  checkWelcomeModal();
 }
 
 // Función para mostrar el estado de usuario logueado
@@ -1060,10 +1066,17 @@ function closeSaveModal() {
   document.getElementById('saveImageModal').classList.remove('active');
 }
 
+// Función para escapar HTML y prevenir XSS
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
 // Función para cargar colaboradores
 async function loadCollaborators() {
   try {
-    const response = await fetch(`${config.API_URL}/api/admin/sessions`, {
+    const response = await fetch(`${config.API_URL}/api/sessions`, {
       headers: config.getAuthHeaders()
     });
     const data = await response.json();
@@ -1086,57 +1099,100 @@ async function loadCollaborators() {
   }
 }
 
+// Función para calcular tamaño de string en MB
+function getStringSizeInMB(str) {
+  const bytes = new Blob([str]).size;
+  return (bytes / (1024 * 1024)).toFixed(2);
+}
+
 // Función para enviar el formulario de guardar
 async function submitSaveImage(event) {
   event.preventDefault();
   
   const title = document.getElementById('imageTitle').value.trim();
   const description = document.getElementById('imageDescription').value.trim();
+  const saveOnlyFinal = document.getElementById('saveOnlyFinal')?.checked || false;
   
   try {
-    // Combinar todas las capas visibles
-    const combined = window.renderAllLayers();
-    
-    // Convertir el canvas combinado a base64
-    const canvas = combined.canvas;
-    const imageData = canvas.toDataURL('image/png', 1.0);
-    
-    // Guardar cada capa por separado
-    const layersData = [];
-    if (window.layers && window.layers.length > 0) {
-      window.layers.forEach((layer, index) => {
-        if (layer && layer.canvas) {
-          layersData.push({
-            index: index,
-            name: index === 0 ? 'Fondo' : `Capa ${index}`,
-            visible: window.layerVisibility[index] || false,
-            imageData: layer.canvas.toDataURL('image/png', 1.0)
-          });
-        }
-      });
-    }
-    
-    // Obtener colaboradores y sesión actual
-    const sessionResponse = await fetch(`${config.API_URL}/api/admin/sessions`, {
-      headers: config.getAuthHeaders()
-    });
-    const sessionData = await sessionResponse.json();
-    
-    const currentSessionId = config.getSessionId();
-    const currentSession = sessionData.sessions.find(s => s.sessionId === currentSessionId);
-    
-    const collaborators = currentSession ? currentSession.users.map(user => ({
-      socketId: user.socketId,
-      username: user.username,
-      connectedAt: new Date()
-    })) : [];
-    
     // Deshabilitar botón de submit
     const submitBtn = event.target.querySelector('button[type="submit"]');
     if (submitBtn) {
       submitBtn.disabled = true;
       submitBtn.textContent = 'Guardando...';
     }
+    
+    console.log('=== INICIO GUARDADO DE IMAGEN ===');
+    console.log('Límite del servidor: 100MB');
+    console.log('Guardar solo imagen final:', saveOnlyFinal);
+    
+    // Obtener colaboradores y sesión actual PRIMERO
+    const currentSessionId = config.getSessionId();
+    let collaborators = [];
+    
+    try {
+      const sessionResponse = await fetch(`${config.API_URL}/api/sessions`);
+      if (sessionResponse.ok) {
+        const sessionData = await sessionResponse.json();
+        const currentSession = sessionData.sessions.find(s => s.sessionId === currentSessionId);
+        
+        if (currentSession && currentSession.users) {
+          collaborators = currentSession.users.map(user => ({
+            socketId: user.socketId || '',
+            username: user.username || 'Anónimo',
+            connectedAt: new Date()
+          }));
+        }
+      }
+    } catch (sessionError) {
+      console.warn('No se pudieron cargar colaboradores:', sessionError);
+      // Continuar sin colaboradores
+    }
+    
+    // Combinar todas las capas visibles
+    const combined = window.renderAllLayers();
+    
+    // Convertir el canvas combinado a JPEG con calidad reducida (mucho más liviano)
+    const canvas = combined.canvas;
+    const imageData = canvas.toDataURL('image/jpeg', 0.85);
+    const imageSizeMB = getStringSizeInMB(imageData);
+    
+    console.log('Tamaño imagen final:', imageSizeMB, 'MB');
+    
+    // Guardar cada capa por separado SOLO si no está marcado "solo final"
+    const layersData = [];
+    let totalLayersSize = 0;
+    
+    if (!saveOnlyFinal && window.layers && window.layers.length > 0) {
+      window.layers.forEach((layer, index) => {
+        if (layer && layer.canvas) {
+          const layerData = layer.canvas.toDataURL('image/jpeg', 0.85);
+          const layerSize = getStringSizeInMB(layerData);
+          totalLayersSize += parseFloat(layerSize);
+          
+          console.log(`Capa ${index} (${index === 0 ? 'Fondo' : 'Capa ' + index}):`, layerSize, 'MB');
+          
+          layersData.push({
+            index: index,
+            name: index === 0 ? 'Fondo' : `Capa ${index}`,
+            visible: window.layerVisibility[index] !== false, // Default true
+            imageData: layerData
+          });
+        }
+      });
+      console.log('Tamaño total de capas:', totalLayersSize.toFixed(2), 'MB');
+    }
+    
+    const totalSize = parseFloat(imageSizeMB) + totalLayersSize;
+    console.log('TAMAÑO TOTAL DEL PAYLOAD:', totalSize.toFixed(2), 'MB');
+    
+    if (totalSize > 100) {
+      console.error('⚠️ ADVERTENCIA: El tamaño total (' + totalSize.toFixed(2) + 'MB) supera el límite del servidor (100MB)');
+      if (typeof toast !== 'undefined') {
+        toast.warning('Imagen muy grande (' + totalSize.toFixed(2) + 'MB). Intenta con "Solo imagen final"');
+      }
+    }
+    
+    console.log('Guardando con', layersData.length, 'capas y', collaborators.length, 'colaboradores');
     
     // Enviar al servidor
     const response = await fetch(`${config.API_URL}/api/images`, {
@@ -1331,7 +1387,4 @@ window.saveImageToServer = saveImageToServer;
 window.renderLayerButtons = renderLayerButtons;
 window.closeWelcomeModal = closeWelcomeModal;
 
-// Verificar modal de bienvenida al cargar
-if (typeof window !== 'undefined') {
-  window.addEventListener('load', checkWelcomeModal);
-}
+// NO verificar modal aquí, se verifica después de checkUserAuthentication()

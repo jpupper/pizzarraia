@@ -110,30 +110,32 @@ class CursorGUI {
         const dy = y - this.lastClickY;
         const distance = Math.sqrt(dx * dx + dy * dy);
         
-        // Verificar si es doble click: mismo tiempo Y mismo punto
-        if (this.lastClickTime > 0 && 
-            timeSinceLastClick < this.doubleClickThreshold && 
-            distance < this.doubleClickDistanceThreshold) {
-            // Es un doble click en el mismo punto!
-            this.show(x, y);
+        // SI HAY UN PRIMER CLICK PREVIO
+        if (this.lastClickTime > 0) {
+            // Verificar si es doble click válido: mismo tiempo Y mismo punto
+            if (timeSinceLastClick < this.doubleClickThreshold && 
+                distance < this.doubleClickDistanceThreshold) {
+                // ✅ DOBLE CLICK VÁLIDO - Abrir GUI
+                this.show(x, y);
+            }
             
-            // Resetear todo
-            this.clickCount = 0;
+            // SIEMPRE resetear después del segundo touch (válido o no)
             this.lastClickTime = 0;
             this.lastClickX = 0;
             this.lastClickY = 0;
+            this.clickCount = 0;
             
-            // Cancelar timer de reset
+            // Cancelar timer
             if (this.resetTimer) {
                 clearTimeout(this.resetTimer);
                 this.resetTimer = null;
             }
         } else {
-            // Primer click o click fuera de rango - guardar posición y tiempo
-            this.clickCount = 1;
+            // PRIMER CLICK - Guardar datos
             this.lastClickTime = currentTime;
             this.lastClickX = x;
             this.lastClickY = y;
+            this.clickCount = 1;
             this.pressStartX = x;
             this.pressStartY = y;
             
@@ -142,7 +144,7 @@ class CursorGUI {
                 clearTimeout(this.resetTimer);
             }
             
-            // Crear nuevo timer para resetear después del threshold
+            // Timer para auto-reset si no hay segundo click
             this.resetTimer = setTimeout(() => {
                 this.lastClickTime = 0;
                 this.lastClickX = 0;
