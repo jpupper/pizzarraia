@@ -675,8 +675,7 @@ function draw() {
             }
             break;
         case 'flower':
-            // Añadir parámetros para flower brush
-            data.minSize = parseFloat(document.getElementById('minSize').value);
+            // Añadir parámetros para flower brush (minSize fijo en 1)
             data.maxSize = parseFloat(document.getElementById('maxSize').value);
             data.frequency = parseFloat(document.getElementById('frequency').value);
             data.animSpeed = parseFloat(document.getElementById('animSpeed').value);

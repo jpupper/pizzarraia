@@ -40,6 +40,13 @@ class CursorGUI {
         this.currentBrushType = null;
         this.dynamicSlidersY = 0; // Posición Y donde empiezan los sliders dinámicos
         
+        // Variables para desplegables (collapsibles)
+        this.globalParamsCollapsed = false; // Parámetros globales abiertos por defecto
+        this.brushParamsCollapsed = true; // Parámetros del brush cerrados por defecto
+        this.globalParamsHeaderY = 0;
+        this.brushParamsHeaderY = 0;
+        this.collapsibleHeaderHeight = 30;
+        
         // Timer para detectar doble click/touch
         this.lastClickTime = 0;
         this.lastClickX = 0;
@@ -249,29 +256,36 @@ class CursorGUI {
         // Calcular posiciones de las barras (de arriba hacia abajo) - MÁS COMPACTO
         let currentY = y - 250; // Empezar más arriba (reducido de 300)
         
-        this.hueBarY = currentY;
-        currentY += this.barSpacing;
+        // Header de parámetros globales
+        this.globalParamsHeaderY = currentY;
+        currentY += this.collapsibleHeaderHeight + 5;
         
-        this.saturationBarY = currentY;
-        currentY += this.barSpacing;
-        
-        this.brightnessBarY = currentY;
-        currentY += this.barSpacing;
-        
-        this.alphaBarY = currentY;
-        currentY += this.barSpacing + 10;
-        
-        // Slots de paleta en el centro
-        this.paletteY = currentY;
-        currentY += 60; // Reducido de 80
-        
-        // Barra de tamaño
-        this.sizeBarY = currentY;
-        currentY += this.barSpacing + 10;
-        
-        // Barra de kaleidoscope
-        this.kaleidoBarY = currentY;
-        currentY += this.barSpacing + 10;
+        // Parámetros globales (solo si no está colapsado)
+        if (!this.globalParamsCollapsed) {
+            this.hueBarY = currentY;
+            currentY += this.barSpacing;
+            
+            this.saturationBarY = currentY;
+            currentY += this.barSpacing;
+            
+            this.brightnessBarY = currentY;
+            currentY += this.barSpacing;
+            
+            this.alphaBarY = currentY;
+            currentY += this.barSpacing + 10;
+            
+            // Slots de paleta en el centro
+            this.paletteY = currentY;
+            currentY += 60; // Reducido de 80
+            
+            // Barra de tamaño
+            this.sizeBarY = currentY;
+            currentY += this.barSpacing + 10;
+            
+            // Barra de kaleidoscope
+            this.kaleidoBarY = currentY;
+            currentY += this.barSpacing + 10;
+        }
         
         // Obtener brush activo DIRECTAMENTE del HTML (fuente única de verdad)
         this.currentBrushType = document.getElementById('brushType') ? document.getElementById('brushType').value : 'classic';
@@ -289,11 +303,17 @@ class CursorGUI {
         // Botones de pinceles a la IZQUIERDA (2 columnas) - POSICIÓN ORIGINAL
         const brushAreaWidth = (this.brushButtonSize * this.brushButtonCols) + (this.brushButtonSpacing * (this.brushButtonCols - 1));
         this.brushButtonsX = this.centerX - this.sizeBarWidth / 2 - brushAreaWidth - 20;
-        this.brushButtonsY = this.hueBarY; // Empezar desde arriba (posición original)
+        this.brushButtonsY = this.globalParamsHeaderY; // Empezar desde el header
         
-        // Sliders dinámicos del brush DEBAJO DE TODO
-        this.dynamicSlidersY = currentY;
-        currentY += brushControls.length * this.barSpacing;
+        // Header de parámetros del brush
+        this.brushParamsHeaderY = currentY;
+        currentY += this.collapsibleHeaderHeight + 5;
+        
+        // Sliders dinámicos del brush (solo si no está colapsado)
+        if (!this.brushParamsCollapsed && brushControls.length > 0) {
+            this.dynamicSlidersY = currentY;
+            currentY += brushControls.length * this.barSpacing;
+        }
         
         // Calcular dimensiones del contenedor PRIMERO (más ancho para incluir botones a la izquierda)
         const barX = this.centerX - this.sizeBarWidth / 2;
@@ -304,12 +324,9 @@ class CursorGUI {
         // Posición del botón de cierre (esquina superior derecha del CONTENEDOR)
         this.closeButtonX = this.containerX + this.containerWidth - this.closeButtonSize - 5;
         this.closeButtonY = this.containerY + 5;
-        // Altura dinámica basada en cuántos controles hay (incluye parámetros)
-        let endY = this.kaleidoBarY + this.barSpacing;
-        if (brushControls.length > 0) {
-            endY = this.dynamicSlidersY + (brushControls.length * this.barSpacing) + 30;
-        }
-        this.containerHeight = endY - this.closeButtonY + this.containerPadding * 2;
+        // Altura dinámica basada en cuántos controles hay (incluye parámetros y headers)
+        let endY = currentY; // Usar currentY que ya incluye todo
+        this.containerHeight = endY - this.closeButtonY + this.containerPadding * 3;
         
         console.log('Cursor GUI mostrado en:', x, y);
     }
@@ -543,6 +560,42 @@ class CursorGUI {
     }
     
     /**
+     * Función de bounding box simple
+     */
+    isPointInRect(px, py, rectCenterX, rectCenterY, rectWidth, rectHeight) {
+        const halfW = rectWidth / 2;
+        const halfH = rectHeight / 2;
+        return px >= rectCenterX - halfW && px <= rectCenterX + halfW &&
+               py >= rectCenterY - halfH && py <= rectCenterY + halfH;
+    }
+    
+    /**
+     * Verificar si un punto está en el header de parámetros globales
+     */
+    isPointInGlobalParamsHeader(x, y) {
+        if (!this.isVisible) return false;
+        const headerCenterY = this.globalParamsHeaderY + this.collapsibleHeaderHeight / 2;
+        const isInside = this.isPointInRect(x, y, this.centerX, headerCenterY, this.sizeBarWidth, this.collapsibleHeaderHeight);
+        if (isInside) {
+            console.log('✅ Click en header GLOBAL');
+        }
+        return isInside;
+    }
+    
+    /**
+     * Verificar si un punto está en el header de parámetros del brush
+     */
+    isPointInBrushParamsHeader(x, y) {
+        if (!this.isVisible) return false;
+        const headerCenterY = this.brushParamsHeaderY + this.collapsibleHeaderHeight / 2;
+        const isInside = this.isPointInRect(x, y, this.centerX, headerCenterY, this.sizeBarWidth, this.collapsibleHeaderHeight);
+        if (isInside) {
+            console.log('✅ Click en header BRUSH');
+        }
+        return isInside;
+    }
+    
+    /**
      * Verificar si un punto está dentro del contenedor completo de la GUI
      */
     isPointInContainer(x, y) {
@@ -748,9 +801,31 @@ class CursorGUI {
     handleClick(x, y) {
         if (!this.isVisible) return false;
         
+        console.log('handleClick llamado:', {x, y, visible: this.isVisible});
+        
         // Verificar si hizo click en el botón de cierre
         if (this.isPointInCloseButton(x, y)) {
             this.hide();
+            return true;
+        }
+        
+        // Verificar si hizo click en el header de parámetros globales
+        if (this.isPointInGlobalParamsHeader(x, y)) {
+            console.log('Click en header de parámetros globales');
+            this.globalParamsCollapsed = !this.globalParamsCollapsed;
+            console.log('Estado globalParamsCollapsed:', this.globalParamsCollapsed);
+            // Recalcular posiciones
+            this.show(this.centerX, this.centerY);
+            return true;
+        }
+        
+        // Verificar si hizo click en el header de parámetros del brush
+        if (this.isPointInBrushParamsHeader(x, y)) {
+            console.log('Click en header de parámetros del brush');
+            this.brushParamsCollapsed = !this.brushParamsCollapsed;
+            console.log('Estado brushParamsCollapsed:', this.brushParamsCollapsed);
+            // Recalcular posiciones
+            this.show(this.centerX, this.centerY);
             return true;
         }
         
@@ -766,72 +841,75 @@ class CursorGUI {
             return true;
         }
         
-        // Verificar si hizo click en la barra de tono
-        const hue = this.getHueAt(x, y);
-        if (hue !== null) {
-            this.applyHue(hue);
-            return true;
-        }
-        
-        // Verificar si hizo click en la barra de saturación
-        const saturation = this.getSaturationAt(x, y);
-        if (saturation !== null) {
-            this.applySaturation(saturation);
-            return true;
-        }
-        
-        // Verificar si hizo click en la barra de brillo
-        const brightness = this.getBrightnessAt(x, y);
-        if (brightness !== null) {
-            this.applyBrightness(brightness);
-            return true;
-        }
-        
-        // Verificar si hizo click en la barra de transparencia
-        const alpha = this.getAlphaAt(x, y);
-        if (alpha !== null) {
-            const alphaInput = document.getElementById('alphaValue');
-            if (alphaInput) {
-                alphaInput.value = alpha;
-                const event = new Event('input');
-                alphaInput.dispatchEvent(event);
-                console.log('Transparencia seleccionada:', alpha);
+        // Verificar barras SOLO si los parámetros globales NO están colapsados
+        if (!this.globalParamsCollapsed) {
+            // Verificar si hizo click en la barra de tono
+            const hue = this.getHueAt(x, y);
+            if (hue !== null) {
+                this.applyHue(hue);
+                return true;
             }
-            return true;
-        }
-        
-        // Verificar si hizo click en la barra de tamaño
-        const size = this.getSizeAt(x, y);
-        if (size !== null) {
-            const sizeInput = document.getElementById('size');
-            if (sizeInput) {
-                sizeInput.value = size;
-                const event = new Event('input');
-                sizeInput.dispatchEvent(event);
-                console.log('Tamaño seleccionado:', size);
+            
+            // Verificar si hizo click en la barra de saturación
+            const saturation = this.getSaturationAt(x, y);
+            if (saturation !== null) {
+                this.applySaturation(saturation);
+                return true;
             }
-            return true;
-        }
-        
-        // Verificar si hizo click en la barra de kaleidoscope
-        const kaleido = this.getKaleidoAt(x, y);
-        if (kaleido !== null) {
-            const kaleidoInput = document.getElementById('kaleidoSegments');
-            if (kaleidoInput) {
-                kaleidoInput.value = kaleido;
-                const event = new Event('input');
-                kaleidoInput.dispatchEvent(event);
-                console.log('Kaleidoscope seleccionado:', kaleido);
+            
+            // Verificar si hizo click en la barra de brillo
+            const brightness = this.getBrightnessAt(x, y);
+            if (brightness !== null) {
+                this.applyBrightness(brightness);
+                return true;
             }
-            return true;
-        }
-        
-        // Verificar si hizo click en un slot de la paleta
-        const paletteSlot = this.getPaletteSlotAt(x, y);
-        if (paletteSlot !== null) {
-            this.selectPaletteSlot(paletteSlot);
-            return true;
-        }
+            
+            // Verificar si hizo click en la barra de transparencia
+            const alpha = this.getAlphaAt(x, y);
+            if (alpha !== null) {
+                const alphaInput = document.getElementById('alphaValue');
+                if (alphaInput) {
+                    alphaInput.value = alpha;
+                    const event = new Event('input');
+                    alphaInput.dispatchEvent(event);
+                    console.log('Transparencia seleccionada:', alpha);
+                }
+                return true;
+            }
+            
+            // Verificar si hizo click en la barra de tamaño
+            const size = this.getSizeAt(x, y);
+            if (size !== null) {
+                const sizeInput = document.getElementById('size');
+                if (sizeInput) {
+                    sizeInput.value = size;
+                    const event = new Event('input');
+                    sizeInput.dispatchEvent(event);
+                    console.log('Tamaño seleccionado:', size);
+                }
+                return true;
+            }
+            
+            // Verificar si hizo click en la barra de kaleidoscope
+            const kaleido = this.getKaleidoAt(x, y);
+            if (kaleido !== null) {
+                const kaleidoInput = document.getElementById('kaleidoSegments');
+                if (kaleidoInput) {
+                    kaleidoInput.value = kaleido;
+                    const event = new Event('input');
+                    kaleidoInput.dispatchEvent(event);
+                    console.log('Kaleidoscope seleccionado:', kaleido);
+                }
+                return true;
+            }
+            
+            // Verificar si hizo click en un slot de la paleta
+            const paletteSlot = this.getPaletteSlotAt(x, y);
+            if (paletteSlot !== null) {
+                this.selectPaletteSlot(paletteSlot);
+                return true;
+            }
+        } // Fin de if (!this.globalParamsCollapsed)
         
         // NO cerrar al hacer click afuera - solo con el botón X
         
@@ -1155,10 +1233,29 @@ class CursorGUI {
         
         const barX = this.centerX - this.sizeBarWidth / 2;
         
-        // ===== CONTENEDOR NEGRO CON MÁS ALPHA =====
-        buffer.fill(30, 30, 30, 240);
+        // ===== CONTENEDOR CON DISEÑO MEJORADO =====
+        // Sombra exterior suave
         buffer.noStroke();
-        buffer.rect(this.containerX, this.containerY, this.containerWidth, this.containerHeight, 10);
+        buffer.fill(0, 0, 0, 80);
+        buffer.rect(this.containerX + 4, this.containerY + 4, this.containerWidth, this.containerHeight, 12);
+        
+        // Fondo principal con gradiente
+        for (let i = 0; i < this.containerHeight; i++) {
+            const alpha = 220 + (i / this.containerHeight) * 30;
+            buffer.fill(25, 25, 30, alpha);
+            buffer.rect(this.containerX, this.containerY + i, this.containerWidth, 1);
+        }
+        
+        // Borde brillante
+        buffer.noFill();
+        buffer.stroke(138, 79, 191, 100);
+        buffer.strokeWeight(2);
+        buffer.rect(this.containerX, this.containerY, this.containerWidth, this.containerHeight, 12);
+        
+        // Borde interior sutil
+        buffer.stroke(60, 60, 70, 150);
+        buffer.strokeWeight(1);
+        buffer.rect(this.containerX + 2, this.containerY + 2, this.containerWidth - 4, this.containerHeight - 4, 10);
         
         // ===== BOTÓN DE CIERRE (X) =====
         buffer.fill(200, 50, 50, 220);
@@ -1183,6 +1280,31 @@ class CursorGUI {
             this.closeButtonY + this.closeButtonSize - margin
         );
         
+        // ===== HEADER DE PARÁMETROS GLOBALES (REDISEÑADO COMPACTO) =====
+        const globalHeaderCenterY = this.globalParamsHeaderY + this.collapsibleHeaderHeight / 2;
+        
+        // Fondo sólido oscuro (usando CENTER)
+        buffer.rectMode(CORNER);
+        buffer.noStroke();
+        buffer.fill(40, 40, 45, 230);
+        buffer.rect(barX, this.globalParamsHeaderY, this.sizeBarWidth, this.collapsibleHeaderHeight, 6);
+        
+        // Borde izquierdo de color (indicador visual)
+        buffer.fill(138, 79, 191, 255);
+        buffer.rect(barX, this.globalParamsHeaderY, 3, this.collapsibleHeaderHeight, 6, 0, 0, 6);
+        
+        // Texto simple sin sombra
+        buffer.fill(255, 255, 255, 255);
+        buffer.textAlign(LEFT, CENTER);
+        buffer.textSize(11);
+        buffer.textStyle(NORMAL);
+        buffer.text('Parámetros Globales', barX + 10, globalHeaderCenterY);
+        
+        // Flecha simple a la derecha
+        buffer.textAlign(RIGHT, CENTER);
+        buffer.textSize(12);
+        buffer.text(this.globalParamsCollapsed ? '▶' : '▼', barX + this.sizeBarWidth - 8, globalHeaderCenterY);
+        
         // Obtener el color actual
         const currentColor = document.getElementById('c1') ? document.getElementById('c1').value : '#FF0000';
         const r = parseInt(currentColor.substr(1, 2), 16);
@@ -1190,6 +1312,8 @@ class CursorGUI {
         const b = parseInt(currentColor.substr(5, 2), 16);
         const currentHSB = this.rgbToHsb(r, g, b);
         
+        // ===== PARÁMETROS GLOBALES (solo si no está colapsado) =====
+        if (!this.globalParamsCollapsed) {
         // ===== BARRA DE TONO (HUE) =====
         buffer.noStroke();
         buffer.fill(50, 50, 50, 200);
@@ -1439,18 +1563,40 @@ class CursorGUI {
         buffer.text('Tamaño', this.centerX, this.sizeBarY - 10);
         buffer.text('Kaleidoscope', this.centerX, this.kaleidoBarY - 10);
         
-        // ===== SLIDERS DINÁMICOS DEL BRUSH =====
+        } // Fin de if (!this.globalParamsCollapsed)
+        
+        // ===== HEADER DE PARÁMETROS DEL BRUSH (REDISEÑADO COMPACTO) =====
+        const brushHeaderCenterY = this.brushParamsHeaderY + this.collapsibleHeaderHeight / 2;
+        
+        // Fondo sólido oscuro
+        buffer.rectMode(CORNER);
+        buffer.noStroke();
+        buffer.fill(40, 40, 45, 230);
+        buffer.rect(barX, this.brushParamsHeaderY, this.sizeBarWidth, this.collapsibleHeaderHeight, 6);
+        
+        // Borde izquierdo de color azul (indicador visual)
+        buffer.fill(79, 138, 191, 255);
+        buffer.rect(barX, this.brushParamsHeaderY, 3, this.collapsibleHeaderHeight, 6, 0, 0, 6);
+        
+        // Texto simple sin sombra
+        buffer.fill(255, 255, 255, 255);
+        buffer.textAlign(LEFT, CENTER);
+        buffer.textSize(11);
+        buffer.textStyle(NORMAL);
+        buffer.text('Parámetros del Brush', barX + 10, brushHeaderCenterY);
+        
+        // Flecha simple a la derecha
+        buffer.textAlign(RIGHT, CENTER);
+        buffer.textSize(12);
+        buffer.text(this.brushParamsCollapsed ? '▶' : '▼', barX + this.sizeBarWidth - 8, brushHeaderCenterY);
+        
+        // ===== SLIDERS DINÁMICOS DEL BRUSH (solo si no está colapsado) =====
         // OBTENER BRUSH ACTIVO DEL HTML (fuente única de verdad) y actualizar this.currentBrushType
         this.currentBrushType = document.getElementById('brushType') ? document.getElementById('brushType').value : 'classic';
         const activeBrush = window.brushRegistry ? brushRegistry.get(this.currentBrushType) : null;
         const brushControls = activeBrush ? activeBrush.getCursorGUIControls() : [];
         
-        if (brushControls.length > 0) {
-            buffer.fill(255, 255, 255, 200);
-            buffer.textSize(12);
-            buffer.textAlign(CENTER, TOP);
-            buffer.text('Parámetros del Brush', this.centerX, this.dynamicSlidersY - 25);
-            
+        if (!this.brushParamsCollapsed && brushControls.length > 0) {
             let currentSliderY = this.dynamicSlidersY;
             brushControls.forEach(control => {
                 this.drawDynamicSlider(buffer, control, currentSliderY);
@@ -1605,10 +1751,22 @@ class CursorGUI {
                 break;
                 
             case 'fill':
-                // Balde de pintura (simplificado)
+                // Balde de pintura (igual al HTML SVG)
                 buffer.noStroke();
-                buffer.triangle(0, -size * 0.3, size * 0.25, size * 0.1, -size * 0.25, size * 0.1);
-                buffer.ellipse(size * 0.3, size * 0.3, size * 0.2, size * 0.2);
+                // Gota de agua (arriba derecha)
+                buffer.ellipse(size * 0.35, -size * 0.15, size * 0.15, size * 0.2);
+                // Balde principal (trapecio + triángulos)
+                buffer.beginShape();
+                buffer.vertex(-size * 0.35, -size * 0.05);
+                buffer.vertex(size * 0.15, -size * 0.05);
+                buffer.vertex(size * 0.25, size * 0.35);
+                buffer.vertex(-size * 0.45, size * 0.35);
+                buffer.endShape(CLOSE);
+                // Asa del balde (arco)
+                buffer.noFill();
+                buffer.strokeWeight(2);
+                buffer.stroke(255, 255, 255, 255);
+                buffer.arc(-size * 0.1, -size * 0.2, size * 0.4, size * 0.3, PI + 0.5, TWO_PI - 0.5);
                 break;
                 
             case 'image':

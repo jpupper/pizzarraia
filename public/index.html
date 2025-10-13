@@ -247,9 +247,9 @@
                 <option value="Josefin Sans">Josefin Sans</option>
             </select>
             <br>
-            <label>Text Size: <span id="textSize-value">40</span></label>
-            <input type="range" value="40" id="textSize" min="10" max="200" step="5" class="jpslider">
-            <br>
+            <p style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-top: 5px;">
+                💡 Usa el slider de Tamaño general para ajustar el tamaño del texto
+            </p>
         </div>
         
         <!-- Spirograph Brush Controls -->
@@ -298,10 +298,9 @@
         
         <!-- Flower Brush Controls -->
         <div id="flowerBrushParams" class="brushParams" style="display: none;">
-            <label>Tamaño Mínimo: <span id="minSize-value">2</span></label>
-            <input type="range" value="2" id="minSize" min="1" max="20" step="1" class="jpslider"
-                   oninput="document.getElementById('minSize-value').textContent = this.value">
-            <br>
+            <p style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-bottom: 10px;">
+                💡 Tamaño mínimo fijo en 1
+            </p>
             <label>Tamaño Máximo: <span id="maxSize-value">14</span></label>
             <input type="range" value="14" id="maxSize" min="10" max="50" step="1" class="jpslider"
                    oninput="document.getElementById('maxSize-value').textContent = this.value">

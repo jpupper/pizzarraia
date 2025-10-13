@@ -743,8 +743,20 @@ class ArtBrush extends BaseBrush {
         // Dibujar 5 círculos pequeños alrededor
         for (let i = 0; i < 5; i++) {
             const angle = (TWO_PI / 5) * i;
-            const px = x + cos(angle) * size * 0.3;
-            const py = y + sin(angle) * size * 0.3;
+            const px = x + cos(angle) * size * 0.5;
+            const py = y + sin(angle) * size * 0.5;
+            
+            let offset = 10;
+            
+            buffer.fill(buffer.color(255));
+            buffer.noStroke();
+            buffer.ellipse(px-offset, py-offset, size * 0.15, size * 0.15);
+
+            
+            buffer.fill(buffer.color(0));
+            buffer.noStroke();
+            buffer.ellipse(px+offset, py+offset, size * 0.15, size * 0.15);
+            
             buffer.fill(color);
             buffer.noStroke();
             buffer.ellipse(px, py, size * 0.15, size * 0.15);

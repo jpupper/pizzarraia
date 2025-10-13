@@ -888,10 +888,11 @@ select option {
 }
 
 .socket-btn.inactive {
-    background-color: #2a5e2a;
+    background-color: rgba(100, 100, 100, 0.4);
     color: #888;
-    border-color: transparent;
-    box-shadow: none;
+    border-color: rgba(255, 0, 0, 0.5);
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+    opacity: 0.6;
 }
 
 .tab-btn {

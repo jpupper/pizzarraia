@@ -229,6 +229,14 @@ function setupBrushTypeEvents() {
         break;
       case 'image':
         imageBrushParams.style.display = 'block';
+        // Cargar estrella por defecto si no hay imagen cargada
+        const manager = typeof getImageBrushManager === 'function' ? getImageBrushManager() : null;
+        if (manager && !manager.hasImage()) {
+          // Cargar estrella como preset por defecto
+          if (typeof loadEmojiPreset === 'function') {
+            loadEmojiPreset('⭐');
+          }
+        }
         break;
       case 'flower':
         flowerBrushParams.style.display = 'block';
