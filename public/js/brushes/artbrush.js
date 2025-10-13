@@ -728,6 +728,26 @@ class ArtBrush extends BaseBrush {
         });
     }
 
+    getCursorGUIControls() {
+        return [
+            { id: 'particleCount', label: 'Partículas', min: 1, max: 30, default: 10, step: 1 }
+        ];
+    }
+    
+    drawCursorGUIPreview(buffer, x, y, size, color) {
+        buffer.push();
+        // Dibujar 5 círculos pequeños alrededor
+        for (let i = 0; i < 5; i++) {
+            const angle = (TWO_PI / 5) * i;
+            const px = x + cos(angle) * size * 0.3;
+            const py = y + sin(angle) * size * 0.3;
+            buffer.fill(color);
+            buffer.noStroke();
+            buffer.ellipse(px, py, size * 0.15, size * 0.15);
+        }
+        buffer.pop();
+    }
+    
     renderControls() {
         return `
             <label>Particle Count: <span id="particleCount-value">10</span></label>

@@ -14,6 +14,18 @@ class StandardBrush extends BaseBrush {
         });
     }
 
+    getCursorGUIControls() {
+        return []; // No tiene parámetros adicionales
+    }
+    
+    drawCursorGUIPreview(buffer, x, y, size, color) {
+        buffer.push();
+        buffer.fill(color);
+        buffer.noStroke();
+        buffer.ellipse(x, y, size * 0.6, size * 0.6);
+        buffer.pop();
+    }
+    
     renderControls() {
         return '';
     }

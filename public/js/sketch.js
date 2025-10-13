@@ -397,26 +397,46 @@ function drawLinePreview(buffer) {
         const col = color(colorValue);
         col.setAlpha(Math.min(alphaValue, 150)); // Más transparente para el preview
         
+        // Convertir mouseX/Y actual a coordenadas de canvas
+        const currentCanvasCoords = screenToCanvas(mouseX, mouseY);
+        
+        // Si estamos dibujando en guiBuffer, convertir coordenadas de canvas a pantalla
+        let startScreenX, startScreenY, endScreenX, endScreenY;
+        if (targetBuffer === guiBuffer) {
+            const startScreen = canvasToScreen(lineStartX, lineStartY);
+            const endScreen = canvasToScreen(currentCanvasCoords.x, currentCanvasCoords.y);
+            startScreenX = startScreen.x;
+            startScreenY = startScreen.y;
+            endScreenX = endScreen.x;
+            endScreenY = endScreen.y;
+        } else {
+            // Si es drawBuffer, usar coordenadas de canvas directamente
+            startScreenX = lineStartX;
+            startScreenY = lineStartY;
+            endScreenX = currentCanvasCoords.x;
+            endScreenY = currentCanvasCoords.y;
+        }
+        
         // Dibujar en el buffer especificado
         targetBuffer.push(); // Guardar estado
         targetBuffer.stroke(col);
         targetBuffer.strokeWeight(brushSize);
         targetBuffer.strokeCap(ROUND);
         
-        // Dibujar línea desde el punto inicial hasta la posición actual del mouse
-        targetBuffer.line(lineStartX, lineStartY, mouseX, mouseY);
+        // Dibujar línea
+        targetBuffer.line(startScreenX, startScreenY, endScreenX, endScreenY);
         
         // Dibujar círculos en los extremos para mejor visualización
         targetBuffer.noStroke();
         targetBuffer.fill(col);
-        targetBuffer.ellipse(lineStartX, lineStartY, brushSize * 0.5, brushSize * 0.5); // Punto inicial
-        targetBuffer.ellipse(mouseX, mouseY, brushSize * 0.5, brushSize * 0.5); // Punto actual
+        targetBuffer.ellipse(startScreenX, startScreenY, brushSize * 0.5, brushSize * 0.5); // Punto inicial
+        targetBuffer.ellipse(endScreenX, endScreenY, brushSize * 0.5, brushSize * 0.5); // Punto actual
         targetBuffer.pop(); // Restaurar estado
     }
 }
 
-// Función para dibujar un puntero circular que muestra el tamaño del pincel actual
-function drawBrushCursor(buffer) {
+// Función para dibujar el cursor personalizado
+function drawCustomCursor(buffer) {
     // Usar guiBuffer por defecto si no se especifica
     const targetBuffer = buffer || guiBuffer;
     
@@ -556,7 +576,7 @@ function draw() {
     drawRemoteCursors(guiBuffer);
     
     // Dibujar el puntero circular que muestra el tamaño del pincel (local) en el GUI buffer
-    drawBrushCursor(guiBuffer);
+    drawCustomCursor(guiBuffer);
     
     // Dibujar preview de línea si estamos usando Line Brush en el GUI buffer
     drawLinePreview(guiBuffer);
@@ -1963,9 +1983,16 @@ function drawScrollbars(buffer) {
     const contentWidth = windowWidth * zoomLevel;
     const contentHeight = windowHeight * zoomLevel;
     
+    // Calcular rango de pan
+    const maxPanX = 0;
+    const minPanX = windowWidth - contentWidth;
+    const maxPanY = 0;
+    const minPanY = windowHeight - contentHeight;
+    
     // Calcular posición visible (normalizada 0-1)
-    const visibleX = -panX / contentWidth;
-    const visibleY = -panY / contentHeight;
+    // visibleX/Y representa qué porcentaje del contenido está fuera de vista a la izquierda/arriba
+    const visibleX = minPanX !== 0 ? (panX - maxPanX) / (minPanX - maxPanX) : 0;
+    const visibleY = minPanY !== 0 ? (panY - maxPanY) / (minPanY - maxPanY) : 0;
     const visibleWidth = windowWidth / contentWidth;
     const visibleHeight = windowHeight / contentHeight;
     

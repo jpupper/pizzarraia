@@ -426,6 +426,22 @@ class ImageBrush extends BaseBrush {
         });
     }
 
+    getCursorGUIControls() {
+        return [];
+    }
+    
+    drawCursorGUIPreview(buffer, x, y, size, color) {
+        buffer.push();
+        buffer.fill(color);
+        buffer.noStroke();
+        buffer.rect(x - size * 0.3, y - size * 0.3, size * 0.6, size * 0.6, 5);
+        buffer.fill(255);
+        buffer.textAlign(CENTER, CENTER);
+        buffer.textSize(size * 0.4);
+        buffer.text('🖼', x, y);
+        buffer.pop();
+    }
+    
     renderControls() {
         return `
             <h4 style="margin-top: 0; margin-bottom: 10px; color: var(--text); font-size: 0.95rem;">Emojis Presets</h4>

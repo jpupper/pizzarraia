@@ -18,6 +18,27 @@ class PixelBrush extends BaseBrush {
         });
     }
 
+    getCursorGUIControls() {
+        return [
+            { id: 'gridCols', label: 'Cols', min: 8, max: 64, default: 32, step: 4 },
+            { id: 'gridRows', label: 'Rows', min: 8, max: 64, default: 32, step: 4 }
+        ];
+    }
+    
+    drawCursorGUIPreview(buffer, x, y, size, color) {
+        buffer.push();
+        buffer.fill(color);
+        buffer.noStroke();
+        // Dibujar una grilla 3x3
+        const cellSize = size / 4;
+        for (let i = -1; i <= 1; i++) {
+            for (let j = -1; j <= 1; j++) {
+                buffer.rect(x + i * cellSize, y + j * cellSize, cellSize * 0.8, cellSize * 0.8);
+            }
+        }
+        buffer.pop();
+    }
+    
     renderControls() {
         return `
             <label for="gridCols">Columnas: <span id="gridColsValue">32</span></label>
