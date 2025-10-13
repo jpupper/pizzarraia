@@ -18,6 +18,22 @@ class TextBrush extends BaseBrush {
         });
     }
 
+    getCursorGUIControls() {
+        return [
+            { id: 'textSize', label: 'Tamaño', min: 10, max: 100, default: 40, step: 5 }
+        ];
+    }
+    
+    drawCursorGUIPreview(buffer, x, y, size, color) {
+        buffer.push();
+        buffer.fill(color);
+        buffer.noStroke();
+        buffer.textAlign(CENTER, CENTER);
+        buffer.textSize(size * 0.6);
+        buffer.text('A', x, y);
+        buffer.pop();
+    }
+    
     renderControls() {
         return `
             <label>Text</label>

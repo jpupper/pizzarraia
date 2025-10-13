@@ -16,6 +16,18 @@ class LineBrush extends BaseBrush {
         this.startY = null;
     }
 
+    getCursorGUIControls() {
+        return [];
+    }
+    
+    drawCursorGUIPreview(buffer, x, y, size, color) {
+        buffer.push();
+        buffer.stroke(color);
+        buffer.strokeWeight(3);
+        buffer.line(x - size * 0.3, y - size * 0.3, x + size * 0.3, y + size * 0.3);
+        buffer.pop();
+    }
+    
     renderControls() {
         return '';
     }

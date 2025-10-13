@@ -17,12 +17,12 @@ function simpleHash(str) {
 }
 
 /**
- * Busca imágenes usando Lorem Picsum
+ * Busca stickers/emojis usando OpenMoji API (sin CORS)
  */
 async function searchImages() {
     const searchInput = document.getElementById('imageSearchInput');
     const resultsContainer = document.getElementById('imageSearchResults');
-    const query = searchInput.value.trim();
+    const query = searchInput.value.trim().toLowerCase();
     
     if (!query) {
         resultsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: rgba(255,255,255,0.5); font-size: 0.8rem;">Escribe algo para buscar</p>';
@@ -33,26 +33,101 @@ async function searchImages() {
     resultsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: rgba(255,255,255,0.7); font-size: 0.8rem;">Buscando...</p>';
     
     try {
-        // Usar Lorem Picsum con IDs basados en hash del query
-        const baseHash = simpleHash(query);
-        const images = [];
+        // Usar OpenMoji API - emojis con transparencia
+        const response = await fetch('https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/data/openmoji.json');
+        const allEmojis = await response.json();
         
-        for (let i = 0; i < 9; i++) {
-            // Generar IDs consistentes basados en el query
-            const imageId = (baseHash + i * 37) % 1000; // 0-999
-            const cacheBuster = Date.now(); // Para forzar recarga
-            images.push({
-                id: imageId,
-                url: `https://picsum.photos/id/${imageId}/200/200?t=${cacheBuster}`,
-                download_url: `https://picsum.photos/id/${imageId}/400/400?t=${cacheBuster}`
-            });
+        // Filtrar emojis que coincidan con la búsqueda
+        const matchingEmojis = allEmojis.filter(emoji => {
+            const annotation = emoji.annotation ? emoji.annotation.toLowerCase() : '';
+            const tags = emoji.tags ? emoji.tags.toLowerCase() : '';
+            return annotation.includes(query) || tags.includes(query);
+        }).slice(0, 9); // Tomar solo los primeros 9
+        
+        // Si no hay coincidencias, buscar emojis populares
+        if (matchingEmojis.length === 0) {
+            resultsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: rgba(255,255,255,0.7); font-size: 0.8rem;">No se encontraron resultados. Mostrando emojis populares...</p>';
+            const popularEmojis = allEmojis.filter(e => e.group === 'smileys-emotion').slice(0, 9);
+            renderEmojiResults(popularEmojis);
+            return;
         }
         
-        renderImageResults(images);
+        renderEmojiResults(matchingEmojis);
     } catch (error) {
-        console.error('Error buscando imágenes:', error);
+        console.error('Error buscando emojis:', error);
         resultsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: rgba(255,67,54,0.8); font-size: 0.8rem;">Error al buscar. Intenta de nuevo.</p>';
     }
+}
+
+/**
+ * Renderiza los resultados de emojis
+ */
+function renderEmojiResults(emojis) {
+    const resultsContainer = document.getElementById('imageSearchResults');
+    resultsContainer.innerHTML = '';
+    
+    emojis.forEach(emoji => {
+        const emojiElement = document.createElement('div');
+        const emojiUrl = `https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/svg/${emoji.hexcode}.svg`;
+        
+        emojiElement.style.cssText = `
+            width: 100%;
+            aspect-ratio: 1;
+            background-image: url('${emojiUrl}');
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        `;
+        
+        emojiElement.onmouseover = () => {
+            emojiElement.style.transform = 'scale(1.1)';
+            emojiElement.style.borderColor = 'rgba(138, 79, 191, 0.8)';
+        };
+        
+        emojiElement.onmouseout = () => {
+            emojiElement.style.transform = 'scale(1)';
+            emojiElement.style.borderColor = 'rgba(255,255,255,0.1)';
+        };
+        
+        emojiElement.onclick = async () => {
+            try {
+                const response = await fetch(emojiUrl);
+                const svgText = await response.text();
+                const blob = new Blob([svgText], { type: 'image/svg+xml' });
+                const url = URL.createObjectURL(blob);
+                
+                const img = new Image();
+                img.onload = () => {
+                    // Cambiar a ImageBrush y cargar la imagen
+                    const brushTypeSelect = document.getElementById('brushType');
+                    if (brushTypeSelect) {
+                        brushTypeSelect.value = 'image';
+                        brushTypeSelect.dispatchEvent(new Event('change'));
+                    }
+                    
+                    // Cargar imagen en el ImageBrush
+                    if (window.brushRegistry) {
+                        const imageBrush = brushRegistry.get('image');
+                        if (imageBrush && typeof imageBrush.loadImageFromElement === 'function') {
+                            imageBrush.loadImageFromElement(img);
+                            console.log('Emoji cargado:', emoji.annotation);
+                        }
+                    }
+                    URL.revokeObjectURL(url);
+                };
+                img.src = url;
+            } catch (error) {
+                console.error('Error cargando emoji:', error);
+            }
+        };
+        
+        resultsContainer.appendChild(emojiElement);
+    });
 }
 
 /**

@@ -16,6 +16,20 @@ class FillBrush extends BaseBrush {
         });
     }
 
+    getCursorGUIControls() {
+        return [
+            { id: 'fillTolerance', label: 'Tolerancia', min: 0, max: 50, default: 0, step: 1 }
+        ];
+    }
+    
+    drawCursorGUIPreview(buffer, x, y, size, color) {
+        buffer.push();
+        buffer.fill(color);
+        buffer.noStroke();
+        buffer.rect(x - size * 0.3, y - size * 0.3, size * 0.6, size * 0.6);
+        buffer.pop();
+    }
+    
     renderControls() {
         return `
             <label>Tolerance: <span id="fillTolerance-value">0</span></label>
