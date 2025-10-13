@@ -15,6 +15,7 @@ window.onload = function() {
     setupTabs();
     checkUserAuthentication();
     setRandomFirstColor(); // Color random en primer slot
+    setupGuiAutoClose(); // Cerrar GUI al hacer click afuera
 };
 
 // Función para inicializar sliders desde config.js
@@ -1379,6 +1380,22 @@ function checkWelcomeModal() {
       modal.classList.remove('active');
     }
   }
+}
+
+// Función para cerrar la GUI al hacer click afuera
+function setupGuiAutoClose() {
+    document.addEventListener('mousedown', function(event) {
+        const gui = document.getElementById('gui');
+        const openButton = document.getElementById('opengui');
+        
+        // Verificar si la GUI está visible
+        if (gui.style.display === 'block') {
+            // Verificar si el click fue fuera de la GUI
+            if (!gui.contains(event.target)) {
+                closeGui();
+            }
+        }
+    });
 }
 
 // Hacer las funciones accesibles globalmente

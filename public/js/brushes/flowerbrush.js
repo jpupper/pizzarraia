@@ -17,7 +17,8 @@ class FlowerBrush extends BaseBrush {
                 animSpeed: { min: 0, max: 0.15, default: 0.1, step: 0.005, label: 'Velocidad Anim' },
                 strokeWeight: { min: 1, max: 5, default: 4, step: 1, label: 'Grosor Trazo' },
                 strokeAlpha: { min: 5, max: 100, default: 45, step: 5, label: 'Alpha Trazo' },
-                shrinkSpeed: { min: 0, max: 2, default: 0.15, step: 0.01, label: 'Velocidad Encogimiento' }
+                shrinkSpeed: { min: 0, max: 2, default: 0.15, step: 0.01, label: 'Velocidad Encogimiento' },
+                shadowOffset: { min: 0, max: 15, default: 10, step: 1, label: 'Offset Sombra' }
             }
         });
         
@@ -56,6 +57,10 @@ class FlowerBrush extends BaseBrush {
             <label>Velocidad Encogimiento: <span id="shrinkSpeed-value">0.15</span></label>
             <input type="range" value="0.15" id="shrinkSpeed" min="0" max="2" step="0.01" class="jpslider"
                    oninput="document.getElementById('shrinkSpeed-value').textContent = parseFloat(this.value).toFixed(2)">
+            <br>
+            <label>Offset Sombra: <span id="shadowOffset-value">10</span></label>
+            <input type="range" value="10" id="shadowOffset" min="0" max="15" step="1" class="jpslider"
+                   oninput="document.getElementById('shadowOffset-value').textContent = this.value">
             <br>
             <p style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-top: 10px;">
                 🌸 Dibuja flores que se encogen y resetean continuamente
@@ -145,7 +150,8 @@ class FlowerBrush extends BaseBrush {
             animSpeed = 0.1,
             strokeWeight = 4,
             strokeAlpha = 45,
-            shrinkSpeed = 0.15
+            shrinkSpeed = 0.15,
+            shadowOffset = 10
         } = params;
         
         // Solo actualizar si shrinkSpeed > 0
@@ -164,15 +170,13 @@ class FlowerBrush extends BaseBrush {
             this.frameCounter++;
         }
         
-        let offset = 10
-
         // Dibujar sombra negra
         const blackColor = buffer.color(0, 0, 0);
-        this.drawShape(buffer, x-offset, y-offset, this.currentSize, frequency, animSpeed, blackColor, strokeWeight, strokeAlpha);
+        this.drawShape(buffer, x-shadowOffset, y-shadowOffset, this.currentSize, frequency, animSpeed, blackColor, strokeWeight, strokeAlpha);
 
         // Dibujar sombra blanca
         const whiteColor = buffer.color(255);
-        this.drawShape(buffer, x+offset, y+offset, this.currentSize, frequency, animSpeed, whiteColor, strokeWeight, strokeAlpha);
+        this.drawShape(buffer, x+shadowOffset, y+shadowOffset, this.currentSize, frequency, animSpeed, whiteColor, strokeWeight, strokeAlpha);
 
         // Dibujar la flor con el color principal
         this.drawShape(buffer, x, y, this.currentSize, frequency, animSpeed, color, strokeWeight, strokeAlpha);
@@ -189,7 +193,8 @@ class FlowerBrush extends BaseBrush {
             animSpeed: params.animSpeed || 0.1,
             strokeWeight: params.strokeWeight || 4,
             strokeAlpha: params.strokeAlpha || 45,
-            shrinkSpeed: params.shrinkSpeed || 0.15
+            shrinkSpeed: params.shrinkSpeed || 0.15,
+            shadowOffset: params.shadowOffset || 10
         };
     }
 }

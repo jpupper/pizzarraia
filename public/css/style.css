@@ -541,6 +541,40 @@ select:focus {
     transform: rotate(90deg);
 }
 
+/* Estilos para botones de zoom */
+.zoom-btn {
+    width: 45px;
+    height: 45px;
+    background-color: var(--primary);
+    border: 2px solid var(--accent);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.zoom-btn:hover {
+    transform: scale(1.1);
+    background-color: var(--primary-light);
+    box-shadow: 0 6px 20px rgba(138, 79, 191, 0.4);
+}
+
+.zoom-btn:active {
+    transform: scale(0.95);
+}
+
+.zoom-btn svg {
+    color: var(--text);
+    transition: transform 0.2s ease;
+}
+
+.zoom-btn:hover svg {
+    transform: scale(1.1);
+}
+
 select option {
     font-family: inherit;
     font-size: 1rem;

@@ -9,7 +9,8 @@ class CursorGUI {
         this.centerX = 0;
         this.centerY = 0;
         this.sizeBarWidth = 200; // Ancho de las barras
-        this.sizeBarHeight = 30; // Alto de las barras
+        this.sizeBarHeight = 25; // Alto de las barras (más compacto: 30 -> 25)
+        this.barSpacing = 45; // Espaciado entre barras (más compacto: 60 -> 45)
         this.hueBarY = 0; // Posición Y de la barra de tono (arriba)
         this.saturationBarY = 0; // Posición Y de la barra de saturación
         this.brightnessBarY = 0; // Posición Y de la barra de brillo
@@ -17,6 +18,21 @@ class CursorGUI {
         this.paletteY = 0; // Posición Y de los slots de paleta
         this.sizeBarY = 0; // Posición Y de la barra de tamaño (abajo)
         this.brushButtonsY = 0; // Posición Y de los botones de pincel
+        
+        // Variables para hacer la GUI movible
+        this.isDragging = false;
+        this.dragOffsetX = 0;
+        this.dragOffsetY = 0;
+        this.closeButtonSize = 30;
+        this.closeButtonX = 0;
+        this.closeButtonY = 0;
+        
+        // Variables para el contenedor
+        this.containerPadding = 20;
+        this.containerX = 0;
+        this.containerY = 0;
+        this.containerWidth = 0;
+        this.containerHeight = 0
         
         // Timer para detectar doble click/touch
         this.lastClickTime = 0;
@@ -199,31 +215,42 @@ class CursorGUI {
         this.centerX = x;
         this.centerY = y;
         
-        // Calcular posiciones de las barras (de arriba hacia abajo)
-        let currentY = y - 300; // Empezar más arriba para dar espacio a los botones de pincel
+        // Calcular posiciones de las barras (de arriba hacia abajo) - MÁS COMPACTO
+        let currentY = y - 250; // Empezar más arriba (reducido de 300)
         
         this.hueBarY = currentY;
-        currentY += 60;
+        currentY += this.barSpacing;
         
         this.saturationBarY = currentY;
-        currentY += 60;
+        currentY += this.barSpacing;
         
         this.brightnessBarY = currentY;
-        currentY += 60;
+        currentY += this.barSpacing;
         
         this.alphaBarY = currentY;
-        currentY += 70;
+        currentY += this.barSpacing + 10;
         
         // Slots de paleta en el centro
         this.paletteY = currentY;
-        currentY += 80;
+        currentY += 60; // Reducido de 80
         
         // Barra de tamaño
         this.sizeBarY = currentY;
-        currentY += 70;
+        currentY += this.barSpacing + 10;
         
         // Botones de pinceles abajo
         this.brushButtonsY = currentY;
+        
+        // Posición del botón de cierre (esquina superior derecha)
+        this.closeButtonX = this.centerX + this.sizeBarWidth / 2 - this.closeButtonSize / 2;
+        this.closeButtonY = y - 270; // Arriba de todo
+        
+        // Calcular dimensiones del contenedor
+        const barX = this.centerX - this.sizeBarWidth / 2;
+        this.containerX = barX - this.containerPadding;
+        this.containerY = this.closeButtonY - this.containerPadding;
+        this.containerWidth = this.sizeBarWidth + this.containerPadding * 2;
+        this.containerHeight = this.brushButtonsY - this.closeButtonY + 60 + this.containerPadding * 2;
         
         console.log('Cursor GUI mostrado en:', x, y);
     }
@@ -387,6 +414,11 @@ class CursorGUI {
         
         const barX = this.centerX - this.sizeBarWidth / 2;
         
+        // Verificar botón de cierre
+        if (this.isPointInCloseButton(x, y)) {
+            return true;
+        }
+        
         // Verificar todas las barras
         const bars = [
             { y: this.hueBarY },
@@ -414,6 +446,37 @@ class CursorGUI {
         }
         
         return false;
+    }
+    
+    /**
+     * Verificar si un punto está en el botón de cierre
+     */
+    isPointInCloseButton(x, y) {
+        if (!this.isVisible) return false;
+        return x >= this.closeButtonX && x <= this.closeButtonX + this.closeButtonSize &&
+               y >= this.closeButtonY && y <= this.closeButtonY + this.closeButtonSize;
+    }
+    
+    /**
+     * Verificar si un punto está dentro del contenedor completo de la GUI
+     */
+    isPointInContainer(x, y) {
+        if (!this.isVisible) return false;
+        return x >= this.containerX && x <= this.containerX + this.containerWidth &&
+               y >= this.containerY && y <= this.containerY + this.containerHeight;
+    }
+    
+    /**
+     * Verificar si un punto está en el área de arrastre (barra superior)
+     */
+    isPointInDragArea(x, y) {
+        if (!this.isVisible) return false;
+        const barX = this.centerX - this.sizeBarWidth / 2;
+        const dragAreaY = this.closeButtonY;
+        const dragAreaHeight = 30;
+        return x >= barX && x <= barX + this.sizeBarWidth &&
+               y >= dragAreaY && y <= dragAreaY + dragAreaHeight &&
+               !this.isPointInCloseButton(x, y);
     }
     
     /**
@@ -524,10 +587,64 @@ class CursorGUI {
     }
     
     /**
+     * Iniciar arrastre de la GUI
+     */
+    startDrag(x, y) {
+        if (this.isPointInDragArea(x, y)) {
+            this.isDragging = true;
+            this.dragOffsetX = x - this.centerX;
+            this.dragOffsetY = y - this.centerY;
+            return true;
+        }
+        return false;
+    }
+    
+    /**
+     * Actualizar posición durante el arrastre
+     */
+    updateDrag(x, y) {
+        if (this.isDragging) {
+            const newCenterX = x - this.dragOffsetX;
+            const newCenterY = y - this.dragOffsetY;
+            
+            // Actualizar todas las posiciones
+            const deltaX = newCenterX - this.centerX;
+            const deltaY = newCenterY - this.centerY;
+            
+            this.centerX = newCenterX;
+            this.centerY = newCenterY;
+            this.hueBarY += deltaY;
+            this.saturationBarY += deltaY;
+            this.brightnessBarY += deltaY;
+            this.alphaBarY += deltaY;
+            this.paletteY += deltaY;
+            this.sizeBarY += deltaY;
+            this.brushButtonsY += deltaY;
+            this.closeButtonX += deltaX;
+            this.closeButtonY += deltaY;
+            this.containerX += deltaX;
+            this.containerY += deltaY;
+        }
+    }
+    
+    /**
+     * Terminar arrastre
+     */
+    endDrag() {
+        this.isDragging = false;
+    }
+    
+    /**
      * Manejar click en el selector
      */
     handleClick(x, y) {
         if (!this.isVisible) return false;
+        
+        // Verificar si hizo click en el botón de cierre
+        if (this.isPointInCloseButton(x, y)) {
+            this.hide();
+            return true;
+        }
         
         // Debug: log de la posición Y del click
         console.log('Click en Y:', y, 'Barras - Hue:', this.hueBarY, 'Sat:', this.saturationBarY, 'Bright:', this.brightnessBarY, 'Alpha:', this.alphaBarY, 'Size:', this.sizeBarY, 'Brushes:', this.brushButtonsY);
@@ -593,11 +710,7 @@ class CursorGUI {
             return true;
         }
         
-        // Si hace click fuera, cerrar
-        if (!this.isPointInside(x, y)) {
-            this.hide();
-            return true;
-        }
+        // NO cerrar al hacer click afuera - solo con el botón X
         
         return false;
     }
@@ -808,6 +921,34 @@ class CursorGUI {
         buffer.push();
         
         const barX = this.centerX - this.sizeBarWidth / 2;
+        
+        // ===== CONTENEDOR NEGRO CON ALPHA =====
+        buffer.fill(0, 0, 0, 10);
+        buffer.noStroke();
+        buffer.rect(this.containerX, this.containerY, this.containerWidth, this.containerHeight, 10);
+        
+        // ===== BOTÓN DE CIERRE (X) =====
+        buffer.fill(200, 50, 50, 220);
+        buffer.stroke(255, 255, 255, 200);
+        buffer.strokeWeight(2);
+        buffer.rect(this.closeButtonX, this.closeButtonY, this.closeButtonSize, this.closeButtonSize, 5);
+        
+        // Dibujar X
+        buffer.stroke(255, 255, 255, 255);
+        buffer.strokeWeight(3);
+        const margin = 8;
+        buffer.line(
+            this.closeButtonX + margin, 
+            this.closeButtonY + margin,
+            this.closeButtonX + this.closeButtonSize - margin,
+            this.closeButtonY + this.closeButtonSize - margin
+        );
+        buffer.line(
+            this.closeButtonX + this.closeButtonSize - margin,
+            this.closeButtonY + margin,
+            this.closeButtonX + margin,
+            this.closeButtonY + this.closeButtonSize - margin
+        );
         
         // Obtener el color actual
         const currentColor = document.getElementById('c1') ? document.getElementById('c1').value : '#FF0000';

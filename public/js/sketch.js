@@ -39,6 +39,34 @@ var activeLayer = 0; // Índice de la capa activa
 var layerVisibility = []; // Visibilidad de cada capa
 var MAX_LAYERS = 20; // Límite máximo de capas (seguridad de memoria)
 
+// Sistema de zoom (solo local, no se replica por socket)
+var zoomLevel = 1.0; // Nivel de zoom actual (1.0 = 100%)
+var zoomMin = 0.25; // Zoom mínimo (25%)
+var zoomMax = 4.0; // Zoom máximo (400%)
+var zoomStep = 0.1; // Incremento/decremento de zoom
+var panX = 0; // Desplazamiento horizontal
+var panY = 0; // Desplazamiento vertical
+
+/**
+ * Convertir coordenadas de pantalla a coordenadas del canvas con zoom
+ */
+function screenToCanvas(screenX, screenY) {
+    return {
+        x: (screenX - panX) / zoomLevel,
+        y: (screenY - panY) / zoomLevel
+    };
+}
+
+/**
+ * Convertir coordenadas del canvas a coordenadas de pantalla con zoom
+ */
+function canvasToScreen(canvasX, canvasY) {
+    return {
+        x: canvasX * zoomLevel + panX,
+        y: canvasY * zoomLevel + panY
+    };
+}
+
 // Función helper para obtener la capa activa
 function getActiveLayer() {
     return layers[activeLayer];
@@ -491,11 +519,19 @@ function draw() {
     // Renderizar todas las capas en orden (0 a 4) respetando visibilidad
     // La capa 0 ya tiene el fondo negro, no necesitamos background() aquí
     clear(); // Limpiar el canvas principal
+    
+    // Aplicar transformaciones de zoom y pan
+    push();
+    translate(panX, panY);
+    scale(zoomLevel);
+    
     for (let i = 0; i < 5; i++) {
         if (layerVisibility[i]) {
             image(layers[i], 0, 0);
         }
     }
+    
+    pop();
     
     // Actualizar previsualizaciones de capas
     updateLayerPreviews();
@@ -529,6 +565,12 @@ function draw() {
     if (window.showFPS) {
         drawFPSCounter(guiBuffer);
     }
+    
+    // Dibujar indicador de zoom
+    drawZoomIndicator(guiBuffer);
+    
+    // Dibujar scrollbars si hay zoom
+    drawScrollbars(guiBuffer);
     
     // Mostrar el buffer GUI siempre (encima de todas las capas)
     image(guiBuffer, 0, 0);
@@ -625,36 +667,43 @@ function draw() {
         socket.emit('cursor', cursorData);
     }
     
-    // Actualizar posición del cursor GUI (para detectar movimiento)
+    // Actualizar posición del cursor GUI (para detectar movimiento y arrastre)
     if (window.cursorGUI) {
         if (cursorGUI.isVisible) {
-            cursorGUI.updateHover(mouseX, mouseY);
+            // Si está arrastrando, actualizar posición
+            if (cursorGUI.isDragging) {
+                cursorGUI.updateDrag(mouseX, mouseY);
+            } else {
+                cursorGUI.updateHover(mouseX, mouseY);
+            }
         } else if (cursorGUI.isPressing) {
             // Actualizar posición para detectar si se está moviendo
             cursorGUI.updatePosition(mouseX, mouseY);
         }
     }
     
-    // Si el cursor GUI está visible, no dibujar
-    if (window.cursorGUI && cursorGUI.isVisible) {
-        return; // Salir del draw early
-    }
+    // Verificar si el mouse está sobre el contenedor de cursorGUI
+    const isOverCursorGUI = window.cursorGUI && cursorGUI.isVisible && cursorGUI.isPointInContainer(mouseX, mouseY);
     
-    // Dibujar si el mouse está presionado y no está sobre la GUI
-    if (isMousePressed && !isOverGui && !isOverOpenButton) {
+    // Dibujar si el mouse está presionado y no está sobre ninguna GUI
+    if (isMousePressed && !isOverGui && !isOverOpenButton && !isOverCursorGUI) {
         // Para el fill brush, solo ejecutar una vez por click
         const isFillBrush = brushType === 'fill';
         const isLineBrush = brushType === 'line';
         let shouldSendSocket = false;
         
+        // Convertir coordenadas de pantalla a canvas con zoom
+        const canvasCoords = screenToCanvas(mouseX, mouseY);
+        const canvasPrevCoords = screenToCanvas(pmouseXGlobal, pmouseYGlobal);
+        
         // Line brush NO dibuja mientras se arrastra, solo al soltar
         if (!isFillBrush && !isLineBrush) {
             // Dibujar normalmente para otros brushes en la capa activa
-            dibujarCoso(getActiveLayer(), mouseX, mouseY, data);
+            dibujarCoso(getActiveLayer(), canvasCoords.x, canvasCoords.y, data);
             shouldSendSocket = true;
         } else if (isFillBrush && !fillExecuted) {
             // Fill brush solo una vez en la capa activa
-            dibujarCoso(getActiveLayer(), mouseX, mouseY, data);
+            dibujarCoso(getActiveLayer(), canvasCoords.x, canvasCoords.y, data);
             fillExecuted = true;
             shouldSendSocket = true;
         }
@@ -723,8 +772,15 @@ function draw() {
 // ============================================================
 
 function mousePressed() {
-    // Si el cursor GUI está visible, manejar el click
+    // Si el cursor GUI está visible, manejar el click y arrastre
     if (window.cursorGUI && cursorGUI.isVisible) {
+        // Intentar iniciar arrastre primero
+        const dragging = cursorGUI.startDrag(mouseX, mouseY);
+        if (dragging) {
+            return; // Iniciando arrastre, no procesar más eventos
+        }
+        
+        // Si no es arrastre, manejar click normal
         const handled = cursorGUI.handleClick(mouseX, mouseY);
         if (handled) {
             return; // No procesar más eventos
@@ -751,10 +807,11 @@ function mousePressed() {
         // console.log('Punto central del caleidoscopio establecido en:', kaleidoCenterX, kaleidoCenterY);
     }
     
-    // Si es line brush, guardar el punto inicial
+    // Si es line brush, guardar el punto inicial (con coordenadas transformadas)
     const brushType = document.getElementById('brushType').value;
     if (brushType === 'line' && !isOverGui && !isOverOpenButton) {
-        startLineBrush(mouseX, mouseY);
+        const canvasCoords = screenToCanvas(mouseX, mouseY);
+        startLineBrush(canvasCoords.x, canvasCoords.y);
     }
     
     // Track draw interaction
@@ -764,8 +821,9 @@ function mousePressed() {
 }
 
 function mouseReleased() {
-    // Cancelar el temporizador de long press
+    // Terminar arrastre de cursorGUI si estaba activo
     if (window.cursorGUI) {
+        cursorGUI.endDrag();
         cursorGUI.cancelLongPress();
     }
     
@@ -777,15 +835,16 @@ function mouseReleased() {
         const alphaValue = parseInt(document.getElementById('alphaValue').value);
         const col = color(colorValue);
         col.setAlpha(alphaValue);
-        
-        // Obtener el número de segmentos para el efecto caleidoscopio
-        const kaleidoSegments = parseInt(document.getElementById('kaleidoSegments').value) || 1;
-        
-        // Dibujar localmente primero en la capa activa usando el nuevo sistema
         const brushSize = parseInt(document.getElementById('size').value);
+        const kaleidoSegments = parseInt(document.getElementById('kaleidoSegments').value);
+        
+        // Convertir coordenadas finales con zoom
+        const canvasCoords = screenToCanvas(mouseX, mouseY);
+        
+        // Dibujar en la capa activa
         const lineBrush = brushRegistry ? brushRegistry.get('line') : null;
         if (lineBrush) {
-            lineBrush.draw(getActiveLayer(), mouseX, mouseY, {
+            lineBrush.draw(getActiveLayer(), canvasCoords.x, canvasCoords.y, {
                 size: brushSize,
                 color: col,
                 kaleidoSegments: kaleidoSegments,
@@ -879,8 +938,15 @@ function touchStarted(event) {
         return true; // Permitir el comportamiento por defecto
     }
     
-    // Si el cursor GUI está visible, manejar el touch
+    // Si el cursor GUI está visible, manejar el touch y arrastre
     if (window.cursorGUI && cursorGUI.isVisible) {
+        // Intentar iniciar arrastre primero
+        const dragging = cursorGUI.startDrag(mouseX, mouseY);
+        if (dragging) {
+            return false; // Iniciando arrastre, prevenir comportamiento por defecto
+        }
+        
+        // Si no es arrastre, manejar click normal
         const handled = cursorGUI.handleClick(mouseX, mouseY);
         if (handled) {
             return false; // Prevenir comportamiento por defecto
@@ -904,10 +970,11 @@ function touchStarted(event) {
         kaleidoCenterY = mouseY;
     }
     
-    // Si es line brush, guardar el punto inicial
+    // Si es line brush, guardar el punto inicial (con coordenadas transformadas)
     const brushType = document.getElementById('brushType').value;
     if (brushType === 'line' && !isOverGui && !isOverOpenButton) {
-        startLineBrush(mouseX, mouseY);
+        const canvasCoords = screenToCanvas(mouseX, mouseY);
+        startLineBrush(canvasCoords.x, canvasCoords.y);
     }
     
     // Track draw interaction
@@ -925,8 +992,9 @@ function touchEnded(event) {
         return; // Dejar que el evento se propague normalmente
     }
     
-    // Cancelar el temporizador de long press
+    // Terminar arrastre de cursorGUI si estaba activo
     if (window.cursorGUI) {
+        cursorGUI.endDrag();
         cursorGUI.cancelLongPress();
     }
     
@@ -951,9 +1019,13 @@ function touchMoved(event) {
         }
     }
     
-    // Actualizar hover del cursor GUI
+    // Actualizar hover o arrastre del cursor GUI
     if (window.cursorGUI && cursorGUI.isVisible) {
-        cursorGUI.updateHover(mouseX, mouseY);
+        if (cursorGUI.isDragging) {
+            cursorGUI.updateDrag(mouseX, mouseY);
+        } else {
+            cursorGUI.updateHover(mouseX, mouseY);
+        }
     }
     
     // Para el canvas, prevenir el scroll
@@ -1103,7 +1175,8 @@ function dibujarCoso(buffer, x, y, data) {
                     animSpeed: data.animSpeed || 0.1,
                     strokeWeight: data.strokeWeight || 4,
                     strokeAlpha: data.strokeAlpha || 45,
-                    shrinkSpeed: data.shrinkSpeed || 0.15
+                    shrinkSpeed: data.shrinkSpeed || 0.15,
+                    shadowOffset: data.shadowOffset || 10
                 });
             }
             break;
@@ -1735,9 +1808,174 @@ function drawFPSCounter(buffer) {
 
 function toggleFPS() {
     window.showFPS = !window.showFPS;
-    const button = document.getElementById('toggleFPSBtn');
-    if (button) {
-        button.textContent = window.showFPS ? 'Hide FPS' : 'Show FPS';
-        button.style.background = window.showFPS ? 'rgba(76, 175, 80, 0.8)' : 'rgba(138, 79, 191, 0.8)';
+    console.log('FPS Counter:', window.showFPS ? 'ON' : 'OFF');
+}
+
+// ============================================================
+// SISTEMA DE ZOOM
+// ============================================================
+
+/**
+ * Aumentar zoom
+ */
+function zoomIn() {
+    const oldZoom = zoomLevel;
+    zoomLevel = Math.min(zoomLevel + zoomStep, zoomMax);
+    
+    // Ajustar pan para mantener el centro
+    const centerX = windowWidth / 2;
+    const centerY = windowHeight / 2;
+    panX = centerX - (centerX - panX) * (zoomLevel / oldZoom);
+    panY = centerY - (centerY - panY) * (zoomLevel / oldZoom);
+    
+    console.log(`Zoom In: ${(zoomLevel * 100).toFixed(0)}%`);
+}
+
+/**
+ * Disminuir zoom
+ */
+function zoomOut() {
+    const oldZoom = zoomLevel;
+    zoomLevel = Math.max(zoomLevel - zoomStep, zoomMin);
+    
+    // Ajustar pan para mantener el centro
+    const centerX = windowWidth / 2;
+    const centerY = windowHeight / 2;
+    panX = centerX - (centerX - panX) * (zoomLevel / oldZoom);
+    panY = centerY - (centerY - panY) * (zoomLevel / oldZoom);
+    
+    console.log(`Zoom Out: ${(zoomLevel * 100).toFixed(0)}%`);
+}
+
+/**
+ * Resetear zoom a 100%
+ */
+function resetZoom() {
+    zoomLevel = 1.0;
+    panX = 0;
+    panY = 0;
+    console.log('Zoom Reset: 100%');
+}
+
+/**
+ * Dibujar indicador de zoom
+ */
+function drawZoomIndicator(buffer) {
+    // Solo mostrar si el zoom no es 100%
+    if (zoomLevel === 1.0) return;
+    
+    buffer.push();
+    
+    // Fondo semi-transparente
+    buffer.fill(0, 0, 0, 180);
+    buffer.noStroke();
+    buffer.rect(10, buffer.height - 60, 120, 50, 5);
+    
+    // Texto de zoom
+    buffer.fill(255);
+    buffer.textSize(20);
+    buffer.textAlign(LEFT, TOP);
+    buffer.text(`Zoom: ${(zoomLevel * 100).toFixed(0)}%`, 20, buffer.height - 50);
+    
+    // Barra de progreso
+    const barWidth = 100;
+    const barHeight = 8;
+    const barX = 20;
+    const barY = buffer.height - 25;
+    
+    // Fondo de la barra
+    buffer.fill(50, 50, 50);
+    buffer.rect(barX, barY, barWidth, barHeight, 4);
+    
+    // Progreso de la barra
+    const progress = (zoomLevel - zoomMin) / (zoomMax - zoomMin);
+    buffer.fill(100, 200, 255);
+    buffer.rect(barX, barY, barWidth * progress, barHeight, 4);
+    
+    buffer.pop();
+}
+
+/**
+ * Dibujar scrollbars cuando hay zoom
+ */
+function drawScrollbars(buffer) {
+    // Solo mostrar si hay zoom diferente de 100%
+    if (zoomLevel === 1.0) return;
+    
+    buffer.push();
+    
+    const scrollbarThickness = 12;
+    const scrollbarColor = [100, 100, 100, 180];
+    const scrollbarHandleColor = [138, 79, 191, 220];
+    
+    // Calcular dimensiones del contenido con zoom
+    const contentWidth = windowWidth * zoomLevel;
+    const contentHeight = windowHeight * zoomLevel;
+    
+    // Calcular posición visible (normalizada 0-1)
+    const visibleX = -panX / contentWidth;
+    const visibleY = -panY / contentHeight;
+    const visibleWidth = windowWidth / contentWidth;
+    const visibleHeight = windowHeight / contentHeight;
+    
+    // SCROLLBAR HORIZONTAL (abajo)
+    if (visibleWidth < 1) {
+        const scrollbarY = windowHeight - scrollbarThickness - 5;
+        const scrollbarWidth = windowWidth - 20;
+        const scrollbarX = 10;
+        
+        // Fondo del scrollbar
+        buffer.fill(scrollbarColor);
+        buffer.noStroke();
+        buffer.rect(scrollbarX, scrollbarY, scrollbarWidth, scrollbarThickness, 6);
+        
+        // Handle del scrollbar
+        const handleWidth = Math.max(30, scrollbarWidth * visibleWidth);
+        const handleX = scrollbarX + (scrollbarWidth - handleWidth) * visibleX;
+        buffer.fill(scrollbarHandleColor);
+        buffer.rect(handleX, scrollbarY, handleWidth, scrollbarThickness, 6);
+    }
+    
+    // SCROLLBAR VERTICAL (derecha)
+    if (visibleHeight < 1) {
+        const scrollbarX = windowWidth - scrollbarThickness - 5;
+        const scrollbarHeight = windowHeight - 20;
+        const scrollbarY = 10;
+        
+        // Fondo del scrollbar
+        buffer.fill(scrollbarColor);
+        buffer.noStroke();
+        buffer.rect(scrollbarX, scrollbarY, scrollbarThickness, scrollbarHeight, 6);
+        
+        // Handle del scrollbar
+        const handleHeight = Math.max(30, scrollbarHeight * visibleHeight);
+        const handleY = scrollbarY + (scrollbarHeight - handleHeight) * visibleY;
+        buffer.fill(scrollbarHandleColor);
+        buffer.rect(scrollbarX, handleY, scrollbarThickness, handleHeight, 6);
+    }
+    
+    buffer.pop();
+}
+
+/**
+ * Manejar evento de rueda del mouse para zoom
+ */
+function mouseWheel(event) {
+    // Solo hacer zoom si se mantiene presionada la tecla Ctrl
+    if (event.event && event.event.ctrlKey) {
+        event.event.preventDefault(); // Prevenir zoom del navegador
+        
+        if (event.delta > 0) {
+            zoomOut();
+        } else {
+            zoomIn();
+        }
+        
+        return false;
     }
 }
+
+// Exponer funciones globalmente
+window.zoomIn = zoomIn;
+window.zoomOut = zoomOut;
+window.resetZoom = resetZoom;
