@@ -47,6 +47,14 @@ var zoomStep = 0.1; // Incremento/decremento de zoom
 var panX = 0; // Desplazamiento horizontal
 var panY = 0; // Desplazamiento vertical
 
+// Variables para scrollbars
+var isDraggingScrollbar = false;
+var draggingScrollbarType = null; // 'horizontal' o 'vertical'
+var scrollbarBounds = {
+    horizontal: { x: 0, y: 0, width: 0, height: 0, handleX: 0, handleWidth: 0 },
+    vertical: { x: 0, y: 0, width: 0, height: 0, handleY: 0, handleHeight: 0 }
+};
+
 /**
  * Convertir coordenadas de pantalla a coordenadas del canvas con zoom
  */
@@ -581,12 +589,18 @@ function draw() {
     
     const brushType = document.getElementById("brushType").value;
     
+    // Convertir coordenadas de pantalla a canvas (para normalizar correctamente)
+    const canvasCoordsForSocket = screenToCanvas(mouseX, mouseY);
+    const canvasPrevCoordsForSocket = screenToCanvas(pmouseXGlobal, pmouseYGlobal);
+    
     // Objeto de datos base
+    // IMPORTANTE: Normalizar coordenadas del CANVAS, no de la pantalla
+    // Esto asegura que otros clientes con diferente zoom reciban las coordenadas correctas
     data = {
-        x: map(mouseX, 0, windowWidth, 0, 1),
-        y: map(mouseY, 0, windowHeight, 0, 1),
-        pmouseX: map(pmouseXGlobal, 0, windowWidth, 0, 1),
-        pmouseY: map(pmouseYGlobal, 0, windowHeight, 0, 1),
+        x: map(canvasCoordsForSocket.x, 0, windowWidth, 0, 1),
+        y: map(canvasCoordsForSocket.y, 0, windowHeight, 0, 1),
+        pmouseX: map(canvasPrevCoordsForSocket.x, 0, windowWidth, 0, 1),
+        pmouseY: map(canvasPrevCoordsForSocket.y, 0, windowHeight, 0, 1),
         c1: color(document.getElementById("c1").value),
         s: document.getElementById("size").value,
         av: document.getElementById("alphaValue").value,
@@ -596,8 +610,9 @@ function draw() {
         layer: activeLayer, // Número de capa activa (0-4)
         kaleidoSegments: parseInt(document.getElementById("kaleidoSegments").value) || 1,
         // Incluir las coordenadas del punto central del caleidoscopio si están definidas
-        kaleidoCenterX: kaleidoCenterX !== null ? map(kaleidoCenterX, 0, windowWidth, 0, 1) : null,
-        kaleidoCenterY: kaleidoCenterY !== null ? map(kaleidoCenterY, 0, windowHeight, 0, 1) : null
+        // Convertir a coordenadas de canvas antes de normalizar
+        kaleidoCenterX: kaleidoCenterX !== null ? map(screenToCanvas(kaleidoCenterX, 0).x, 0, windowWidth, 0, 1) : null,
+        kaleidoCenterY: kaleidoCenterY !== null ? map(screenToCanvas(0, kaleidoCenterY).y, 0, windowHeight, 0, 1) : null
     };
     
     // Añadir parámetros específicos según el tipo de pincel
@@ -667,6 +682,11 @@ function draw() {
         socket.emit('cursor', cursorData);
     }
     
+    // Actualizar arrastre de scrollbar si está activo
+    if (isDraggingScrollbar) {
+        updateScrollbarDrag(mouseX, mouseY);
+    }
+    
     // Actualizar posición del cursor GUI (para detectar movimiento y arrastre)
     if (window.cursorGUI) {
         if (cursorGUI.isVisible) {
@@ -682,11 +702,12 @@ function draw() {
         }
     }
     
-    // Verificar si el mouse está sobre el contenedor de cursorGUI
+    // Verificar si el mouse está sobre el contenedor de cursorGUI o scrollbars
     const isOverCursorGUI = window.cursorGUI && cursorGUI.isVisible && cursorGUI.isPointInContainer(mouseX, mouseY);
+    const isOverScrollbars = isMouseOverScrollbar(mouseX, mouseY);
     
-    // Dibujar si el mouse está presionado y no está sobre ninguna GUI
-    if (isMousePressed && !isOverGui && !isOverOpenButton && !isOverCursorGUI) {
+    // Dibujar si el mouse está presionado y no está sobre ninguna GUI o scrollbar
+    if (isMousePressed && !isOverGui && !isOverOpenButton && !isOverCursorGUI && !isOverScrollbars) {
         // Para el fill brush, solo ejecutar una vez por click
         const isFillBrush = brushType === 'fill';
         const isLineBrush = brushType === 'line';
@@ -695,6 +716,10 @@ function draw() {
         // Convertir coordenadas de pantalla a canvas con zoom
         const canvasCoords = screenToCanvas(mouseX, mouseY);
         const canvasPrevCoords = screenToCanvas(pmouseXGlobal, pmouseYGlobal);
+        
+        // Agregar coordenadas previas transformadas a data
+        data.pmouseXTransformed = canvasPrevCoords.x;
+        data.pmouseYTransformed = canvasPrevCoords.y;
         
         // Line brush NO dibuja mientras se arrastra, solo al soltar
         if (!isFillBrush && !isLineBrush) {
@@ -772,6 +797,11 @@ function draw() {
 // ============================================================
 
 function mousePressed() {
+    // Verificar si se hizo click en una scrollbar
+    if (handleScrollbarClick(mouseX, mouseY)) {
+        return; // Click en scrollbar, no procesar más eventos
+    }
+    
     // Si el cursor GUI está visible, manejar el click y arrastre
     if (window.cursorGUI && cursorGUI.isVisible) {
         // Intentar iniciar arrastre primero
@@ -821,6 +851,10 @@ function mousePressed() {
 }
 
 function mouseReleased() {
+    // Terminar arrastre de scrollbar
+    isDraggingScrollbar = false;
+    draggingScrollbarType = null;
+    
     // Terminar arrastre de cursorGUI si estaba activo
     if (window.cursorGUI) {
         cursorGUI.endDrag();
@@ -854,10 +888,11 @@ function mouseReleased() {
         }
         
         // Preparar datos para enviar por socket
+        // IMPORTANTE: Normalizar coordenadas del CANVAS (ya transformadas), no de pantalla
         const data = {
-            x: mouseX / windowWidth,  // Normalizar coordenadas
-            y: mouseY / windowHeight,
-            pmouseX: lineStartX / windowWidth,
+            x: canvasCoords.x / windowWidth,  // Normalizar coordenadas de canvas
+            y: canvasCoords.y / windowHeight,
+            pmouseX: lineStartX / windowWidth,  // lineStartX/Y ya son coordenadas de canvas
             pmouseY: lineStartY / windowHeight,
             c1: colorValue,
             av: alphaValue,
@@ -867,8 +902,9 @@ function mouseReleased() {
             session: sessionId,
             kaleidoSegments: kaleidoSegments,
             // Incluir las coordenadas del punto central del caleidoscopio si están definidas
-            kaleidoCenterX: kaleidoCenterX !== null ? kaleidoCenterX / windowWidth : null,
-            kaleidoCenterY: kaleidoCenterY !== null ? kaleidoCenterY / windowHeight : null
+            // Convertir a coordenadas de canvas antes de normalizar
+            kaleidoCenterX: kaleidoCenterX !== null ? screenToCanvas(kaleidoCenterX, 0).x / windowWidth : null,
+            kaleidoCenterY: kaleidoCenterY !== null ? screenToCanvas(0, kaleidoCenterY).y / windowHeight : null
         };
         
         // Enviar por socket si el envío está habilitado
@@ -1072,9 +1108,13 @@ function dibujarCoso(buffer, x, y, data) {
             // Art brush - usar el nuevo sistema de clases
             const artBrush = brushRegistry ? brushRegistry.get('art') : null;
             if (artBrush) {
+                // Usar coordenadas transformadas si están disponibles (para zoom)
+                const artPrevX = data.pmouseXTransformed !== undefined ? data.pmouseXTransformed : pmouseXGlobal;
+                const artPrevY = data.pmouseYTransformed !== undefined ? data.pmouseYTransformed : pmouseYGlobal;
+                
                 const result = artBrush.draw(buffer, x, y, {
-                    pmouseX: pmouseXGlobal,
-                    pmouseY: pmouseYGlobal,
+                    pmouseX: artPrevX,
+                    pmouseY: artPrevY,
                     particleCount: data.particleCount || 10,
                     size: brushSize,
                     color: col,
@@ -1186,12 +1226,16 @@ function dibujarCoso(buffer, x, y, data) {
             const kaleidoSegments = data.kaleidoSegments || 1;
             const brush = brushRegistry ? brushRegistry.get('classic') : null;
             if (brush) {
+                // Usar coordenadas transformadas si están disponibles (para zoom)
+                const prevX = data.pmouseXTransformed !== undefined ? data.pmouseXTransformed : pmouseXGlobal;
+                const prevY = data.pmouseYTransformed !== undefined ? data.pmouseYTransformed : pmouseYGlobal;
+                
                 brush.draw(buffer, x, y, {
                     size: brushSize,
                     color: col,
                     kaleidoSegments,
-                    pmouseX: pmouseXGlobal,
-                    pmouseY: pmouseYGlobal
+                    pmouseX: prevX,
+                    pmouseY: prevY
                 });
             }
             break;
@@ -1263,6 +1307,8 @@ function newDrawing(data2) {
         }
         
         // Convertir coordenadas normalizadas a coordenadas del canvas
+        // IMPORTANTE: Estas coordenadas ya están en el espacio del canvas (0 a windowWidth/Height)
+        // NO necesitan transformación de zoom porque vienen normalizadas del espacio del canvas
         const canvasX = map(data2.x, 0, 1, 0, windowWidth);
         const canvasY = map(data2.y, 0, 1, 0, windowHeight);
         
@@ -1273,6 +1319,10 @@ function newDrawing(data2) {
             remotePmouseX = map(data2.pmouseX, 0, 1, 0, windowWidth);
             remotePmouseY = map(data2.pmouseY, 0, 1, 0, windowHeight);
         }
+        
+        // Agregar coordenadas transformadas para que dibujarCoso las use
+        data2.pmouseXTransformed = remotePmouseX;
+        data2.pmouseYTransformed = remotePmouseY;
         
         // Establecer el punto central del caleidoscopio si se recibió en los datos
         if (data2.kaleidoCenterX !== null && data2.kaleidoCenterY !== null) {
@@ -1907,6 +1957,7 @@ function drawScrollbars(buffer) {
     const scrollbarThickness = 12;
     const scrollbarColor = [100, 100, 100, 180];
     const scrollbarHandleColor = [138, 79, 191, 220];
+    const scrollbarHoverColor = [158, 99, 211, 240];
     
     // Calcular dimensiones del contenido con zoom
     const contentWidth = windowWidth * zoomLevel;
@@ -1932,7 +1983,21 @@ function drawScrollbars(buffer) {
         // Handle del scrollbar
         const handleWidth = Math.max(30, scrollbarWidth * visibleWidth);
         const handleX = scrollbarX + (scrollbarWidth - handleWidth) * visibleX;
-        buffer.fill(scrollbarHandleColor);
+        
+        // Guardar bounds para interacción
+        scrollbarBounds.horizontal = {
+            x: scrollbarX,
+            y: scrollbarY,
+            width: scrollbarWidth,
+            height: scrollbarThickness,
+            handleX: handleX,
+            handleWidth: handleWidth
+        };
+        
+        // Highlight si el mouse está sobre el handle
+        const isHovering = mouseX >= handleX && mouseX <= handleX + handleWidth &&
+                          mouseY >= scrollbarY && mouseY <= scrollbarY + scrollbarThickness;
+        buffer.fill(isHovering || (isDraggingScrollbar && draggingScrollbarType === 'horizontal') ? scrollbarHoverColor : scrollbarHandleColor);
         buffer.rect(handleX, scrollbarY, handleWidth, scrollbarThickness, 6);
     }
     
@@ -1950,11 +2015,115 @@ function drawScrollbars(buffer) {
         // Handle del scrollbar
         const handleHeight = Math.max(30, scrollbarHeight * visibleHeight);
         const handleY = scrollbarY + (scrollbarHeight - handleHeight) * visibleY;
-        buffer.fill(scrollbarHandleColor);
+        
+        // Guardar bounds para interacción
+        scrollbarBounds.vertical = {
+            x: scrollbarX,
+            y: scrollbarY,
+            width: scrollbarThickness,
+            height: scrollbarHeight,
+            handleY: handleY,
+            handleHeight: handleHeight
+        };
+        
+        // Highlight si el mouse está sobre el handle
+        const isHovering = mouseX >= scrollbarX && mouseX <= scrollbarX + scrollbarThickness &&
+                          mouseY >= handleY && mouseY <= handleY + handleHeight;
+        buffer.fill(isHovering || (isDraggingScrollbar && draggingScrollbarType === 'vertical') ? scrollbarHoverColor : scrollbarHandleColor);
         buffer.rect(scrollbarX, handleY, scrollbarThickness, handleHeight, 6);
     }
     
     buffer.pop();
+}
+
+/**
+ * Verificar si el mouse está sobre alguna scrollbar
+ */
+function isMouseOverScrollbar(x, y) {
+    if (zoomLevel === 1.0) return false;
+    
+    // Verificar scrollbar horizontal
+    const hBounds = scrollbarBounds.horizontal;
+    if (hBounds.width > 0) {
+        if (x >= hBounds.x && x <= hBounds.x + hBounds.width &&
+            y >= hBounds.y && y <= hBounds.y + hBounds.height) {
+            return true;
+        }
+    }
+    
+    // Verificar scrollbar vertical
+    const vBounds = scrollbarBounds.vertical;
+    if (vBounds.height > 0) {
+        if (x >= vBounds.x && x <= vBounds.x + vBounds.width &&
+            y >= vBounds.y && y <= vBounds.y + vBounds.height) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * Manejar click en scrollbar
+ */
+function handleScrollbarClick(x, y) {
+    if (zoomLevel === 1.0) return false;
+    
+    // Verificar click en scrollbar horizontal
+    const hBounds = scrollbarBounds.horizontal;
+    if (hBounds.width > 0) {
+        if (x >= hBounds.handleX && x <= hBounds.handleX + hBounds.handleWidth &&
+            y >= hBounds.y && y <= hBounds.y + hBounds.height) {
+            isDraggingScrollbar = true;
+            draggingScrollbarType = 'horizontal';
+            return true;
+        }
+    }
+    
+    // Verificar click en scrollbar vertical
+    const vBounds = scrollbarBounds.vertical;
+    if (vBounds.height > 0) {
+        if (x >= vBounds.x && x <= vBounds.x + vBounds.width &&
+            y >= vBounds.handleY && y <= vBounds.handleY + vBounds.handleHeight) {
+            isDraggingScrollbar = true;
+            draggingScrollbarType = 'vertical';
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * Actualizar posición de pan basado en arrastre de scrollbar
+ */
+function updateScrollbarDrag(x, y) {
+    if (!isDraggingScrollbar) return;
+    
+    const contentWidth = windowWidth * zoomLevel;
+    const contentHeight = windowHeight * zoomLevel;
+    
+    if (draggingScrollbarType === 'horizontal') {
+        const hBounds = scrollbarBounds.horizontal;
+        const relativeX = x - hBounds.x;
+        const percentage = relativeX / hBounds.width;
+        panX = -percentage * contentWidth + windowWidth / 2;
+        
+        // Limitar pan
+        const maxPanX = 0;
+        const minPanX = windowWidth - contentWidth;
+        panX = Math.max(minPanX, Math.min(maxPanX, panX));
+    } else if (draggingScrollbarType === 'vertical') {
+        const vBounds = scrollbarBounds.vertical;
+        const relativeY = y - vBounds.y;
+        const percentage = relativeY / vBounds.height;
+        panY = -percentage * contentHeight + windowHeight / 2;
+        
+        // Limitar pan
+        const maxPanY = 0;
+        const minPanY = windowHeight - contentHeight;
+        panY = Math.max(minPanY, Math.min(maxPanY, panY));
+    }
 }
 
 /**
