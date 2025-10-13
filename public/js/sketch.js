@@ -2105,24 +2105,32 @@ function updateScrollbarDrag(x, y) {
     
     if (draggingScrollbarType === 'horizontal') {
         const hBounds = scrollbarBounds.horizontal;
-        const relativeX = x - hBounds.x;
-        const percentage = relativeX / hBounds.width;
-        panX = -percentage * contentWidth + windowWidth / 2;
         
-        // Limitar pan
+        // Calcular posición relativa en la scrollbar (0-1)
+        let relativeX = (x - hBounds.x) / hBounds.width;
+        relativeX = Math.max(0, Math.min(1, relativeX));
+        
+        // Calcular el rango de pan disponible
         const maxPanX = 0;
         const minPanX = windowWidth - contentWidth;
-        panX = Math.max(minPanX, Math.min(maxPanX, panX));
+        const panRange = maxPanX - minPanX;
+        
+        // Mapear el porcentaje al rango de pan
+        panX = maxPanX - (relativeX * panRange);
     } else if (draggingScrollbarType === 'vertical') {
         const vBounds = scrollbarBounds.vertical;
-        const relativeY = y - vBounds.y;
-        const percentage = relativeY / vBounds.height;
-        panY = -percentage * contentHeight + windowHeight / 2;
         
-        // Limitar pan
+        // Calcular posición relativa en la scrollbar (0-1)
+        let relativeY = (y - vBounds.y) / vBounds.height;
+        relativeY = Math.max(0, Math.min(1, relativeY));
+        
+        // Calcular el rango de pan disponible
         const maxPanY = 0;
         const minPanY = windowHeight - contentHeight;
-        panY = Math.max(minPanY, Math.min(maxPanY, panY));
+        const panRange = maxPanY - minPanY;
+        
+        // Mapear el porcentaje al rango de pan
+        panY = maxPanY - (relativeY * panRange);
     }
 }
 
