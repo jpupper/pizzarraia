@@ -80,6 +80,35 @@ class BaseBrush {
         // Override en cada brush específico
         return '';
     }
+    
+    /**
+     * Renderiza controles compactos para el cursorGUI
+     * Retorna un array de objetos con la configuración de cada slider
+     * @returns {Array} Array de configuraciones de sliders
+     */
+    getCursorGUIControls() {
+        // Override en cada brush específico
+        // Formato: [{ id: 'param1', label: 'Label', min: 0, max: 100, default: 50, step: 1 }]
+        return [];
+    }
+    
+    /**
+     * Dibuja una representación visual del brush en el cursorGUI
+     * @param {p5.Graphics} buffer - Buffer donde dibujar
+     * @param {number} x - Posición X central
+     * @param {number} y - Posición Y central
+     * @param {number} size - Tamaño del preview
+     * @param {Object} color - Color actual
+     */
+    drawCursorGUIPreview(buffer, x, y, size, color) {
+        // Override en cada brush específico
+        // Por defecto, dibujar un círculo simple
+        buffer.push();
+        buffer.fill(color);
+        buffer.noStroke();
+        buffer.ellipse(x, y, size, size);
+        buffer.pop();
+    }
 
     /**
      * Función principal de dibujo - DEBE ser implementada por cada brush
