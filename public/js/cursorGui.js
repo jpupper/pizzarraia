@@ -775,6 +775,8 @@ class CursorGUI {
             
             this.centerX = newCenterX;
             this.centerY = newCenterY;
+            this.globalParamsHeaderY += deltaY;
+            this.brushParamsHeaderY += deltaY;
             this.hueBarY += deltaY;
             this.saturationBarY += deltaY;
             this.brightnessBarY += deltaY;
