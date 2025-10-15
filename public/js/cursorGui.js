@@ -71,6 +71,8 @@ class CursorGUI {
         this.hoveredPaletteSlot = null;
         this.hoveredBrushButton = null;
         this.hoveredKaleido = null;
+        this.hoveredGlobalHeader = false;
+        this.hoveredBrushHeader = false;
         
         // Sistema de paleta de colores - sincronizar con HTML
         this.colorPalette = this.loadPaletteFromHTML();
@@ -285,6 +287,9 @@ class CursorGUI {
             // Barra de kaleidoscope
             this.kaleidoBarY = currentY;
             currentY += this.barSpacing + 10;
+        } else {
+            // Si está colapsado, solo avanzar un poco para separar los headers
+            currentY += 10;
         }
         
         // Obtener brush activo DIRECTAMENTE del HTML (fuente única de verdad)
@@ -501,6 +506,11 @@ class CursorGUI {
     isPointInsideInteractiveElement(x, y) {
         const barX = this.centerX - this.sizeBarWidth / 2;
         
+        // Verificar headers (NO deben ser arrastrables)
+        if (this.isPointInGlobalParamsHeader(x, y) || this.isPointInBrushParamsHeader(x, y)) {
+            return true;
+        }
+        
         // Verificar todas las barras
         const bars = [
             { y: this.hueBarY },
@@ -574,12 +584,9 @@ class CursorGUI {
      */
     isPointInGlobalParamsHeader(x, y) {
         if (!this.isVisible) return false;
-        const headerCenterY = this.globalParamsHeaderY + this.collapsibleHeaderHeight / 2;
-        const isInside = this.isPointInRect(x, y, this.centerX, headerCenterY, this.sizeBarWidth, this.collapsibleHeaderHeight);
-        if (isInside) {
-            console.log('✅ Click en header GLOBAL');
-        }
-        return isInside;
+        const barX = this.centerX - this.sizeBarWidth / 2;
+        return x >= barX && x <= barX + this.sizeBarWidth &&
+               y >= this.globalParamsHeaderY && y <= this.globalParamsHeaderY + this.collapsibleHeaderHeight;
     }
     
     /**
@@ -587,12 +594,9 @@ class CursorGUI {
      */
     isPointInBrushParamsHeader(x, y) {
         if (!this.isVisible) return false;
-        const headerCenterY = this.brushParamsHeaderY + this.collapsibleHeaderHeight / 2;
-        const isInside = this.isPointInRect(x, y, this.centerX, headerCenterY, this.sizeBarWidth, this.collapsibleHeaderHeight);
-        if (isInside) {
-            console.log('✅ Click en header BRUSH');
-        }
-        return isInside;
+        const barX = this.centerX - this.sizeBarWidth / 2;
+        return x >= barX && x <= barX + this.sizeBarWidth &&
+               y >= this.brushParamsHeaderY && y <= this.brushParamsHeaderY + this.collapsibleHeaderHeight;
     }
     
     /**
@@ -1112,6 +1116,8 @@ class CursorGUI {
         this.hoveredPaletteSlot = this.getPaletteSlotAt(x, y);
         this.hoveredBrushButton = this.getBrushButtonAt(x, y);
         this.hoveredKaleido = this.getKaleidoAt(x, y);
+        this.hoveredGlobalHeader = this.isPointInGlobalParamsHeader(x, y);
+        this.hoveredBrushHeader = this.isPointInBrushParamsHeader(x, y);
     }
     
     /**
@@ -1283,14 +1289,22 @@ class CursorGUI {
         // ===== HEADER DE PARÁMETROS GLOBALES (REDISEÑADO COMPACTO) =====
         const globalHeaderCenterY = this.globalParamsHeaderY + this.collapsibleHeaderHeight / 2;
         
-        // Fondo sólido oscuro (usando CENTER)
+        // Fondo sólido oscuro (usando CENTER) - más claro si está en hover
         buffer.rectMode(CORNER);
         buffer.noStroke();
-        buffer.fill(40, 40, 45, 230);
+        if (this.hoveredGlobalHeader) {
+            buffer.fill(60, 60, 65, 240); // Más claro en hover
+        } else {
+            buffer.fill(40, 40, 45, 230);
+        }
         buffer.rect(barX, this.globalParamsHeaderY, this.sizeBarWidth, this.collapsibleHeaderHeight, 6);
         
-        // Borde izquierdo de color (indicador visual)
-        buffer.fill(138, 79, 191, 255);
+        // Borde izquierdo de color (indicador visual) - más brillante en hover
+        if (this.hoveredGlobalHeader) {
+            buffer.fill(158, 99, 211, 255); // Más brillante en hover
+        } else {
+            buffer.fill(138, 79, 191, 255);
+        }
         buffer.rect(barX, this.globalParamsHeaderY, 3, this.collapsibleHeaderHeight, 6, 0, 0, 6);
         
         // Texto simple sin sombra
@@ -1568,14 +1582,22 @@ class CursorGUI {
         // ===== HEADER DE PARÁMETROS DEL BRUSH (REDISEÑADO COMPACTO) =====
         const brushHeaderCenterY = this.brushParamsHeaderY + this.collapsibleHeaderHeight / 2;
         
-        // Fondo sólido oscuro
+        // Fondo sólido oscuro - más claro si está en hover
         buffer.rectMode(CORNER);
         buffer.noStroke();
-        buffer.fill(40, 40, 45, 230);
+        if (this.hoveredBrushHeader) {
+            buffer.fill(60, 60, 65, 240); // Más claro en hover
+        } else {
+            buffer.fill(40, 40, 45, 230);
+        }
         buffer.rect(barX, this.brushParamsHeaderY, this.sizeBarWidth, this.collapsibleHeaderHeight, 6);
         
-        // Borde izquierdo de color azul (indicador visual)
-        buffer.fill(79, 138, 191, 255);
+        // Borde izquierdo de color azul (indicador visual) - más brillante en hover
+        if (this.hoveredBrushHeader) {
+            buffer.fill(99, 158, 211, 255); // Más brillante en hover
+        } else {
+            buffer.fill(79, 138, 191, 255);
+        }
         buffer.rect(barX, this.brushParamsHeaderY, 3, this.collapsibleHeaderHeight, 6, 0, 0, 6);
         
         // Texto simple sin sombra

@@ -721,12 +721,13 @@ function draw() {
         }
     }
     
-    // Verificar si el mouse está sobre el contenedor de cursorGUI o scrollbars
+    // Verificar si el mouse está sobre el contenedor de cursorGUI, scrollbars o controles de zoom
     const isOverCursorGUI = window.cursorGUI && cursorGUI.isVisible && cursorGUI.isPointInContainer(mouseX, mouseY);
     const isOverScrollbars = isMouseOverScrollbar(mouseX, mouseY);
+    const isOverZoomControls = isMouseOverHTMLElement(mouseX, mouseY, 'zoom-controls');
     
-    // Dibujar si el mouse está presionado y no está sobre ninguna GUI o scrollbar
-    if (isMousePressed && !isOverGui && !isOverOpenButton && !isOverCursorGUI && !isOverScrollbars) {
+    // Dibujar si el mouse está presionado y no está sobre ninguna GUI, scrollbar o controles de zoom
+    if (isMousePressed && !isOverGui && !isOverOpenButton && !isOverCursorGUI && !isOverScrollbars && !isOverZoomControls) {
         // Para el fill brush, solo ejecutar una vez por click
         const isFillBrush = brushType === 'fill';
         const isLineBrush = brushType === 'line';
@@ -838,8 +839,11 @@ function mousePressed() {
     
     isMousePressed = true;
     
-    // Iniciar temporizador de long press si no está sobre la GUI
-    if (!isOverGui && !isOverOpenButton && window.cursorGUI) {
+    // Verificar si el click está sobre botones de zoom u otros elementos HTML
+    const isOverZoomControls = isMouseOverHTMLElement(mouseX, mouseY, 'zoom-controls');
+    
+    // Iniciar temporizador de long press si no está sobre la GUI o controles HTML
+    if (!isOverGui && !isOverOpenButton && !isOverZoomControls && window.cursorGUI) {
         cursorGUI.startLongPress(mouseX, mouseY);
     }
     
@@ -850,7 +854,7 @@ function mousePressed() {
     
     // Establecer el punto central del caleidoscopio en la posición inicial del clic
     // Solo si no estamos sobre la GUI o el botón de cerrar
-    if (!isOverGui && !isOverOpenButton) {
+    if (!isOverGui && !isOverOpenButton && !isOverZoomControls) {
         kaleidoCenterX = mouseX;
         kaleidoCenterY = mouseY;
         // console.log('Punto central del caleidoscopio establecido en:', kaleidoCenterX, kaleidoCenterY);
@@ -858,13 +862,13 @@ function mousePressed() {
     
     // Si es line brush, guardar el punto inicial (con coordenadas transformadas)
     const brushType = document.getElementById('brushType').value;
-    if (brushType === 'line' && !isOverGui && !isOverOpenButton) {
+    if (brushType === 'line' && !isOverGui && !isOverOpenButton && !isOverZoomControls) {
         const canvasCoords = screenToCanvas(mouseX, mouseY);
         startLineBrush(canvasCoords.x, canvasCoords.y);
     }
     
     // Track draw interaction
-    if (analyticsTracker && !isOverGui && !isOverOpenButton) {
+    if (analyticsTracker && !isOverGui && !isOverOpenButton && !isOverZoomControls) {
         analyticsTracker.trackDraw(brushType);
     }
 }
@@ -882,7 +886,8 @@ function mouseReleased() {
     
     // Si es line brush, dibujar la línea y enviar por socket
     const brushType = document.getElementById('brushType').value;
-    if (brushType === 'line' && !isOverGui && !isOverOpenButton && lineStartX !== null) {
+    const isOverZoomControls = isMouseOverHTMLElement(mouseX, mouseY, 'zoom-controls');
+    if (brushType === 'line' && !isOverGui && !isOverOpenButton && !isOverZoomControls && lineStartX !== null) {
         // Preparar color
         const colorValue = document.getElementById('c1').value;
         const alphaValue = parseInt(document.getElementById('alphaValue').value);
@@ -1008,8 +1013,11 @@ function touchStarted(event) {
         }
     }
     
-    // Iniciar temporizador de long press si no está sobre la GUI
-    if (!isOverGui && !isOverOpenButton && window.cursorGUI) {
+    // Verificar si el touch está sobre botones de zoom u otros elementos HTML
+    const isOverZoomControls = isMouseOverHTMLElement(mouseX, mouseY, 'zoom-controls');
+    
+    // Iniciar temporizador de long press si no está sobre la GUI o controles HTML
+    if (!isOverGui && !isOverOpenButton && !isOverZoomControls && window.cursorGUI) {
         cursorGUI.startLongPress(mouseX, mouseY);
     }
     
@@ -1020,20 +1028,20 @@ function touchStarted(event) {
     pmouseYGlobal = mouseY;
     
     // Establecer punto central del caleidoscopio
-    if (!isOverGui && !isOverOpenButton) {
+    if (!isOverGui && !isOverOpenButton && !isOverZoomControls) {
         kaleidoCenterX = mouseX;
         kaleidoCenterY = mouseY;
     }
     
     // Si es line brush, guardar el punto inicial (con coordenadas transformadas)
     const brushType = document.getElementById('brushType').value;
-    if (brushType === 'line' && !isOverGui && !isOverOpenButton) {
+    if (brushType === 'line' && !isOverGui && !isOverOpenButton && !isOverZoomControls) {
         const canvasCoords = screenToCanvas(mouseX, mouseY);
         startLineBrush(canvasCoords.x, canvasCoords.y);
     }
     
     // Track draw interaction
-    if (analyticsTracker && !isOverGui && !isOverOpenButton) {
+    if (analyticsTracker && !isOverGui && !isOverOpenButton && !isOverZoomControls) {
         analyticsTracker.trackDrawInteraction();
     }
     
@@ -2060,6 +2068,17 @@ function drawScrollbars(buffer) {
     }
     
     buffer.pop();
+}
+
+/**
+ * Verificar si el mouse está sobre un elemento HTML específico
+ */
+function isMouseOverHTMLElement(x, y, elementId) {
+    const element = document.getElementById(elementId);
+    if (!element) return false;
+    
+    const rect = element.getBoundingClientRect();
+    return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
 }
 
 /**
