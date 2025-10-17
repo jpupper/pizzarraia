@@ -82,10 +82,6 @@ class GeometryBrush extends BaseBrush {
             <label>Alpha Borde: <span id="borderAlpha-value">255</span></label>
             <input type="range" value="255" id="borderAlpha" min="0" max="255" step="5" class="jpslider"
                    oninput="document.getElementById('borderAlpha-value').textContent = this.value">
-            <br>
-            <p style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-top: 10px;">
-                🌀 Spirograph animado con rotación continua
-            </p>
         `;
     }
 
