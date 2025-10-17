@@ -84,10 +84,6 @@ class FlowerBrush extends BaseBrush {
             <label>Offset Sombra: <span id="shadowOffset-value">10</span></label>
             <input type="range" value="10" id="shadowOffset" min="0" max="15" step="1" class="jpslider"
                    oninput="document.getElementById('shadowOffset-value').textContent = this.value">
-            <br>
-            <p style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-top: 10px;">
-                🌸 Dibuja flores que se encogen y resetean continuamente
-            </p>
         `;
     }
 

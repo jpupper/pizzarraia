@@ -600,6 +600,9 @@ function draw() {
     // Dibujar scrollbars si hay zoom
     drawScrollbars(guiBuffer);
     
+    // Dibujar QR si está visible
+    drawQR();
+    
     // Mostrar el buffer GUI siempre (encima de todas las capas)
     image(guiBuffer, 0, 0);
     
@@ -2201,3 +2204,114 @@ function mouseWheel(event) {
 window.zoomIn = zoomIn;
 window.zoomOut = zoomOut;
 window.resetZoom = resetZoom;
+
+// ============================================================
+// SISTEMA DE QR CODE
+// ============================================================
+
+// Variables para QR
+var qrVisible = false;
+var qrImage = null;
+var qrX = 50; // Porcentaje
+var qrY = 50; // Porcentaje
+var qrScale = 1;
+
+/**
+ * Generar QR Code
+ */
+function generateQR() {
+    const inputText = document.getElementById('qrInput').value || window.location.href;
+    
+    try {
+        // Crear QR code
+        const qr = qrcode(0, 'L');
+        qr.addData(inputText);
+        qr.make();
+        
+        // Obtener el tamaño del módulo
+        const moduleCount = qr.getModuleCount();
+        const cellSize = 5; // Tamaño de cada celda del QR
+        const margin = 20; // Margen alrededor del QR
+        
+        // Crear un canvas temporal para dibujar el QR
+        const qrCanvas = document.createElement('canvas');
+        const qrSize = moduleCount * cellSize + margin * 2;
+        qrCanvas.width = qrSize;
+        qrCanvas.height = qrSize;
+        const ctx = qrCanvas.getContext('2d');
+        
+        // Fondo blanco
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, qrSize, qrSize);
+        
+        // Dibujar módulos del QR
+        ctx.fillStyle = '#000000';
+        for (let row = 0; row < moduleCount; row++) {
+            for (let col = 0; col < moduleCount; col++) {
+                if (qr.isDark(row, col)) {
+                    ctx.fillRect(
+                        col * cellSize + margin,
+                        row * cellSize + margin,
+                        cellSize,
+                        cellSize
+                    );
+                }
+            }
+        }
+        
+        // Convertir canvas a imagen de p5
+        qrImage = loadImage(qrCanvas.toDataURL());
+        
+        console.log('QR generado exitosamente');
+    } catch (error) {
+        console.error('Error generando QR:', error);
+    }
+}
+
+/**
+ * Toggle visibilidad del QR
+ */
+function toggleQR() {
+    qrVisible = !qrVisible;
+    const btn = document.getElementById('qrToggleBtn');
+    
+    if (qrVisible) {
+        generateQR();
+        btn.textContent = 'Ocultar QR';
+        btn.style.background = 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)';
+    } else {
+        btn.textContent = 'Mostrar QR';
+        btn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+    }
+}
+
+/**
+ * Actualizar valores de posición y escala del QR
+ */
+function updateQRValues() {
+    qrX = parseFloat(document.getElementById('qrX').value);
+    qrY = parseFloat(document.getElementById('qrY').value);
+    qrScale = parseFloat(document.getElementById('qrScale').value);
+}
+
+/**
+ * Dibujar QR en el guiBuffer
+ */
+function drawQR() {
+    if (!qrVisible || !qrImage) return;
+    
+    updateQRValues();
+    
+    // Calcular posición en píxeles
+    const x = (qrX / 100) * windowWidth;
+    const y = (qrY / 100) * windowHeight;
+    
+    // Dibujar en guiBuffer
+    guiBuffer.push();
+    guiBuffer.imageMode(CENTER);
+    guiBuffer.image(qrImage, x, y, qrImage.width * qrScale, qrImage.height * qrScale);
+    guiBuffer.pop();
+}
+
+// Exponer funciones globalmente
+window.toggleQR = toggleQR;
