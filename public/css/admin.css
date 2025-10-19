@@ -287,8 +287,14 @@ tr:hover {
     border-radius: 6px;
     font-size: 0.9rem;
     background: white;
+    color: #333;
     cursor: pointer;
     min-width: 150px;
+}
+
+.time-range-selector select option {
+    color: #333;
+    background: white;
 }
 
 .time-range-selector input[type="date"] {

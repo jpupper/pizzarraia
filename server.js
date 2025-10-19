@@ -7,6 +7,7 @@ const cors = require('cors');
 
 const User = require('./models/User');
 const Image = require('./models/Image');
+const Session = require('./models/Session');
 const { Interaction, HourlyStats } = require('./models/Analytics');
 
 const app = express();
@@ -490,10 +491,10 @@ app.get('/pizarraia/api/sessions', (req, res) => {
   }
 });
 
-// Admin endpoint (kept for backwards compatibility)
-app.get('/pizarraia/api/admin/sessions', (req, res) => {
+// Admin endpoint - shows ALL sessions (active socket sessions + database sessions)
+app.get('/pizarraia/api/admin/sessions', async (req, res) => {
   try {
-    // Get active sessions with user count
+    // Get active socket sessions with user count
     const activeSessions = Object.keys(sessions)
       .filter(sessionId => sessions[sessionId] && sessions[sessionId].length > 0)
       .map(sessionId => ({
@@ -502,10 +503,40 @@ app.get('/pizarraia/api/admin/sessions', (req, res) => {
         users: sessions[sessionId].map(socketId => {
           const userInfo = connectedUsers.get(socketId);
           return userInfo || { socketId, username: 'Anónimo' };
-        })
+        }),
+        isActive: true
       }));
     
-    res.json({ sessions: activeSessions });
+    // Get all sessions from database (both public and private)
+    const dbSessions = await Session.find().sort({ lastActiveAt: -1 });
+    
+    // Merge database sessions with active sessions
+    const allSessions = [...activeSessions];
+    
+    // Add database sessions that aren't already in active sessions
+    dbSessions.forEach(dbSession => {
+      const existingSession = activeSessions.find(s => s.sessionId === dbSession.sessionId);
+      if (!existingSession) {
+        allSessions.push({
+          sessionId: dbSession.sessionId,
+          name: dbSession.name,
+          description: dbSession.description,
+          isPublic: dbSession.isPublic,
+          creatorUsername: dbSession.creatorUsername,
+          userCount: 0,
+          users: [],
+          isActive: false
+        });
+      } else {
+        // Enrich active session with database info
+        existingSession.name = dbSession.name;
+        existingSession.description = dbSession.description;
+        existingSession.isPublic = dbSession.isPublic;
+        existingSession.creatorUsername = dbSession.creatorUsername;
+      }
+    });
+    
+    res.json({ sessions: allSessions });
   } catch (error) {
     console.error('Error getting sessions:', error);
     res.status(500).json({ error: 'Error al obtener sesiones' });
@@ -676,6 +707,158 @@ app.get('/pizarraia/api/analytics/summary', isAuthenticated, async (req, res) =>
   } catch (error) {
     console.error('Error getting analytics summary:', error);
     res.status(500).json({ error: 'Error al obtener resumen' });
+  }
+});
+
+// ========== SESSION MANAGEMENT ROUTES ==========
+
+// Create a new session
+app.post('/pizarraia/api/sessions/create', isAuthenticated, async (req, res) => {
+  try {
+    const { sessionId, name, description, isPublic, allowedBrushTypes } = req.body;
+    
+    if (!sessionId || !name) {
+      return res.status(400).json({ error: 'Session ID y nombre son requeridos' });
+    }
+    
+    // Check if session ID already exists
+    const existingSession = await Session.findOne({ sessionId });
+    if (existingSession) {
+      return res.status(400).json({ error: 'El ID de sesión ya existe' });
+    }
+    
+    const user = await User.findById(req.userId);
+    
+    const session = new Session({
+      sessionId,
+      creatorId: req.userId,
+      creatorUsername: user.username,
+      name,
+      description: description || '',
+      isPublic: isPublic !== undefined ? isPublic : true,
+      allowedBrushTypes: allowedBrushTypes || []
+    });
+    
+    await session.save();
+    
+    res.json({ 
+      success: true,
+      session: {
+        id: session._id,
+        sessionId: session.sessionId,
+        name: session.name,
+        description: session.description,
+        isPublic: session.isPublic,
+        allowedBrushTypes: session.allowedBrushTypes
+      }
+    });
+  } catch (error) {
+    console.error('Error creating session:', error);
+    res.status(500).json({ error: 'Error al crear la sesión' });
+  }
+});
+
+// Get user's sessions
+app.get('/pizarraia/api/sessions/my-sessions', isAuthenticated, async (req, res) => {
+  try {
+    const sessions = await Session.find({ creatorId: req.userId })
+      .sort({ createdAt: -1 });
+    
+    res.json({ sessions });
+  } catch (error) {
+    console.error('Error getting sessions:', error);
+    res.status(500).json({ error: 'Error al obtener sesiones' });
+  }
+});
+
+// Get session by ID
+app.get('/pizarraia/api/sessions/:sessionId', async (req, res) => {
+  try {
+    const session = await Session.findOne({ sessionId: req.params.sessionId });
+    
+    if (!session) {
+      return res.status(404).json({ error: 'Sesión no encontrada' });
+    }
+    
+    res.json({ session });
+  } catch (error) {
+    console.error('Error getting session:', error);
+    res.status(500).json({ error: 'Error al obtener la sesión' });
+  }
+});
+
+// Get all public sessions
+app.get('/pizarraia/api/sessions/public/list', async (req, res) => {
+  try {
+    const sessions = await Session.find({ isPublic: true })
+      .sort({ lastActiveAt: -1 });
+    
+    res.json({ sessions });
+  } catch (error) {
+    console.error('Error getting public sessions:', error);
+    res.status(500).json({ error: 'Error al obtener sesiones públicas' });
+  }
+});
+
+// Update session
+app.put('/pizarraia/api/sessions/:id', isAuthenticated, async (req, res) => {
+  try {
+    const session = await Session.findOne({ 
+      _id: req.params.id,
+      creatorId: req.userId 
+    });
+    
+    if (!session) {
+      return res.status(404).json({ error: 'Sesión no encontrada o no tienes permisos' });
+    }
+    
+    const { name, description, isPublic, allowedBrushTypes } = req.body;
+    
+    if (name) session.name = name;
+    if (description !== undefined) session.description = description;
+    if (isPublic !== undefined) session.isPublic = isPublic;
+    if (allowedBrushTypes) session.allowedBrushTypes = allowedBrushTypes;
+    
+    await session.save();
+    
+    res.json({ success: true, session });
+  } catch (error) {
+    console.error('Error updating session:', error);
+    res.status(500).json({ error: 'Error al actualizar la sesión' });
+  }
+});
+
+// Delete session
+app.delete('/pizarraia/api/sessions/:id', isAuthenticated, async (req, res) => {
+  try {
+    const session = await Session.findOneAndDelete({ 
+      _id: req.params.id,
+      creatorId: req.userId 
+    });
+    
+    if (!session) {
+      return res.status(404).json({ error: 'Sesión no encontrada o no tienes permisos' });
+    }
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting session:', error);
+    res.status(500).json({ error: 'Error al eliminar la sesión' });
+  }
+});
+
+// Update session last active time
+app.post('/pizarraia/api/sessions/:sessionId/ping', async (req, res) => {
+  try {
+    await Session.findOneAndUpdate(
+      { sessionId: req.params.sessionId },
+      { lastActiveAt: new Date() }
+    );
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error pinging session:', error);
+    res.status(500).json({ error: 'Error al actualizar sesión' });
   }
 });
 

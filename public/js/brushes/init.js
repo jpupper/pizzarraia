@@ -8,7 +8,7 @@
  */
 
 // Esperar a que el DOM esté listo
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     console.log('🎨 Inicializando sistema de brushes...');
     
     // Verificar que el registro existe
@@ -17,12 +17,33 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
+    // Get session ID from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get('session') || urlParams.get('sesion');
+    
+    // Fetch session configuration if session ID exists
+    if (sessionId && typeof config !== 'undefined') {
+        try {
+            const response = await fetch(`${config.API_URL}/api/sessions/${sessionId}`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.session && data.session.allowedBrushTypes && data.session.allowedBrushTypes.length > 0) {
+                    brushRegistry.setAllowedBrushTypes(data.session.allowedBrushTypes);
+                    console.log(`🔒 Sesión ${sessionId}: Brushes restringidos a:`, data.session.allowedBrushTypes);
+                }
+            }
+        } catch (error) {
+            console.warn('⚠ No se pudo cargar la configuración de la sesión:', error);
+        }
+    }
+
     // Renderizar botones de brushes
     const brushButtonsContainer = document.querySelector('.brush-buttons');
     if (brushButtonsContainer) {
         brushButtonsContainer.id = 'brushButtons';
         brushRegistry.renderButtons('brushButtons');
-        console.log(`✓ ${brushRegistry.getAll().length} botones de brushes renderizados`);
+        const allowedCount = brushRegistry.getAllowedBrushes().length;
+        console.log(`✓ ${allowedCount} botones de brushes renderizados`);
     } else {
         console.warn('⚠ Contenedor de botones de brushes no encontrado');
     }
@@ -45,18 +66,27 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('✓ Controles de brushes renderizados');
     }
 
-    // Establecer brush por defecto (classic/standard)
-    const defaultBrush = 'classic';
-    if (brushRegistry.has(defaultBrush)) {
-        brushRegistry.setActive(defaultBrush);
-        
-        // Marcar el botón como activo
-        const defaultButton = document.querySelector(`[data-brush="${defaultBrush}"]`);
-        if (defaultButton) {
-            defaultButton.classList.add('active');
+    // Establecer brush por defecto (classic/standard) si está permitido
+    let defaultBrush = 'classic';
+    const allowedBrushes = brushRegistry.getAllowedBrushes();
+    
+    if (allowedBrushes.length > 0) {
+        // Si classic no está permitido, usar el primer brush permitido
+        if (!brushRegistry.isBrushAllowed(defaultBrush)) {
+            defaultBrush = allowedBrushes[0].getId();
         }
         
-        console.log(`✓ Brush por defecto establecido: ${defaultBrush}`);
+        if (brushRegistry.has(defaultBrush)) {
+            brushRegistry.setActive(defaultBrush);
+            
+            // Marcar el botón como activo
+            const defaultButton = document.querySelector(`[data-brush="${defaultBrush}"]`);
+            if (defaultButton) {
+                defaultButton.classList.add('active');
+            }
+            
+            console.log(`✓ Brush por defecto establecido: ${defaultBrush}`);
+        }
     }
 
     console.log('✅ Sistema de brushes inicializado correctamente');

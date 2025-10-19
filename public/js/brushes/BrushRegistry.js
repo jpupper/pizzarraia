@@ -6,6 +6,7 @@ class BrushRegistry {
     constructor() {
         this.brushes = new Map();
         this.activeBrush = null;
+        this.allowedBrushTypes = null; // null means all brushes allowed
     }
 
     /**
@@ -88,7 +89,39 @@ class BrushRegistry {
     }
 
     /**
-     * Renderiza todos los botones de brushes
+     * Establece los tipos de brushes permitidos
+     * @param {Array<string>|null} allowedTypes - Array de IDs de brushes permitidos, o null para permitir todos
+     */
+    setAllowedBrushTypes(allowedTypes) {
+        this.allowedBrushTypes = allowedTypes;
+        console.log('Brushes permitidos:', allowedTypes || 'todos');
+    }
+
+    /**
+     * Verifica si un brush está permitido
+     * @param {string} brushId - ID del brush
+     * @returns {boolean}
+     */
+    isBrushAllowed(brushId) {
+        if (this.allowedBrushTypes === null) {
+            return true; // All brushes allowed
+        }
+        return this.allowedBrushTypes.includes(brushId);
+    }
+
+    /**
+     * Obtiene todos los brushes permitidos
+     * @returns {Array<BaseBrush>}
+     */
+    getAllowedBrushes() {
+        if (this.allowedBrushTypes === null) {
+            return this.getAll();
+        }
+        return this.getAll().filter(brush => this.isBrushAllowed(brush.getId()));
+    }
+
+    /**
+     * Renderiza todos los botones de brushes (solo los permitidos)
      * @param {string} containerId - ID del contenedor donde renderizar
      */
     renderButtons(containerId = 'brushButtons') {
@@ -99,9 +132,15 @@ class BrushRegistry {
         }
 
         let html = '';
-        this.brushes.forEach(brush => {
-            html += brush.renderButton();
-        });
+        const allowedBrushes = this.getAllowedBrushes();
+        
+        if (allowedBrushes.length === 0) {
+            html = '<p style="color: #999; padding: 10px;">No hay herramientas disponibles en esta sesión</p>';
+        } else {
+            allowedBrushes.forEach(brush => {
+                html += brush.renderButton();
+            });
+        }
 
         container.innerHTML = html;
 

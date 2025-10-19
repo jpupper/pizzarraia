@@ -1,6 +1,20 @@
 // Profile page JavaScript
 let currentUser = null;
 let userImages = [];
+let userSessions = [];
+
+// Available brush types
+const BRUSH_TYPES = [
+    { id: 'standard', name: 'Pincel Estándar' },
+    { id: 'art', name: 'Pincel Artístico' },
+    { id: 'pixel', name: 'Pincel Pixel' },
+    { id: 'line', name: 'Línea' },
+    { id: 'geometry', name: 'Geometría' },
+    { id: 'flower', name: 'Flores' },
+    { id: 'fill', name: 'Relleno' },
+    { id: 'image', name: 'Imagen' },
+    { id: 'text', name: 'Texto' }
+];
 
 // Check authentication
 async function checkAuth() {
@@ -18,6 +32,7 @@ async function checkAuth() {
         currentUser = data.user;
         loadUserProfile();
         loadUserImages();
+        loadUserSessions();
     } catch (error) {
         console.error('Error checking auth:', error);
         window.location.href = 'login.html';
@@ -518,6 +533,210 @@ async function downloadLayers() {
 document.getElementById('imageModal').addEventListener('click', (e) => {
     if (e.target.id === 'imageModal') {
         closeModal();
+    }
+});
+
+// ========== SESSION MANAGEMENT ==========
+
+async function loadUserSessions() {
+    try {
+        const response = await fetch(`${config.API_URL}/api/sessions/my-sessions`, {
+            headers: config.getAuthHeaders()
+        });
+        const data = await response.json();
+        
+        userSessions = data.sessions || [];
+        renderUserSessions();
+    } catch (error) {
+        console.error('Error loading sessions:', error);
+        document.getElementById('mySessionsContainer').innerHTML = `
+            <p class="empty-state">Error al cargar las sesiones</p>
+        `;
+    }
+}
+
+function renderUserSessions() {
+    const container = document.getElementById('mySessionsContainer');
+    
+    if (userSessions.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <h3>No tienes sesiones creadas</h3>
+                <p>Crea tu primera sesión para comenzar a colaborar</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = userSessions.map(session => `
+        <div class="session-card">
+            <h3>Sesión ${session.sessionId}</h3>
+            <p><strong>${session.name}</strong></p>
+            ${session.description ? `<p class="session-info">${session.description}</p>` : ''}
+            <div class="session-info">
+                <span class="session-badge ${session.isPublic ? 'public' : 'private'}">
+                    ${session.isPublic ? '🌐 Pública' : '🔒 Privada'}
+                </span>
+            </div>
+            <div class="session-info">
+                <strong>Herramientas:</strong> ${session.allowedBrushTypes.length} disponibles
+            </div>
+            <div class="session-info">
+                Creada: ${new Date(session.createdAt).toLocaleDateString('es-ES')}
+            </div>
+            <div class="session-actions">
+                <a href="index.html?session=${session.sessionId}" class="btn btn-primary btn-small">Ir a Sesión</a>
+                <button onclick="editSession('${session._id}')" class="btn btn-secondary btn-small">Editar</button>
+                <button onclick="deleteSession('${session._id}')" class="btn btn-danger btn-small">Eliminar</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function openCreateSessionModal() {
+    const modal = document.getElementById('sessionModal');
+    document.getElementById('sessionModalTitle').textContent = 'Crear Nueva Sesión';
+    document.getElementById('sessionForm').reset();
+    
+    // Populate brush types
+    populateBrushTypes();
+    
+    modal.classList.add('active');
+}
+
+function closeSessionModal() {
+    const modal = document.getElementById('sessionModal');
+    modal.classList.remove('active');
+}
+
+function populateBrushTypes() {
+    const container = document.getElementById('brushTypesContainer');
+    
+    container.innerHTML = BRUSH_TYPES.map(brush => `
+        <div class="brush-type-item selected" onclick="toggleBrushType(this, '${brush.id}')">
+            <input type="checkbox" id="brush_${brush.id}" value="${brush.id}" checked>
+            <label for="brush_${brush.id}">${brush.name}</label>
+        </div>
+    `).join('');
+}
+
+function toggleBrushType(element, brushId) {
+    const checkbox = element.querySelector('input[type="checkbox"]');
+    checkbox.checked = !checkbox.checked;
+    
+    if (checkbox.checked) {
+        element.classList.add('selected');
+    } else {
+        element.classList.remove('selected');
+    }
+}
+
+async function saveSession(event) {
+    event.preventDefault();
+    
+    const sessionId = document.getElementById('sessionIdInput').value;
+    const name = document.getElementById('sessionName').value;
+    const description = document.getElementById('sessionDescription').value;
+    const isPublic = document.getElementById('sessionIsPublic').checked;
+    
+    // Get selected brush types
+    const selectedBrushes = Array.from(document.querySelectorAll('#brushTypesContainer input[type="checkbox"]:checked'))
+        .map(cb => cb.value);
+    
+    if (selectedBrushes.length === 0) {
+        if (typeof toast !== 'undefined') {
+            toast.error('Debes seleccionar al menos una herramienta');
+        } else {
+            alert('Debes seleccionar al menos una herramienta');
+        }
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${config.API_URL}/api/sessions/create`, {
+            method: 'POST',
+            headers: {
+                ...config.getAuthHeaders(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                sessionId,
+                name,
+                description,
+                isPublic,
+                allowedBrushTypes: selectedBrushes
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            if (typeof toast !== 'undefined') {
+                toast.success('Sesión creada exitosamente');
+            } else {
+                alert('Sesión creada exitosamente');
+            }
+            closeSessionModal();
+            loadUserSessions();
+        } else {
+            throw new Error(data.error || 'Error al crear la sesión');
+        }
+    } catch (error) {
+        console.error('Error saving session:', error);
+        if (typeof toast !== 'undefined') {
+            toast.error(error.message);
+        } else {
+            alert('Error: ' + error.message);
+        }
+    }
+}
+
+async function deleteSession(sessionId) {
+    if (!confirm('¿Estás seguro de que quieres eliminar esta sesión?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${config.API_URL}/api/sessions/${sessionId}`, {
+            method: 'DELETE',
+            headers: config.getAuthHeaders()
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            if (typeof toast !== 'undefined') {
+                toast.success('Sesión eliminada');
+            } else {
+                alert('Sesión eliminada');
+            }
+            loadUserSessions();
+        } else {
+            throw new Error(data.error || 'Error al eliminar la sesión');
+        }
+    } catch (error) {
+        console.error('Error deleting session:', error);
+        if (typeof toast !== 'undefined') {
+            toast.error(error.message);
+        } else {
+            alert('Error: ' + error.message);
+        }
+    }
+}
+
+async function editSession(sessionId) {
+    // TODO: Implement edit functionality
+    if (typeof toast !== 'undefined') {
+        toast.info('Función de edición próximamente');
+    } else {
+        alert('Función de edición próximamente');
+    }
+}
+
+// Close session modal on background click
+document.getElementById('sessionModal').addEventListener('click', (e) => {
+    if (e.target.id === 'sessionModal') {
+        closeSessionModal();
     }
 });
 
