@@ -181,24 +181,45 @@ function renderSessions(sessions) {
     const container = document.getElementById('sessionsContainer');
     
     if (sessions.length === 0) {
-        container.innerHTML = '<p class="empty-state">No hay sesiones activas</p>';
+        container.innerHTML = '<p class="empty-state">No hay sesiones registradas</p>';
         return;
     }
     
-    const html = sessions.map(session => `
-        <div class="session-card">
-            <h3>Sesión ${session.sessionId}</h3>
-            <div class="session-info">
-                <strong>${session.userCount}</strong> usuario${session.userCount !== 1 ? 's' : ''} conectado${session.userCount !== 1 ? 's' : ''}
+    const html = sessions.map(session => {
+        const statusBadge = session.isActive 
+            ? '<span style="background: #4caf50; color: white; padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; margin-left: 8px;">🟢 Activa</span>'
+            : '<span style="background: #999; color: white; padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; margin-left: 8px;">⚪ Inactiva</span>';
+        
+        const visibilityBadge = session.isPublic !== undefined
+            ? (session.isPublic 
+                ? '<span style="background: #2196F3; color: white; padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; margin-left: 8px;">🌐 Pública</span>'
+                : '<span style="background: #ff9800; color: white; padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; margin-left: 8px;">🔒 Privada</span>')
+            : '';
+        
+        return `
+            <div class="session-card">
+                <h3>
+                    Sesión ${session.sessionId}
+                    ${statusBadge}
+                    ${visibilityBadge}
+                </h3>
+                ${session.name ? `<p style="font-weight: 600; margin: 5px 0;">${escapeHtml(session.name)}</p>` : ''}
+                ${session.description ? `<p style="color: #666; font-size: 0.9rem; margin: 5px 0;">${escapeHtml(session.description)}</p>` : ''}
+                ${session.creatorUsername ? `<div class="session-info">👤 Creador: <strong>${escapeHtml(session.creatorUsername)}</strong></div>` : ''}
+                <div class="session-info">
+                    <strong>${session.userCount}</strong> usuario${session.userCount !== 1 ? 's' : ''} conectado${session.userCount !== 1 ? 's' : ''}
+                </div>
+                ${session.users && session.users.length > 0 ? `
+                    <div class="session-users">
+                        <h4>Usuarios conectados:</h4>
+                        ${session.users.map(user => `
+                            <span class="user-chip">${escapeHtml(user.username)}</span>
+                        `).join('')}
+                    </div>
+                ` : ''}
             </div>
-            <div class="session-users">
-                <h4>Usuarios:</h4>
-                ${session.users.map(user => `
-                    <span class="user-chip">${escapeHtml(user.username)}</span>
-                `).join('')}
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
     
     container.innerHTML = html;
 }
@@ -653,7 +674,6 @@ async function loadAnalyticsForRangeOld(startDate, endDate) {
 async function downloadAnalyticsData() {
     try {
         const timeRange = document.getElementById('timeRange').value;
-        const userFilter = document.getElementById('userFilter').value;
         
         let startDate, endDate;
         const today = new Date();
@@ -681,17 +701,25 @@ async function downloadAnalyticsData() {
             case 'custom':
                 startDate = new Date(document.getElementById('startDate').value);
                 endDate = new Date(document.getElementById('endDate').value);
+                if (!startDate || !endDate || isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+                    alert('Por favor selecciona fechas válidas');
+                    return;
+                }
                 break;
             default:
                 startDate = new Date(today.setHours(0, 0, 0, 0));
                 endDate = new Date();
         }
         
+        // Use active user filters
+        const usersToDownload = activeUserFilters.size > 0 ? Array.from(activeUserFilters) : [];
+        
         // Fetch detailed interaction data
         let url = `${config.API_URL}/api/analytics/interactions?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
         
-        if (userFilter) {
-            url += `&username=${encodeURIComponent(userFilter)}`;
+        // If specific users are filtered, add them to the query
+        if (usersToDownload.length > 0) {
+            url += `&usernames=${encodeURIComponent(usersToDownload.join(','))}`;
         }
         
         const response = await fetch(url, {
@@ -706,11 +734,12 @@ async function downloadAnalyticsData() {
             // Download
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
+            const downloadUrl = URL.createObjectURL(blob);
             
-            const filename = `analytics_${userFilter || 'all'}_${startDate.toISOString().split('T')[0]}_${endDate.toISOString().split('T')[0]}.csv`;
+            const userLabel = usersToDownload.length > 0 ? usersToDownload.join('_') : 'all';
+            const filename = `analytics_${userLabel}_${startDate.toISOString().split('T')[0]}_${endDate.toISOString().split('T')[0]}.csv`;
             
-            link.setAttribute('href', url);
+            link.setAttribute('href', downloadUrl);
             link.setAttribute('download', filename);
             link.style.visibility = 'hidden';
             document.body.appendChild(link);
@@ -718,10 +747,13 @@ async function downloadAnalyticsData() {
             document.body.removeChild(link);
             
             console.log('Analytics data downloaded:', filename);
+            alert('Datos descargados exitosamente');
+        } else {
+            alert('No hay datos disponibles para el rango seleccionado');
         }
     } catch (error) {
         console.error('Error downloading analytics:', error);
-        alert('Error al descargar los datos');
+        alert('Error al descargar los datos: ' + error.message);
     }
 }
 

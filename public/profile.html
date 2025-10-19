@@ -25,6 +25,17 @@
             </div>
         </div>
 
+        <!-- Session Management Section -->
+        <div class="sessions-management-section">
+            <div class="section-header">
+                <h2>🎨 Mis Sesiones</h2>
+                <button class="btn btn-primary" onclick="openCreateSessionModal()">+ Crear Nueva Sesión</button>
+            </div>
+            <div id="mySessionsContainer" class="sessions-grid">
+                <p class="loading">Cargando sesiones...</p>
+            </div>
+        </div>
+
         <div class="gallery-section">
             <div class="gallery-header">
                 <h2>Mis Dibujos (<span id="imageCount">0</span>)</h2>
@@ -32,6 +43,53 @@
             <div id="galleryContent" class="loading">
                 Cargando galería...
             </div>
+        </div>
+    </div>
+
+    <!-- Modal para crear/editar sesión -->
+    <div id="sessionModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeSessionModal()">×</button>
+            <h2 id="sessionModalTitle">Crear Nueva Sesión</h2>
+            
+            <form id="sessionForm" onsubmit="saveSession(event)">
+                <div class="form-group">
+                    <label for="sessionIdInput">ID de Sesión:</label>
+                    <input type="text" id="sessionIdInput" required placeholder="Ej: 3000" pattern="[0-9]+" title="Solo números">
+                    <small>Número único para identificar la sesión</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="sessionName">Nombre de la Sesión:</label>
+                    <input type="text" id="sessionName" required placeholder="Ej: Sesión de Arte Colaborativo">
+                </div>
+
+                <div class="form-group">
+                    <label for="sessionDescription">Descripción:</label>
+                    <textarea id="sessionDescription" rows="3" placeholder="Describe tu sesión..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="sessionIsPublic" checked>
+                        <span>Sesión Pública</span>
+                    </label>
+                    <small>Las sesiones públicas aparecen en la galería. Las privadas solo en el panel de administración.</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Herramientas Disponibles:</label>
+                    <div id="brushTypesContainer" class="brush-types-grid">
+                        <!-- Se llenará dinámicamente -->
+                    </div>
+                    <small>Selecciona las herramientas que estarán disponibles en esta sesión</small>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeSessionModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Sesión</button>
+                </div>
+            </form>
         </div>
     </div>
 

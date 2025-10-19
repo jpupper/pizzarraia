@@ -41,7 +41,8 @@ async function checkAuth() {
 
 async function loadActiveSessions() {
     try {
-        const response = await fetch(`${config.API_URL}/api/admin/sessions`);
+        // Load public sessions from the database
+        const response = await fetch(`${config.API_URL}/api/sessions/public/list`);
         const data = await response.json();
         
         renderActiveSessions(data.sessions || []);
@@ -54,14 +55,15 @@ function renderActiveSessions(sessions) {
     const container = document.getElementById('activeSessions');
     
     if (sessions.length === 0) {
-        container.innerHTML = '<p class="loading-small">No hay sesiones activas</p>';
+        container.innerHTML = '<p class="loading-small">No hay sesiones públicas disponibles</p>';
         return;
     }
     
     const html = sessions.map(session => `
-        <div class="session-badge" onclick="goToSession('${session.sessionId}')">
-            🎨 Sesión ${session.sessionId}
-            <span class="user-count">${session.userCount} ${session.userCount === 1 ? 'usuario' : 'usuarios'}</span>
+        <div class="session-badge" onclick="goToSession('${session.sessionId}')" title="${session.description || session.name}">
+            🎨 ${session.name}
+            <span class="session-id">ID: ${session.sessionId}</span>
+            <span class="creator">Por: ${session.creatorUsername}</span>
         </div>
     `).join('');
     
