@@ -916,18 +916,28 @@ io.on('connection', (socket) => {
     // Convert to string and ensure it's a valid number
     sessionId = String(sessionId || '0');
     
-    // Remove from previous session if any
+    // ⚠️ CRÍTICO: Salir de la sala anterior de Socket.IO
+    if (socket.sessionId) {
+      socket.leave(socket.sessionId);
+      console.log(`   🚪 Socket ${socket.id} salió de sala ${socket.sessionId}`);
+    }
+    
+    // Remove from previous session array
     Object.keys(sessions).forEach(sid => {
       if (sessions[sid] && sessions[sid].includes(socket.id)) {
         sessions[sid] = sessions[sid].filter(id => id !== socket.id);
       }
     });
     
-    // Add to new session
+    // Add to new session array
     if (!sessions[sessionId]) {
       sessions[sessionId] = [];
     }
     sessions[sessionId].push(socket.id);
+    
+    // ✅ CRÍTICO: Unir a la SALA de Socket.IO
+    socket.join(sessionId);
+    console.log(`✅ Cliente ${socket.id} se unió a la SALA ${sessionId}`);
     
     // Update user info
     const userInfo = connectedUsers.get(socket.id);
@@ -935,7 +945,6 @@ io.on('connection', (socket) => {
       userInfo.sessionId = sessionId;
     }
     
-    console.log(`Cliente ${socket.id} se unió a la sesión ${sessionId}`);
     console.log('Sesiones activas:', sessions);
     
     // Store the session ID in the socket object for easy access
@@ -1107,28 +1116,10 @@ io.on('connection', (socket) => {
   socket.on('session-updated', function(data) {
     const sessionId = data.sessionId;
     
-    console.log(`\n📡 ========== SESSION-UPDATED RECIBIDO EN SERVIDOR ==========`);
-    console.log(`   Session ID: ${sessionId}`);
-    console.log(`   Data:`, JSON.stringify(data, null, 2));
-    console.log(`   Sesiones activas:`, Object.keys(sessions));
+    console.log(`📡 SESSION-UPDATED: ${sessionId} - Broadcasting inmediato`);
     
-    if (sessions[sessionId]) {
-      const sessionSockets = sessions[sessionId];
-      console.log(`   ✅ Sesión encontrada con ${sessionSockets.length} usuarios conectados`);
-      console.log(`   Socket IDs en sesión:`, sessionSockets);
-      
-      // Broadcast to ALL sockets in the same session (including sender for confirmation)
-      sessionSockets.forEach(socketId => {
-        console.log(`      → Enviando a socket ${socketId}`);
-        io.to(socketId).emit('session-updated', data);
-      });
-      
-      console.log(`✅ Broadcasted session update to ${sessionSockets.length} connected users`);
-    } else {
-      console.log(`   ⚠️ NO HAY USUARIOS EN SESIÓN ${sessionId}`);
-      console.log(`   Sesiones disponibles:`, Object.keys(sessions));
-    }
-    console.log(`========== FIN SESSION-UPDATED ==========\n`);
+    // Broadcast INMEDIATO a toda la sala
+    io.to(sessionId).emit('session-updated', data);
   });
   
   // Handle interaction tracking

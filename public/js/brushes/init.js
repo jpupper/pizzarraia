@@ -335,61 +335,42 @@ function applySessionRestrictions(restrictions) {
 }
 
 /**
- * Fuerza el ocultamiento de botones no permitidos
- * NUEVO: Usa el sistema polimórfico de cada brush
+ * Fuerza el ocultamiento de botones no permitidos - SIMPLIFICADO Y DIRECTO
  */
 function forceHideNonAllowedButtons() {
-    if (!brushRegistry) {
-        console.warn('⚠️ forceHideNonAllowedButtons: BrushRegistry no disponible');
-        return;
-    }
-
-    console.log('🔒 forceHideNonAllowedButtons: Actualizando visibilidad de brushes...');
+    if (!brushRegistry) return;
     
-    const allBrushIds = brushRegistry.getAllIds();
-    console.log(`📊 Total de brushes registrados: ${allBrushIds.length}`);
+    const allButtons = document.querySelectorAll('.brush-btn');
+    if (allButtons.length === 0) return;
     
-    let hiddenCount = 0;
-    let visibleCount = 0;
+    console.log('🔒 Actualizando botones...');
     
-    // POLIMORFISMO: Cada brush controla su propia visibilidad
-    allBrushIds.forEach(brushId => {
-        const brush = brushRegistry.get(brushId);
+    allButtons.forEach(button => {
+        const brushId = button.getAttribute('data-brush');
+        if (!brushId) return;
+        
         const isAllowed = brushRegistry.isBrushAllowed(brushId);
         
-        if (brush && typeof brush.setVisible === 'function') {
-            // Usar el método polimórfico del brush
-            brush.setVisible(isAllowed, isAllowed ? null : 'No permitido en esta sesión');
-            
-            if (isAllowed) {
-                visibleCount++;
-            } else {
-                hiddenCount++;
-            }
+        if (isAllowed) {
+            // MOSTRAR
+            button.style.display = '';
+            button.style.visibility = 'visible';
+            button.style.opacity = '1';
+            button.style.pointerEvents = '';
+            button.disabled = false;
+            button.classList.remove('hidden');
         } else {
-            // Fallback al método antiguo si el brush no tiene el nuevo sistema
-            console.warn(`⚠️ Brush ${brushId} no tiene método setVisible(), usando fallback`);
-            const button = document.querySelector(`.brush-btn[data-brush="${brushId}"]`);
-            if (button) {
-                if (isAllowed) {
-                    button.style.display = '';
-                    button.style.visibility = 'visible';
-                    button.style.opacity = '1';
-                    visibleCount++;
-                } else {
-                    button.style.display = 'none';
-                    button.style.visibility = 'hidden';
-                    button.style.opacity = '0';
-                    button.style.pointerEvents = 'none';
-                    hiddenCount++;
-                }
-            }
+            // OCULTAR
+            button.style.display = 'none';
+            button.style.visibility = 'hidden';
+            button.style.opacity = '0';
+            button.style.pointerEvents = 'none';
+            button.disabled = true;
+            button.classList.add('hidden');
         }
     });
     
-    console.log(`✅ forceHideNonAllowedButtons completado:`);
-    console.log(`   - Brushes visibles: ${visibleCount}`);
-    console.log(`   - Brushes ocultos: ${hiddenCount}`);
+    console.log('✅ Botones actualizados');
 }
 
 /**
