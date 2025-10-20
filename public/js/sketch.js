@@ -2220,7 +2220,18 @@ var qrScale = 1;
  * Generar QR Code
  */
 function generateQR() {
-    const inputText = document.getElementById('qrInput').value || window.location.href;
+    // Siempre usar el link completo de la sesión actual
+    const currentUrl = window.location.href;
+    const inputText = currentUrl;
+    
+    // Actualizar el input para mostrar el link generado
+    const qrInput = document.getElementById('qrInput');
+    if (qrInput) {
+        qrInput.value = inputText;
+        qrInput.readOnly = true; // Hacer el input de solo lectura
+        qrInput.style.color = '#667eea';
+        qrInput.style.fontWeight = '600';
+    }
     
     try {
         // Crear QR code
@@ -2313,5 +2324,38 @@ function drawQR() {
     guiBuffer.pop();
 }
 
+/**
+ * Copiar link de la sesión al portapapeles
+ */
+function copySessionLink() {
+    const currentUrl = window.location.href;
+    const qrInput = document.getElementById('qrInput');
+    
+    // Actualizar el input con el link
+    if (qrInput) {
+        qrInput.value = currentUrl;
+    }
+    
+    // Copiar al portapapeles
+    navigator.clipboard.writeText(currentUrl).then(() => {
+        if (typeof toast !== 'undefined') {
+            toast.success('Link copiado al portapapeles');
+        } else {
+            console.log('Link copiado:', currentUrl);
+        }
+    }).catch(err => {
+        console.error('Error al copiar:', err);
+        // Fallback: seleccionar el texto del input
+        if (qrInput) {
+            qrInput.select();
+            document.execCommand('copy');
+            if (typeof toast !== 'undefined') {
+                toast.success('Link copiado al portapapeles');
+            }
+        }
+    });
+}
+
 // Exponer funciones globalmente
 window.toggleQR = toggleQR;
+window.copySessionLink = copySessionLink;

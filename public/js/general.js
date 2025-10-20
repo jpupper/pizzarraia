@@ -183,6 +183,13 @@ function setupBrushTypeEvents() {
   }
   
   const brushTypeSelect = document.getElementById('brushType');
+  
+  // Only setup if brushTypeSelect exists (old system)
+  if (!brushTypeSelect) {
+    console.log('Brush type select not found - using new brush registry system');
+    return;
+  }
+  
   const classicBrushParams = document.getElementById('classicBrushParams');
   const pixelBrushParams = document.getElementById('pixelBrushParams');
   const artBrushParams = document.getElementById('artBrushParams');
@@ -323,9 +330,11 @@ function setupBrushTypeEvents() {
   // Add event listeners for text brush parameters
   const textSizeInput = document.getElementById('textSize');
   
-  textSizeInput.addEventListener('input', function() {
-    updateSliderValue('textSize');
-  });
+  if (textSizeInput) {
+    textSizeInput.addEventListener('input', function() {
+      updateSliderValue('textSize');
+    });
+  }
   
   // Add event listeners for spirograph brush parameters
   const spiroModuloInput = document.getElementById('spiroModulo');
@@ -437,6 +446,12 @@ function setupBrushTypeEvents() {
 function setupBrushSelector() {
   const brushButtons = document.querySelectorAll('.brush-btn');
   const brushTypeInput = document.getElementById('brushType');
+  
+  // If no brush buttons or brushType input, we're using the new brush registry system
+  if (brushButtons.length === 0 || !brushTypeInput) {
+    console.log('Using new brush registry system - old brush selector not needed');
+    return;
+  }
   
   brushButtons.forEach(button => {
     button.addEventListener('click', function() {

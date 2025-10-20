@@ -10,7 +10,7 @@ fetch(`${config.API_URL}/api/check-session`, {
     .then(res => res.json())
     .then(data => {
         if (data.authenticated) {
-            window.location.href = 'index.html?sesion=3000';
+            window.location.href = 'profile.html';
         }
     });
 
@@ -50,7 +50,7 @@ loginForm.addEventListener('submit', async (e) => {
             
             showSuccess('¡Inicio de sesión exitoso! Redirigiendo...');
             setTimeout(() => {
-                window.location.href = 'index.html?sesion=3000';
+                window.location.href = 'profile.html';
             }, 1000);
         } else {
             showError(data.error || 'Error al iniciar sesión');

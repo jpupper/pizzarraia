@@ -27,10 +27,23 @@ document.addEventListener('DOMContentLoaded', async () => {
             const response = await fetch(`${config.API_URL}/api/sessions/${sessionId}`);
             if (response.ok) {
                 const data = await response.json();
-                if (data.session && data.session.allowedBrushTypes && data.session.allowedBrushTypes.length > 0) {
-                    brushRegistry.setAllowedBrushTypes(data.session.allowedBrushTypes);
-                    console.log(`🔒 Sesión ${sessionId}: Brushes restringidos a:`, data.session.allowedBrushTypes);
+                if (data.session) {
+                    // Apply brush restrictions if configured
+                    if (data.session.allowedBrushTypes && data.session.allowedBrushTypes.length > 0) {
+                        brushRegistry.setAllowedBrushTypes(data.session.allowedBrushTypes);
+                        console.log(`🔒 Sesión ${sessionId}: Brushes restringidos a:`, data.session.allowedBrushTypes);
+                    }
+                } else {
+                    // Session not found in database
+                    console.error(`❌ La sesión ${sessionId} no existe`);
+                    window.location.href = `session-not-found.html?session=${sessionId}`;
+                    return;
                 }
+            } else if (response.status === 404) {
+                // Session not found
+                console.error(`❌ La sesión ${sessionId} no existe`);
+                window.location.href = `session-not-found.html?session=${sessionId}`;
+                return;
             }
         } catch (error) {
             console.warn('⚠ No se pudo cargar la configuración de la sesión:', error);

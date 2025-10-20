@@ -198,20 +198,37 @@ function renderSessions(sessions) {
         
         return `
             <div class="session-card">
-                <h3>
-                    Sesión ${session.sessionId}
-                    ${statusBadge}
-                    ${visibilityBadge}
-                </h3>
-                ${session.name ? `<p style="font-weight: 600; margin: 5px 0;">${escapeHtml(session.name)}</p>` : ''}
-                ${session.description ? `<p style="color: #666; font-size: 0.9rem; margin: 5px 0;">${escapeHtml(session.description)}</p>` : ''}
-                ${session.creatorUsername ? `<div class="session-info">👤 Creador: <strong>${escapeHtml(session.creatorUsername)}</strong></div>` : ''}
-                <div class="session-info">
-                    <strong>${session.userCount}</strong> usuario${session.userCount !== 1 ? 's' : ''} conectado${session.userCount !== 1 ? 's' : ''}
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                    <h3 style="margin: 0;">
+                        Sesión ${session.sessionId}
+                    </h3>
+                    <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                        ${statusBadge}
+                        ${visibilityBadge}
+                    </div>
                 </div>
+                ${session.name ? `<p style="font-weight: 600; margin: 5px 0; font-size: 1.1rem; color: #333;">${escapeHtml(session.name)}</p>` : ''}
+                ${session.description ? `<p style="color: #666; font-size: 0.9rem; margin: 5px 0;">${escapeHtml(session.description)}</p>` : ''}
+                
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                    ${session.creatorUsername ? `
+                        <div class="session-info" style="margin-bottom: 8px;">
+                            👤 <strong>Creador:</strong> ${escapeHtml(session.creatorUsername)}
+                        </div>
+                    ` : ''}
+                    <div class="session-info" style="margin-bottom: 8px;">
+                        👥 <strong>Usuarios conectados:</strong> ${session.userCount} usuario${session.userCount !== 1 ? 's' : ''}
+                    </div>
+                    ${session.allowedBrushTypes && session.allowedBrushTypes.length > 0 ? `
+                        <div class="session-info" style="margin-bottom: 8px;">
+                            🎨 <strong>Herramientas:</strong> ${session.allowedBrushTypes.length} permitida${session.allowedBrushTypes.length !== 1 ? 's' : ''}
+                        </div>
+                    ` : ''}
+                </div>
+                
                 ${session.users && session.users.length > 0 ? `
-                    <div class="session-users">
-                        <h4>Usuarios conectados:</h4>
+                    <div class="session-users" style="margin-top: 15px;">
+                        <h4 style="font-size: 0.9rem; margin-bottom: 8px; color: #666;">Usuarios activos ahora:</h4>
                         ${session.users.map(user => `
                             <span class="user-chip">${escapeHtml(user.username)}</span>
                         `).join('')}
@@ -483,12 +500,12 @@ async function applyCustomRange() {
     const endDate = new Date(document.getElementById('endDate').value);
     
     if (!startDate || !endDate) {
-        alert('Por favor selecciona ambas fechas');
+        toast.warning('Por favor selecciona ambas fechas');
         return;
     }
     
     if (startDate > endDate) {
-        alert('La fecha de inicio debe ser anterior a la fecha de fin');
+        toast.warning('La fecha de inicio debe ser anterior a la fecha de fin');
         return;
     }
     
@@ -702,7 +719,7 @@ async function downloadAnalyticsData() {
                 startDate = new Date(document.getElementById('startDate').value);
                 endDate = new Date(document.getElementById('endDate').value);
                 if (!startDate || !endDate || isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-                    alert('Por favor selecciona fechas válidas');
+                    toast.warning('Por favor selecciona fechas válidas');
                     return;
                 }
                 break;
@@ -747,13 +764,13 @@ async function downloadAnalyticsData() {
             document.body.removeChild(link);
             
             console.log('Analytics data downloaded:', filename);
-            alert('Datos descargados exitosamente');
+            toast.success('Datos descargados exitosamente');
         } else {
-            alert('No hay datos disponibles para el rango seleccionado');
+            toast.info('No hay datos disponibles para el rango seleccionado');
         }
     } catch (error) {
         console.error('Error downloading analytics:', error);
-        alert('Error al descargar los datos: ' + error.message);
+        toast.error('Error al descargar los datos: ' + error.message);
     }
 }
 
