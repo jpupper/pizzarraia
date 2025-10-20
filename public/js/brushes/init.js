@@ -71,6 +71,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Log which brushes are shown
         const allowedBrushes = brushRegistry.getAllowedBrushes();
         console.log(`📋 Brushes visibles:`, allowedBrushes.map(b => b.getId()).join(', '));
+        
+        // FORZAR ocultamiento de botones no permitidos después de un pequeño delay
+        setTimeout(() => {
+            forceHideNonAllowedButtons();
+        }, 100);
     } else {
         console.warn('⚠ Contenedor de botones de brushes no encontrado');
     }
@@ -119,6 +124,60 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('✅ Sistema de brushes inicializado correctamente');
     console.log(`📊 Brushes registrados: ${brushRegistry.getAllIds().join(', ')}`);
 });
+
+/**
+ * Fuerza el ocultamiento de botones no permitidos
+ * Esta función se ejecuta como medida de seguridad adicional
+ */
+function forceHideNonAllowedButtons() {
+    if (!brushRegistry) {
+        console.warn('⚠️ forceHideNonAllowedButtons: BrushRegistry no disponible');
+        return;
+    }
+
+    console.log('🔒 forceHideNonAllowedButtons: Ocultando botones no permitidos...');
+    
+    // Obtener TODOS los botones del DOM
+    const allButtons = document.querySelectorAll('.brush-btn');
+    console.log(`📊 Total de botones encontrados en el DOM: ${allButtons.length}`);
+    
+    if (allButtons.length === 0) {
+        console.warn('⚠️ No se encontraron botones .brush-btn en el DOM');
+        return;
+    }
+    
+    let hiddenCount = 0;
+    let visibleCount = 0;
+    
+    allButtons.forEach(button => {
+        const brushId = button.getAttribute('data-brush');
+        
+        if (brushId) {
+            const isAllowed = brushRegistry.isBrushAllowed(brushId);
+            
+            if (isAllowed) {
+                // Asegurar que el botón esté visible
+                button.style.display = '';
+                button.style.visibility = 'visible';
+                button.style.opacity = '1';
+                visibleCount++;
+                console.log(`✅ Brush visible: ${brushId}`);
+            } else {
+                // OCULTAR COMPLETAMENTE
+                button.style.display = 'none';
+                button.style.visibility = 'hidden';
+                button.style.opacity = '0';
+                button.style.pointerEvents = 'none';
+                hiddenCount++;
+                console.log(`🚫 Brush OCULTO: ${brushId}`);
+            }
+        }
+    });
+    
+    console.log(`✅ forceHideNonAllowedButtons completado:`);
+    console.log(`   - Botones visibles: ${visibleCount}`);
+    console.log(`   - Botones ocultos: ${hiddenCount}`);
+}
 
 /**
  * Función helper para obtener el brush activo
@@ -190,4 +249,5 @@ function getCurrentBrushParams() {
 if (typeof window !== 'undefined') {
     window.getActiveBrush = getActiveBrush;
     window.getCurrentBrushParams = getCurrentBrushParams;
+    window.forceHideNonAllowedButtons = forceHideNonAllowedButtons;
 }

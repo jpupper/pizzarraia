@@ -124,12 +124,22 @@ function openGui(){
 	document.getElementById("gui").style.display = "block";
 	document.getElementById("opengui").style.display = "none";
 	isRandomValues = false;
+	
+	// Forzar ocultamiento de botones no permitidos al abrir GUI
+	if (typeof forceHideNonAllowedButtons === 'function') {
+		setTimeout(() => forceHideNonAllowedButtons(), 50);
+	}
 }
 
 function closeGui(){
 	console.log("CERRAR GUI");
 	document.getElementById("gui").style.display = "none";
 	document.getElementById("opengui").style.display = "block";
+	
+	// Forzar ocultamiento de botones no permitidos al cerrar GUI
+	if (typeof forceHideNonAllowedButtons === 'function') {
+		setTimeout(() => forceHideNonAllowedButtons(), 50);
+	}
 }
 
 
