@@ -2475,6 +2475,33 @@ async function handleSessionUpdate(data) {
             console.log('✅ [SKETCH] Restricciones aplicadas');
         }
         
+        // Actualizar nombre y descripción de la sesión en el chat
+        if (data.name || data.description) {
+            console.log('📝 [SKETCH] Actualizando nombre y descripción de sesión...');
+            
+            // Actualizar nombre
+            if (data.name) {
+                const nameElement = document.getElementById('sessionInfoName');
+                if (nameElement) {
+                    nameElement.textContent = data.name;
+                    console.log('✅ [SKETCH] Nombre actualizado en #sessionInfoName:', data.name);
+                } else {
+                    console.warn('⚠️ [SKETCH] Elemento #sessionInfoName no encontrado');
+                }
+            }
+            
+            // Actualizar descripción
+            if (data.description) {
+                const descElement = document.getElementById('sessionInfoDescription');
+                if (descElement) {
+                    descElement.textContent = data.description;
+                    console.log('✅ [SKETCH] Descripción actualizada en #sessionInfoDescription:', data.description);
+                } else {
+                    console.warn('⚠️ [SKETCH] Elemento #sessionInfoDescription no encontrado');
+                }
+            }
+        }
+        
         console.log('✅ [SKETCH] ========== ACTUALIZACIÓN COMPLETADA ==========\n');
         
     } catch (error) {

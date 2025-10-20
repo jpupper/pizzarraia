@@ -170,37 +170,65 @@ document.addEventListener('DOMContentLoaded', async () => {
  * @returns {Array|null} - Array de brushes permitidos o null si no tiene acceso
  */
 async function applyAccessConfig(accessConfig, userType, currentUsername) {
-    console.log('🔐 Aplicando configuración de acceso:', { accessConfig, userType, currentUsername });
+    console.log('\n🔐 [INIT] ========== APLICANDO ACCESS CONFIG ==========');
+    console.log('📊 [INIT] Parámetros:', { 
+        userType, 
+        currentUsername,
+        accessConfig: {
+            notLogged: {
+                allowed: accessConfig.notLogged?.allowed,
+                brushes: accessConfig.notLogged?.brushes
+            },
+            logged: {
+                allowed: accessConfig.logged?.allowed,
+                brushes: accessConfig.logged?.brushes
+            },
+            specific: {
+                allowed: accessConfig.specific?.allowed,
+                users: accessConfig.specific?.users,
+                brushes: accessConfig.specific?.brushes
+            }
+        }
+    });
     
     // Verificar si es un usuario específico
     if (currentUsername && accessConfig.specific?.allowed) {
         const isSpecificUser = accessConfig.specific.users.includes(currentUsername);
+        console.log(`🔍 [INIT] Verificando usuario específico:`, { currentUsername, isSpecificUser, users: accessConfig.specific.users });
         if (isSpecificUser) {
-            console.log(`✅ Usuario específico detectado: ${currentUsername}`);
-            // Si no hay brushes, devolver array vacío (sin botones)
+            console.log(`✅ [INIT] Usuario específico detectado: ${currentUsername}`);
+            console.log(`📋 [INIT] Brushes para específico:`, accessConfig.specific.brushes);
             return accessConfig.specific.brushes || [];
         }
     }
     
     // Verificar según tipo de usuario
     if (userType === 'logged') {
+        console.log(`🔍 [INIT] Usuario REGISTRADO - Verificando acceso...`);
+        console.log(`   - allowed:`, accessConfig.logged?.allowed);
+        console.log(`   - brushes:`, accessConfig.logged?.brushes);
+        
         if (!accessConfig.logged?.allowed) {
             alert('⛔ Esta sesión no permite el acceso a usuarios registrados.\n\nPor favor, cierra sesión para continuar.');
             return null;
         }
-        console.log(`✅ Acceso permitido para usuario registrado`);
-        // Si no hay brushes, devolver array vacío (sin botones)
+        console.log(`✅ [INIT] Acceso permitido para usuario REGISTRADO`);
+        console.log(`📋 [INIT] Brushes para REGISTRADO:`, accessConfig.logged.brushes);
         return accessConfig.logged.brushes || [];
     }
     
     if (userType === 'notLogged') {
+        console.log(`🔍 [INIT] Usuario NO REGISTRADO - Verificando acceso...`);
+        console.log(`   - allowed:`, accessConfig.notLogged?.allowed);
+        console.log(`   - brushes:`, accessConfig.notLogged?.brushes);
+        
         if (!accessConfig.notLogged?.allowed) {
             alert('⛔ Esta sesión solo está disponible para usuarios registrados.\n\nPor favor, inicia sesión para continuar.');
             window.location.href = 'login.html';
             return null;
         }
-        console.log(`✅ Acceso permitido para usuario no registrado`);
-        // Si no hay brushes, devolver array vacío (sin botones)
+        console.log(`✅ [INIT] Acceso permitido para usuario NO REGISTRADO`);
+        console.log(`📋 [INIT] Brushes para NO REGISTRADO:`, accessConfig.notLogged.brushes);
         return accessConfig.notLogged.brushes || [];
     }
     
