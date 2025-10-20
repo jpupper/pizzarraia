@@ -263,7 +263,33 @@ function setup() {
     
     // Configurar evento para actualización de sesión - TIEMPO REAL
     socket.on("session-updated", function(data) {
-        console.log('🔔 SESSION-UPDATED RECIBIDO - Procesando INMEDIATAMENTE');
+        console.log('\n⚡ [SKETCH] ========== SESSION-UPDATED RECIBIDO ==========');
+        console.log('📦 [SKETCH] Datos recibidos:', {
+            sessionId: data.sessionId,
+            timestamp: new Date().toISOString(),
+            accessConfig: {
+                notLogged: {
+                    allowed: data.accessConfig?.notLogged?.allowed,
+                    brushes: data.accessConfig?.notLogged?.brushes?.length || 0,
+                    brushesList: data.accessConfig?.notLogged?.brushes,
+                    restrictions: data.accessConfig?.notLogged?.restrictions
+                },
+                logged: {
+                    allowed: data.accessConfig?.logged?.allowed,
+                    brushes: data.accessConfig?.logged?.brushes?.length || 0,
+                    brushesList: data.accessConfig?.logged?.brushes,
+                    restrictions: data.accessConfig?.logged?.restrictions
+                },
+                specific: {
+                    allowed: data.accessConfig?.specific?.allowed,
+                    users: data.accessConfig?.specific?.users,
+                    brushes: data.accessConfig?.specific?.brushes?.length || 0,
+                    brushesList: data.accessConfig?.specific?.brushes,
+                    restrictions: data.accessConfig?.specific?.restrictions
+                }
+            }
+        });
+        console.log('🔄 [SKETCH] Procesando INMEDIATAMENTE...');
         handleSessionUpdate(data);
     });
     
@@ -2367,13 +2393,17 @@ function copySessionLink() {
  * @param {Object} data - Datos de la sesión actualizada
  */
 async function handleSessionUpdate(data) {
-    console.log('🔄 SESSION UPDATE:', data.sessionId);
+    console.log('🔄 [SKETCH] handleSessionUpdate() INICIADO');
+    console.log('📊 [SKETCH] Sesión actual:', sessionId);
+    console.log('📊 [SKETCH] Sesión recibida:', data.sessionId);
     
     // Validar sesión
     if (data.sessionId !== sessionId) {
-        console.log('⚠️ Sesión diferente, ignorando');
+        console.log('⚠️ [SKETCH] Sesión diferente, IGNORANDO');
         return;
     }
+    
+    console.log('✅ [SKETCH] Sesión coincide - Continuando...');
     
     // Notificación
     if (typeof toast !== 'undefined') {
@@ -2382,11 +2412,13 @@ async function handleSessionUpdate(data) {
     
     // Aplicar configuración
     if (!data.accessConfig || typeof applyAccessConfig !== 'function') {
-        console.warn('⚠️ No hay accessConfig o applyAccessConfig');
+        console.warn('⚠️ [SKETCH] No hay accessConfig o applyAccessConfig');
         return;
     }
     
     try {
+        console.log('👤 [SKETCH] Determinando tipo de usuario...');
+        
         // Determinar tipo de usuario
         let userType = 'notLogged';
         let currentUsername = null;
@@ -2401,37 +2433,53 @@ async function handleSessionUpdate(data) {
             userType = 'logged';
         }
         
+        console.log('✅ [SKETCH] Usuario:', { tipo: userType, username: currentUsername });
+        console.log('🔐 [SKETCH] Aplicando configuración de acceso...');
+        
         // Aplicar configuración
         const allowedBrushes = await applyAccessConfig(data.accessConfig, userType, currentUsername);
         
+        console.log('📋 [SKETCH] Brushes permitidos:', allowedBrushes);
+        
         if (allowedBrushes && typeof brushRegistry !== 'undefined') {
+            console.log('🔒 [SKETCH] Actualizando BrushRegistry...');
             brushRegistry.setAllowedBrushTypes(allowedBrushes);
             
+            console.log('🔘 [SKETCH] Actualizando botones...');
             // Actualizar botones INMEDIATAMENTE
             if (typeof forceHideNonAllowedButtons === 'function') {
                 forceHideNonAllowedButtons();
+            } else {
+                console.error('❌ [SKETCH] forceHideNonAllowedButtons NO disponible');
             }
             
             // Cambiar brush si el actual no está permitido
             if (typeof currentBrush !== 'undefined' && !allowedBrushes.includes(currentBrush)) {
+                console.log('⚠️ [SKETCH] Brush actual no permitido, cambiando...');
                 if (allowedBrushes.length > 0) {
                     selectBrush(allowedBrushes[0]);
                 }
             }
+        } else {
+            console.error('❌ [SKETCH] No se recibieron brushes o BrushRegistry no disponible');
         }
         
         // Aplicar restricciones específicas
         const userConfigKey = userType === 'logged' ? 'logged' : 'notLogged';
         const userConfig = data.accessConfig[userConfigKey];
         
+        console.log('🔐 [SKETCH] Aplicando restricciones para:', userConfigKey);
+        
         if (userConfig && userConfig.restrictions && typeof applySessionRestrictions === 'function') {
             applySessionRestrictions(userConfig.restrictions);
+            console.log('✅ [SKETCH] Restricciones aplicadas');
         }
         
-        console.log('✅ Actualización completada');
+        console.log('✅ [SKETCH] ========== ACTUALIZACIÓN COMPLETADA ==========\n');
         
     } catch (error) {
-        console.error('❌ Error:', error);
+        console.error('❌ [SKETCH] Error:', error);
+        console.error('❌ [SKETCH] Stack:', error.stack);
     }
 }
 

@@ -338,12 +338,26 @@ function applySessionRestrictions(restrictions) {
  * Fuerza el ocultamiento de botones no permitidos - SIMPLIFICADO Y DIRECTO
  */
 function forceHideNonAllowedButtons() {
-    if (!brushRegistry) return;
+    console.log('🔘 [INIT] forceHideNonAllowedButtons() LLAMADA');
+    
+    if (!brushRegistry) {
+        console.error('❌ [INIT] BrushRegistry NO disponible');
+        return;
+    }
     
     const allButtons = document.querySelectorAll('.brush-btn');
-    if (allButtons.length === 0) return;
+    console.log('📊 [INIT] Botones encontrados:', allButtons.length);
     
-    console.log('🔒 Actualizando botones...');
+    if (allButtons.length === 0) {
+        console.warn('⚠️ [INIT] NO se encontraron botones .brush-btn');
+        return;
+    }
+    
+    const allowedBrushes = brushRegistry.getAllowedBrushes();
+    console.log('📋 [INIT] Brushes permitidos:', allowedBrushes);
+    
+    let visibleCount = 0;
+    let hiddenCount = 0;
     
     allButtons.forEach(button => {
         const brushId = button.getAttribute('data-brush');
@@ -359,6 +373,7 @@ function forceHideNonAllowedButtons() {
             button.style.pointerEvents = '';
             button.disabled = false;
             button.classList.remove('hidden');
+            visibleCount++;
         } else {
             // OCULTAR
             button.style.display = 'none';
@@ -367,10 +382,11 @@ function forceHideNonAllowedButtons() {
             button.style.pointerEvents = 'none';
             button.disabled = true;
             button.classList.add('hidden');
+            hiddenCount++;
         }
     });
     
-    console.log('✅ Botones actualizados');
+    console.log('✅ [INIT] Botones actualizados - Visibles:', visibleCount, 'Ocultos:', hiddenCount);
 }
 
 /**

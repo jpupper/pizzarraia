@@ -1116,10 +1116,42 @@ io.on('connection', (socket) => {
   socket.on('session-updated', function(data) {
     const sessionId = data.sessionId;
     
-    console.log(`📡 SESSION-UPDATED: ${sessionId} - Broadcasting inmediato`);
+    console.log('\n🔥 [SERVER] ========== SESSION-UPDATED RECIBIDO ==========');
+    console.log('📊 [SERVER] Datos recibidos:', {
+      sessionId: sessionId,
+      timestamp: new Date().toISOString(),
+      socketId: socket.id,
+      accessConfig: {
+        notLogged: {
+          allowed: data.accessConfig?.notLogged?.allowed,
+          brushes: data.accessConfig?.notLogged?.brushes?.length || 0,
+          brushesList: data.accessConfig?.notLogged?.brushes,
+          restrictions: data.accessConfig?.notLogged?.restrictions
+        },
+        logged: {
+          allowed: data.accessConfig?.logged?.allowed,
+          brushes: data.accessConfig?.logged?.brushes?.length || 0,
+          brushesList: data.accessConfig?.logged?.brushes,
+          restrictions: data.accessConfig?.logged?.restrictions
+        },
+        specific: {
+          allowed: data.accessConfig?.specific?.allowed,
+          users: data.accessConfig?.specific?.users,
+          brushes: data.accessConfig?.specific?.brushes?.length || 0,
+          brushesList: data.accessConfig?.specific?.brushes,
+          restrictions: data.accessConfig?.specific?.restrictions
+        }
+      }
+    });
+    
+    console.log('📢 [SERVER] Broadcasting a sala:', sessionId);
+    console.log('👥 [SERVER] Usuarios en sala:', sessions[sessionId]?.length || 0);
     
     // Broadcast INMEDIATO a toda la sala
     io.to(sessionId).emit('session-updated', data);
+    
+    console.log('✅ [SERVER] Broadcast completado');
+    console.log('========== FIN SESSION-UPDATED ==========\n');
   });
   
   // Handle interaction tracking

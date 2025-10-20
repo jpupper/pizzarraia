@@ -754,14 +754,29 @@ function populateBrushTypesForUserType(containerId, userType) {
 }
 
 function toggleBrushTypeForUser(element, brushId, userType) {
+    console.log('\n🖱️ ========== BOTÓN APRETADO ==========');
+    console.log('🎯 Brush ID:', brushId);
+    console.log('👤 User Type:', userType);
+    console.log('⏰ Timestamp:', new Date().toISOString());
+    
     const checkbox = element.querySelector('input[type="checkbox"]');
+    const oldValue = checkbox.checked;
     checkbox.checked = !checkbox.checked;
+    
+    console.log('🔄 Estado cambiado:', oldValue, '→', checkbox.checked);
     
     if (checkbox.checked) {
         element.classList.add('selected');
     } else {
         element.classList.remove('selected');
     }
+    
+    // DISPARAR EVENTO CHANGE MANUALMENTE
+    console.log('📢 Disparando evento change...');
+    const changeEvent = new Event('change', { bubbles: true });
+    checkbox.dispatchEvent(changeEvent);
+    console.log('✅ Evento change disparado');
+    console.log('========== FIN BOTÓN APRETADO ==========\n');
 }
 
 function setupAccessControlListeners() {
@@ -1139,25 +1154,61 @@ async function editSession(sessionId) {
 
 /**
  * Configura listeners para auto-guardado en cada cambio
+ * USA EVENT DELEGATION para que funcione con elementos dinámicos
  */
 function setupAutoSaveListeners() {
-    console.log('⚙️ Configurando listeners de auto-guardado...');
+    console.log('\n🔧 [PROFILE] ========== CONFIGURANDO LISTENERS ==========');
     
-    // NO clonar el modal - eso destruye todo
-    // En su lugar, remover listeners específicos si es necesario
+    // EVENT DELEGATION en el modal completo
+    const modal = document.getElementById('sessionModal');
     
-    // Listener para checkboxes de tipo de usuario
-    document.querySelectorAll('.user-type-toggle').forEach(checkbox => {
-        // Remover listener anterior si existe
-        checkbox.removeEventListener('change', autoSaveSession);
-        checkbox.addEventListener('change', autoSaveSession);
-    });
+    if (!modal) {
+        console.error('❌ [PROFILE] Modal NO encontrado!');
+        return;
+    }
     
-    // Listener para checkboxes de brushes (incluyendo restricciones)
-    document.querySelectorAll('.brush-types-grid input[type="checkbox"]').forEach(checkbox => {
-        checkbox.removeEventListener('change', autoSaveSession);
-        checkbox.addEventListener('change', autoSaveSession);
-    });
+    console.log('✅ [PROFILE] Modal encontrado:', modal);
+    console.log('📊 [PROFILE] Checkboxes en modal:', modal.querySelectorAll('input[type="checkbox"]').length);
+    console.log('📊 [PROFILE] Brush grids:', modal.querySelectorAll('.brush-types-grid').length);
+    
+    // Remover listener anterior si existe
+    if (modal._autoSaveHandler) {
+        console.log('🔄 [PROFILE] Removiendo listener anterior');
+        modal.removeEventListener('change', modal._autoSaveHandler);
+    }
+    
+    // Listener único con delegation
+    modal._autoSaveHandler = function(e) {
+        const target = e.target;
+        
+        console.log('\n🔔 [PROFILE] ========== EVENTO CHANGE DETECTADO ==========');
+        console.log('📊 [PROFILE] Target:', {
+            id: target.id,
+            type: target.type,
+            checked: target.checked,
+            value: target.value,
+            classList: Array.from(target.classList),
+            hasParentGrid: !!target.closest('.brush-types-grid'),
+            timestamp: new Date().toISOString()
+        });
+        
+        // Si es un checkbox de brush o user-type-toggle
+        if (target.type === 'checkbox' && 
+            (target.closest('.brush-types-grid') || target.classList.contains('user-type-toggle'))) {
+            console.log('✅ [PROFILE] Checkbox de brush detectado - Llamando autoSaveSession()');
+            autoSaveSession();
+        } else if (target.id === 'sessionIsPublic') {
+            // Si es el checkbox de sesión pública
+            console.log('✅ [PROFILE] Checkbox público detectado - Llamando autoSaveSession()');
+            autoSaveSession();
+        } else {
+            console.log('⚠️ [PROFILE] Checkbox NO coincide con condiciones - IGNORADO');
+        }
+    };
+    
+    modal.addEventListener('change', modal._autoSaveHandler);
+    console.log('✅ [PROFILE] Listener agregado al modal');
+    console.log('========== FIN CONFIGURACIÓN LISTENERS ==========\n');
     
     // Listener para usuarios específicos (con debounce)
     const specificUsersInput = document.getElementById('specificUsers');
@@ -1219,10 +1270,12 @@ function setupAutoSaveListeners() {
 
 /**
  * Guarda automáticamente la sesión y envía por WebSocket - INMEDIATO
+ * NO ESPERA - Envía socket primero, guarda después
  */
-async function autoSaveSession() {
-    // Ejecutar guardado INMEDIATAMENTE
-    await performAutoSave();
+function autoSaveSession() {
+    console.log('🚀 [PROFILE] autoSaveSession() LLAMADA:', new Date().toISOString());
+    // NO AWAIT - Ejecutar en paralelo sin bloquear
+    performAutoSave();
 }
 
 /**
@@ -1236,14 +1289,24 @@ async function performAutoSave() {
     
     console.log('🔄 Auto-guardando sesión INMEDIATAMENTE...');
     
+    // Recopilar configuración actual
+    let sessionId, name, description, isPublic, accessConfig;
+    
     try {
-        // Recopilar configuración actual
-        const sessionId = document.getElementById('sessionIdInput').value;
-        const name = document.getElementById('sessionName').value;
-        const description = document.getElementById('sessionDescription').value;
-        const isPublic = document.getElementById('sessionIsPublic').checked;
+        console.log('📋 [PROFILE] Recopilando datos del formulario...');
         
-        const accessConfig = {};
+        sessionId = document.getElementById('sessionIdInput')?.value;
+        name = document.getElementById('sessionName')?.value;
+        description = document.getElementById('sessionDescription')?.value;
+        isPublic = document.getElementById('sessionIsPublic')?.checked;
+        
+        if (!sessionId) {
+            throw new Error('sessionId no encontrado en el formulario');
+        }
+        
+        console.log('✅ [PROFILE] Datos básicos recopilados:', { sessionId, name, isPublic });
+        
+        accessConfig = {};
         
         // Usuarios NO registrados
         const allowNotLogged = document.getElementById('allowNotLogged').checked;
@@ -1307,8 +1370,73 @@ async function performAutoSave() {
             restrictions: specificRestrictions
         };
         
-        // Guardar en backend
-        const response = await fetch(`${config.API_URL}/api/sessions/${currentEditingSessionId}`, {
+        console.log('✅ [PROFILE] Configuración recopilada exitosamente');
+        
+    } catch (error) {
+        console.error('\n❌❌❌ [PROFILE] ERROR CRÍTICO EN AUTO-GUARDADO ❌❌❌');
+        console.error('Error:', error);
+        console.error('Mensaje:', error.message);
+        console.error('Stack:', error.stack);
+        console.error('❌❌❌ EL SOCKET NO SE ENVIARÁ PORQUE HUBO UN ERROR ❌❌❌\n');
+        return; // SALIR si hay error
+    }
+    
+    // ENVIAR SOCKET (FUERA del try-catch de recopilación)
+    try {
+        console.log('\n🔍 [PROFILE] ========== PREPARANDO ENVÍO SOCKET ==========');
+        console.log('📊 [PROFILE] Estado del socket:', {
+            existe: !!socket,
+            conectado: socket?.connected,
+            id: socket?.id
+        });
+        
+        if (socket && socket.connected) {
+            const updateData = {
+                sessionId: sessionId,
+                accessConfig: accessConfig,
+                name: name,
+                description: description
+            };
+            
+            console.log('📡 [PROFILE] ENVIANDO socket session-updated:', {
+                sessionId: sessionId,
+                timestamp: new Date().toISOString(),
+                accessConfig: {
+                    notLogged: {
+                        allowed: accessConfig.notLogged.allowed,
+                        brushes: accessConfig.notLogged.brushes,
+                        restrictions: accessConfig.notLogged.restrictions
+                    },
+                    logged: {
+                        allowed: accessConfig.logged.allowed,
+                        brushes: accessConfig.logged.brushes,
+                        restrictions: accessConfig.logged.restrictions
+                    },
+                    specific: {
+                        allowed: accessConfig.specific.allowed,
+                        users: accessConfig.specific.users,
+                        brushes: accessConfig.specific.brushes,
+                        restrictions: accessConfig.specific.restrictions
+                    }
+                }
+            });
+            
+            socket.emit('session-updated', updateData);
+            console.log('✅ [PROFILE] Socket EMITIDO correctamente');
+            console.log('========== FIN ENVÍO SOCKET ==========\n');
+        } else {
+            console.error('❌ [PROFILE] Socket NO conectado - NO SE ENVIÓ');
+            console.error('   - socket existe:', !!socket);
+            console.error('   - socket.connected:', socket?.connected);
+        }
+    } catch (socketError) {
+        console.error('❌❌❌ [PROFILE] ERROR AL ENVIAR SOCKET ❌❌❌');
+        console.error('Error:', socketError);
+    }
+    
+    // GUARDAR EN DB (en paralelo, no bloqueante)
+    try {
+        fetch(`${config.API_URL}/api/sessions/${currentEditingSessionId}`, {
             method: 'PUT',
             headers: {
                 ...config.getAuthHeaders(),
@@ -1321,45 +1449,21 @@ async function performAutoSave() {
                 isPublic,
                 accessConfig
             })
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            console.log('✅ Sesión guardada automáticamente');
-            
-            // Enviar por WebSocket para sincronización en tiempo real
-            if (socket && socket.connected) {
-                const updateData = {
-                    sessionId: sessionId,
-                    accessConfig: accessConfig,
-                    name: name,
-                    description: description
-                };
-                
-                console.log('📡 Enviando actualización por WebSocket:');
-                console.log('   - sessionId:', sessionId);
-                console.log('   - accessConfig:', accessConfig);
-                
-                socket.emit('session-updated', updateData);
-                console.log('✅ Configuración enviada por WebSocket');
-            } else {
-                console.error('❌ Socket no conectado, no se puede enviar actualización');
-                console.log('   - socket existe:', !!socket);
-                console.log('   - socket.connected:', socket?.connected);
-            }
+        }).then(response => response.json())
+        .then(data => {
+            console.log('✅ [PROFILE] Sesión guardada en DB');
             
             // Actualizar sesión local
             currentEditingSession.accessConfig = accessConfig;
             currentEditingSession.name = name;
             currentEditingSession.description = description;
             currentEditingSession.isPublic = isPublic;
-            
-        } else {
-            console.error('❌ Error al guardar:', data.message);
-        }
-    } catch (error) {
-        console.error('❌ Error en auto-guardado:', error);
+        })
+        .catch(error => {
+            console.error('❌ [PROFILE] Error guardando en DB:', error);
+        });
+    } catch (dbError) {
+        console.error('❌ [PROFILE] Error al iniciar guardado en DB:', dbError);
     }
 }
 
