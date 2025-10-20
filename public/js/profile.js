@@ -675,7 +675,7 @@ function renderUserSessions() {
                 </div>
                 
                 <div class="session-actions">
-                    <a href="index.html?session=${session.sessionId}" class="btn btn-primary btn-small">🎨 Ir a Sesión</a>
+                    <a href="index.html?sesion=${session.sessionId}" class="btn btn-primary btn-small">🎨 Ir a Sesión</a>
                     <button onclick="editSession('${session._id}')" class="btn btn-secondary btn-small">✏️ Editar</button>
                     <button onclick="deleteSession('${session._id}')" class="btn btn-danger btn-small">🗑️ Eliminar</button>
                 </div>
@@ -1218,15 +1218,23 @@ function setupAutoSaveListeners() {
 }
 
 /**
- * Guarda automáticamente la sesión y envía por WebSocket
+ * Guarda automáticamente la sesión y envía por WebSocket - INMEDIATO
  */
 async function autoSaveSession() {
+    // Ejecutar guardado INMEDIATAMENTE
+    await performAutoSave();
+}
+
+/**
+ * Ejecuta el guardado real - INMEDIATO SIN BLOQUEOS
+ */
+async function performAutoSave() {
     if (!currentEditingSessionId || !currentEditingSession) {
         console.warn('No hay sesión en edición');
         return;
     }
     
-    console.log('🔄 Auto-guardando sesión...');
+    console.log('🔄 Auto-guardando sesión INMEDIATAMENTE...');
     
     try {
         // Recopilar configuración actual
