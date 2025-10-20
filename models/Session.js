@@ -31,6 +31,37 @@ const sessionSchema = new mongoose.Schema({
   allowedBrushTypes: [{
     type: String
   }],
+  accessConfig: {
+    notLogged: {
+      allowed: { type: Boolean, default: true },
+      brushes: [{ type: String }],
+      restrictions: {
+        allowKaleidoscope: { type: Boolean, default: true },
+        allowLayers: { type: Boolean, default: true }
+      }
+    },
+    logged: {
+      allowed: { type: Boolean, default: true },
+      brushes: [{ type: String }],
+      restrictions: {
+        allowKaleidoscope: { type: Boolean, default: true },
+        allowLayers: { type: Boolean, default: true }
+      }
+    },
+    specific: {
+      allowed: { type: Boolean, default: false },
+      users: [{ type: String }],
+      brushes: [{ type: String }],
+      restrictions: {
+        allowKaleidoscope: { type: Boolean, default: true },
+        allowLayers: { type: Boolean, default: true }
+      }
+    }
+  },
+  restrictions: {
+    allowKaleidoscope: { type: Boolean, default: true },
+    allowLayers: { type: Boolean, default: true }
+  },
   createdAt: {
     type: Date,
     default: Date.now

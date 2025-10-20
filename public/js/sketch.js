@@ -261,6 +261,13 @@ function setup() {
     // Configurar evento para sincronización de imagen del brush
     socket.on("image_brush_sync", receiveImageBrushSync);
     
+    // Configurar evento para actualización de sesión
+    socket.on("session-updated", function(data) {
+        console.log('🔔 ========== EVENTO session-updated RECIBIDO ==========');
+        console.log('📦 Data completa:', data);
+        handleSessionUpdate(data);
+    });
+    
     // Inicializar valores
     asignarValores();
     drawBuffer.background(0);
@@ -2356,6 +2363,109 @@ function copySessionLink() {
     });
 }
 
+/**
+ * Maneja la actualización de configuración de sesión en tiempo real
+ * @param {Object} data - Datos de la sesión actualizada
+ */
+async function handleSessionUpdate(data) {
+    console.log('🔄 ========== SESIÓN ACTUALIZADA EN TIEMPO REAL ==========');
+    console.log('📦 Data recibida:', data);
+    
+    if (data.sessionId !== sessionId) {
+        console.log('⚠️ Actualización de sesión diferente, ignorando');
+        console.log(`   - Sesión actual: ${sessionId}`);
+        console.log(`   - Sesión recibida: ${data.sessionId}`);
+        return;
+    }
+    
+    // Mostrar notificación
+    if (typeof toast !== 'undefined') {
+        toast.info('⚡ Configuración actualizada en tiempo real');
+    }
+    
+    // Aplicar nueva configuración de acceso
+    if (data.accessConfig && typeof applyAccessConfig === 'function') {
+        console.log('🔐 Aplicando nueva configuración de acceso...');
+        
+        // Determinar tipo de usuario actual
+        let userType = 'notLogged';
+        let currentUsername = null;
+        
+        try {
+            const response = await fetch(`${config.API_URL}/api/check-session`, {
+                headers: config.getAuthHeaders()
+            });
+            const authData = await response.json();
+            
+            if (authData.authenticated) {
+                currentUsername = authData.user?.username;
+                userType = 'logged';
+            }
+            
+            console.log(`👤 Usuario actual:`, {
+                tipo: userType,
+                username: currentUsername,
+                autenticado: authData.authenticated
+            });
+            
+            // Aplicar nueva configuración
+            const allowedBrushes = await applyAccessConfig(data.accessConfig, userType, currentUsername);
+            
+            console.log('✅ Brushes permitidos recibidos:', allowedBrushes);
+            
+            if (allowedBrushes && typeof brushRegistry !== 'undefined') {
+                console.log('🔒 Aplicando restricciones al BrushRegistry...');
+                brushRegistry.setAllowedBrushTypes(allowedBrushes);
+                
+                console.log('📋 Estado del BrushRegistry:');
+                console.log('   - Todos los brushes:', brushRegistry.getAllIds());
+                console.log('   - Brushes permitidos:', brushRegistry.getAllowedBrushes());
+                
+                // Forzar actualización de botones
+                console.log('🔄 Forzando actualización de botones...');
+                if (typeof forceHideNonAllowedButtons === 'function') {
+                    forceHideNonAllowedButtons();
+                } else {
+                    console.error('❌ forceHideNonAllowedButtons no está disponible');
+                }
+                
+                // Verificar si el brush actual está permitido
+                if (typeof currentBrush !== 'undefined' && !allowedBrushes.includes(currentBrush)) {
+                    console.log('⚠️ Brush actual ya no permitido, cambiando al primero disponible');
+                    if (allowedBrushes.length > 0) {
+                        selectBrush(allowedBrushes[0]);
+                    }
+                }
+            } else {
+                console.error('❌ No se recibieron brushes permitidos o BrushRegistry no disponible');
+            }
+            
+            // Aplicar restricciones específicas del tipo de usuario
+            const userConfigKey = userType === 'logged' ? 'logged' : userType === 'notLogged' ? 'notLogged' : 'specific';
+            const userConfig = data.accessConfig[userConfigKey];
+            
+            console.log(`🔐 Configuración para ${userConfigKey}:`, userConfig);
+            
+            if (userConfig && userConfig.restrictions) {
+                console.log('🔒 Aplicando restricciones específicas:', userConfig.restrictions);
+                if (typeof applySessionRestrictions === 'function') {
+                    applySessionRestrictions(userConfig.restrictions);
+                } else {
+                    console.error('❌ applySessionRestrictions no está disponible');
+                }
+            }
+            
+            console.log('✅ ========== ACTUALIZACIÓN COMPLETADA ==========');
+            
+        } catch (error) {
+            console.error('❌ Error aplicando actualización de sesión:', error);
+        }
+    } else {
+        console.warn('⚠️ No hay accessConfig en los datos o applyAccessConfig no disponible');
+    }
+}
+
 // Exponer funciones globalmente
 window.toggleQR = toggleQR;
 window.copySessionLink = copySessionLink;
+window.handleSessionUpdate = handleSessionUpdate;

@@ -2,19 +2,54 @@
 let currentUser = null;
 let userImages = [];
 let userSessions = [];
+let currentEditingSessionId = null; // ID de MongoDB de la sesión en edición
+let currentEditingSession = null; // Datos completos de la sesión en edición
+let socket = null; // Socket.IO connection
 
-// Available brush types (IDs must match the actual brush IDs in BrushRegistry)
-const BRUSH_TYPES = [
-    { id: 'classic', name: 'Pincel Clásico' },
-    { id: 'art', name: 'Pincel Artístico' },
-    { id: 'pixel', name: 'Pincel Pixel' },
-    { id: 'line', name: 'Línea' },
-    { id: 'geometry', name: 'Geometría' },
-    { id: 'flower', name: 'Flores' },
-    { id: 'fill', name: 'Relleno' },
-    { id: 'image', name: 'Imagen' },
-    { id: 'text', name: 'Texto' },
-    { id: 'spirograph', name: 'Espirógrafo' }
+// BRUSH_TYPES se obtiene dinámicamente del BrushRegistry
+// Esto garantiza que SIEMPRE esté sincronizado con los brushes reales
+function getBrushTypes() {
+    if (typeof window.brushRegistry === 'undefined') {
+        console.warn('⚠️ BrushRegistry no disponible, usando lista por defecto');
+        // Fallback si brushRegistry no está disponible
+        return [
+            { id: 'classic', name: 'Pincel Clásico' },
+            { id: 'art', name: 'Pincel Artístico' },
+            { id: 'pixel', name: 'Pincel Pixel' },
+            { id: 'line', name: 'Línea' },
+            { id: 'geometry', name: 'Geometría' },
+            { id: 'flower', name: 'Flores' },
+            { id: 'fill', name: 'Relleno' },
+            { id: 'image', name: 'Imagen' },
+            { id: 'text', name: 'Texto' }
+        ];
+    }
+    
+    // Obtener todos los brushes del registry y extraer su metadata
+    const allBrushes = window.brushRegistry.getAllIds();
+    return allBrushes.map(id => {
+        const brush = window.brushRegistry.get(id);
+        if (brush && typeof brush.getMetadata === 'function') {
+            const metadata = brush.getMetadata();
+            return {
+                id: metadata.id,
+                name: metadata.name,
+                title: metadata.title,
+                icon: metadata.icon
+            };
+        }
+        // Fallback si el brush no tiene getMetadata
+        return { id: id, name: id };
+    });
+}
+
+// Mantener referencia para compatibilidad
+let BRUSH_TYPES = [];
+
+// Additional restrictions (treated as special brushes)
+const ADDITIONAL_RESTRICTIONS = [
+    { id: 'allowKaleidoscope', name: '🔮 Kaleidoscopio', icon: '🔮' },
+    { id: 'allowLayers', name: '📚 Capas', icon: '📚' }
 ];
 
 // Check authentication
@@ -569,29 +604,84 @@ function renderUserSessions() {
         return;
     }
     
-    container.innerHTML = userSessions.map(session => `
-        <div class="session-card">
-            <h3>Sesión ${session.sessionId}</h3>
-            <p><strong>${session.name}</strong></p>
-            ${session.description ? `<p class="session-info">${session.description}</p>` : ''}
-            <div class="session-info">
-                <span class="session-badge ${session.isPublic ? 'public' : 'private'}">
-                    ${session.isPublic ? '🌐 Pública' : '🔒 Privada'}
-                </span>
+    container.innerHTML = userSessions.map(session => {
+        // Generar información de configuración de acceso
+        let accessInfo = '';
+        if (session.accessConfig) {
+            const accessParts = [];
+            
+            // Usuarios NO registrados
+            if (session.accessConfig.notLogged?.allowed) {
+                const restrictions = [];
+                if (session.accessConfig.notLogged.restrictions) {
+                    if (!session.accessConfig.notLogged.restrictions.allowKaleidoscope) restrictions.push('🚫 Kaleidoscopio');
+                    if (!session.accessConfig.notLogged.restrictions.allowLayers) restrictions.push('🚫 Capas');
+                }
+                const restrictText = restrictions.length > 0 ? ` (${restrictions.join(', ')})` : '';
+                accessParts.push(`👤 No Registrados: ${session.accessConfig.notLogged.brushes.length} herramientas${restrictText}`);
+            }
+            
+            // Usuarios registrados
+            if (session.accessConfig.logged?.allowed) {
+                const restrictions = [];
+                if (session.accessConfig.logged.restrictions) {
+                    if (!session.accessConfig.logged.restrictions.allowKaleidoscope) restrictions.push('🚫 Kaleidoscopio');
+                    if (!session.accessConfig.logged.restrictions.allowLayers) restrictions.push('🚫 Capas');
+                }
+                const restrictText = restrictions.length > 0 ? ` (${restrictions.join(', ')})` : '';
+                accessParts.push(`🔐 Registrados: ${session.accessConfig.logged.brushes.length} herramientas${restrictText}`);
+            }
+            
+            // Usuarios específicos
+            if (session.accessConfig.specific?.allowed) {
+                const restrictions = [];
+                if (session.accessConfig.specific.restrictions) {
+                    if (!session.accessConfig.specific.restrictions.allowKaleidoscope) restrictions.push('🚫 Kaleidoscopio');
+                    if (!session.accessConfig.specific.restrictions.allowLayers) restrictions.push('🚫 Capas');
+                }
+                const restrictText = restrictions.length > 0 ? ` (${restrictions.join(', ')})` : '';
+                accessParts.push(`👥 Específicos (${session.accessConfig.specific.users.join(', ')}): ${session.accessConfig.specific.brushes.length} herramientas${restrictText}`);
+            }
+            
+            accessInfo = accessParts.length > 0 ? accessParts.join('<br>') : 'Sin restricciones';
+        } else if (session.allowedBrushTypes) {
+            accessInfo = `${session.allowedBrushTypes.length} herramientas disponibles`;
+        }
+        
+        // Ya no usamos restrictionsInfo global, está por tipo de usuario
+        let restrictionsInfo = '';
+        
+        return `
+            <div class="session-card">
+                <div class="session-card-header">
+                    <h3>Sesión ${session.sessionId}</h3>
+                    <span class="session-badge ${session.isPublic ? 'public' : 'private'}">
+                        ${session.isPublic ? '🌐 Pública' : '🔒 Privada'}
+                    </span>
+                </div>
+                <p class="session-name"><strong>${session.name}</strong></p>
+                ${session.description ? `<p class="session-description">${session.description}</p>` : ''}
+                
+                <div class="session-config-details">
+                    <div class="config-section">
+                        <strong>👥 Acceso:</strong>
+                        <div class="config-content">${accessInfo}</div>
+                    </div>
+                    ${restrictionsInfo}
+                </div>
+                
+                <div class="session-meta">
+                    <small>Creada: ${new Date(session.createdAt).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' })}</small>
+                </div>
+                
+                <div class="session-actions">
+                    <a href="index.html?session=${session.sessionId}" class="btn btn-primary btn-small">🎨 Ir a Sesión</a>
+                    <button onclick="editSession('${session._id}')" class="btn btn-secondary btn-small">✏️ Editar</button>
+                    <button onclick="deleteSession('${session._id}')" class="btn btn-danger btn-small">🗑️ Eliminar</button>
+                </div>
             </div>
-            <div class="session-info">
-                <strong>Herramientas:</strong> ${session.allowedBrushTypes.length} disponibles
-            </div>
-            <div class="session-info">
-                Creada: ${new Date(session.createdAt).toLocaleDateString('es-ES')}
-            </div>
-            <div class="session-actions">
-                <a href="index.html?session=${session.sessionId}" class="btn btn-primary btn-small">Ir a Sesión</a>
-                <button onclick="editSession('${session._id}')" class="btn btn-secondary btn-small">Editar</button>
-                <button onclick="deleteSession('${session._id}')" class="btn btn-danger btn-small">Eliminar</button>
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 function openCreateSessionModal() {
@@ -599,29 +689,71 @@ function openCreateSessionModal() {
     document.getElementById('sessionModalTitle').textContent = 'Crear Nueva Sesión';
     document.getElementById('sessionForm').reset();
     
-    // Populate brush types
-    populateBrushTypes();
+    // Generar ID de sesión automáticamente (15 dígitos)
+    const sessionId = generateSessionId();
+    document.getElementById('sessionIdInput').value = sessionId;
+    
+    // Populate brush types for each user type
+    populateBrushTypesForAllUsers();
+    
+    // Setup access control listeners
+    setupAccessControlListeners();
     
     modal.classList.add('active');
 }
 
-function closeSessionModal() {
-    const modal = document.getElementById('sessionModal');
-    modal.classList.remove('active');
+function generateSessionId() {
+    // Generar un ID de 15 dígitos
+    // Formato: timestamp (13 dígitos) + random (2 dígitos)
+    const timestamp = Date.now().toString(); // 13 dígitos
+    const random = Math.floor(Math.random() * 100).toString().padStart(2, '0'); // 2 dígitos
+    return timestamp + random;
 }
 
-function populateBrushTypes() {
-    const container = document.getElementById('brushTypesContainer');
+function populateBrushTypesForAllUsers() {
+    // Actualizar BRUSH_TYPES dinámicamente desde el registry
+    BRUSH_TYPES = getBrushTypes();
+    console.log('🎨 Brushes cargados dinámicamente:', BRUSH_TYPES);
     
-    container.innerHTML = BRUSH_TYPES.map(brush => `
-        <div class="brush-type-item selected" onclick="toggleBrushType(this, '${brush.id}')">
-            <input type="checkbox" id="brush_${brush.id}" value="${brush.id}" checked>
-            <label for="brush_${brush.id}">${brush.name}</label>
+    // Poblar para usuarios NO registrados
+    populateBrushTypesForUserType('notLoggedBrushes', 'notLogged');
+    
+    // Poblar para usuarios registrados
+    populateBrushTypesForUserType('loggedBrushes', 'logged');
+    
+    // Poblar para usuarios específicos
+    populateBrushTypesForUserType('specificBrushes', 'specific');
+}
+
+function populateBrushTypesForUserType(containerId, userType) {
+    const container = document.getElementById(containerId);
+    
+    // Generar brushes (nombres vienen directamente de los brushes)
+    const brushesHTML = BRUSH_TYPES.map(brush => `
+        <div class="brush-type-item selected" onclick="toggleBrushTypeForUser(this, '${brush.id}', '${userType}')">
+            <input type="checkbox" id="brush_${userType}_${brush.id}" value="${brush.id}" checked>
+            <label for="brush_${userType}_${brush.id}">${brush.name}</label>
         </div>
     `).join('');
+    
+    // Generar restricciones adicionales (kaleidoscopio, capas)
+    const restrictionsHTML = ADDITIONAL_RESTRICTIONS.map(restriction => `
+        <div class="brush-type-item selected" onclick="toggleBrushTypeForUser(this, '${restriction.id}', '${userType}')">
+            <input type="checkbox" 
+                   id="brush_${userType}_${restriction.id}" 
+                   value="${restriction.id}" 
+                   class="restriction-checkbox" 
+                   data-user-type="${userType}" 
+                   data-restriction="${restriction.id}" 
+                   checked>
+            <label for="brush_${userType}_${restriction.id}">${restriction.name}</label>
+        </div>
+    `).join('');
+    
+    container.innerHTML = brushesHTML + restrictionsHTML;
 }
 
-function toggleBrushType(element, brushId) {
+function toggleBrushTypeForUser(element, brushId, userType) {
     const checkbox = element.querySelector('input[type="checkbox"]');
     checkbox.checked = !checkbox.checked;
     
@@ -629,6 +761,45 @@ function toggleBrushType(element, brushId) {
         element.classList.add('selected');
     } else {
         element.classList.remove('selected');
+    }
+}
+
+function setupAccessControlListeners() {
+    // Listener para usuarios específicos
+    const allowSpecificCheckbox = document.getElementById('allowSpecific');
+    const specificUsersConfig = document.getElementById('specificUsersConfig');
+    
+    allowSpecificCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            specificUsersConfig.style.display = 'block';
+        } else {
+            specificUsersConfig.style.display = 'none';
+        }
+    });
+    
+    // Listeners para habilitar/deshabilitar secciones
+    ['allowNotLogged', 'allowLogged', 'allowSpecific'].forEach(id => {
+        const checkbox = document.getElementById(id);
+        checkbox.addEventListener('change', function() {
+            const section = this.closest('.access-config-section');
+            if (this.checked) {
+                section.style.opacity = '1';
+            } else {
+                section.style.opacity = '0.6';
+            }
+        });
+    });
+}
+
+function closeSessionModal() {
+    const modal = document.getElementById('sessionModal');
+    modal.classList.remove('active');
+    // Limpiar variables de edición
+    currentEditingSessionId = null;
+    currentEditingSession = null;
+    // Recargar sesiones para mostrar cambios
+    if (currentUser) {
+        loadUserSessions();
     }
 }
 
@@ -640,22 +811,101 @@ async function saveSession(event) {
     const description = document.getElementById('sessionDescription').value;
     const isPublic = document.getElementById('sessionIsPublic').checked;
     
-    // Get selected brush types
-    const selectedBrushes = Array.from(document.querySelectorAll('#brushTypesContainer input[type="checkbox"]:checked'))
-        .map(cb => cb.value);
+    // Recopilar configuración de acceso para cada tipo de usuario
+    const accessConfig = {};
     
-    if (selectedBrushes.length === 0) {
+    // Usuarios NO registrados
+    const allowNotLogged = document.getElementById('allowNotLogged').checked;
+    if (allowNotLogged) {
+        const notLoggedBrushes = Array.from(document.querySelectorAll('#notLoggedBrushes input[type="checkbox"]:checked'))
+            .map(cb => cb.value);
+        accessConfig.notLogged = {
+            allowed: true,
+            brushes: notLoggedBrushes
+        };
+    } else {
+        accessConfig.notLogged = {
+            allowed: false,
+            brushes: []
+        };
+    }
+    
+    // Usuarios registrados
+    const allowLogged = document.getElementById('allowLogged').checked;
+    if (allowLogged) {
+        const loggedBrushes = Array.from(document.querySelectorAll('#loggedBrushes input[type="checkbox"]:checked'))
+            .map(cb => cb.value);
+        accessConfig.logged = {
+            allowed: true,
+            brushes: loggedBrushes
+        };
+    } else {
+        accessConfig.logged = {
+            allowed: false,
+            brushes: []
+        };
+    }
+    
+    // Usuarios específicos
+    const allowSpecific = document.getElementById('allowSpecific').checked;
+    if (allowSpecific) {
+        const specificUsers = document.getElementById('specificUsers').value
+            .split(',')
+            .map(u => u.trim())
+            .filter(u => u.length > 0);
+        const specificBrushes = Array.from(document.querySelectorAll('#specificBrushes input[type="checkbox"]:checked'))
+            .map(cb => cb.value);
+        
+        if (specificUsers.length === 0) {
+            if (typeof toast !== 'undefined') {
+                toast.error('Debes especificar al menos un usuario para "Usuarios Específicos"');
+            } else {
+                alert('Debes especificar al menos un usuario para "Usuarios Específicos"');
+            }
+            return;
+        }
+        
+        accessConfig.specific = {
+            allowed: true,
+            users: specificUsers,
+            brushes: specificBrushes
+        };
+    } else {
+        accessConfig.specific = {
+            allowed: false,
+            users: [],
+            brushes: []
+        };
+    }
+    
+    // Validar que al menos un tipo de usuario tenga acceso
+    if (!allowNotLogged && !allowLogged && !allowSpecific) {
         if (typeof toast !== 'undefined') {
-            toast.error('Debes seleccionar al menos una herramienta');
+            toast.error('Debes permitir acceso a al menos un tipo de usuario');
         } else {
-            alert('Debes seleccionar al menos una herramienta');
+            alert('Debes permitir acceso a al menos un tipo de usuario');
         }
         return;
     }
     
+    // Get additional restrictions
+    const allowKaleidoscope = document.getElementById('allowKaleidoscope').checked;
+    const allowLayers = document.getElementById('allowLayers').checked;
+    
+    // Verificar si estamos en modo edición
+    const modal = document.getElementById('sessionModal');
+    const isEditing = modal.dataset.editingMode === 'true';
+    const editingSessionId = modal.dataset.editingSessionId;
+    
     try {
-        const response = await fetch(`${config.API_URL}/api/sessions/create`, {
-            method: 'POST',
+        const url = isEditing 
+            ? `${config.API_URL}/api/sessions/${editingSessionId}`
+            : `${config.API_URL}/api/sessions/create`;
+        
+        const method = isEditing ? 'PUT' : 'POST';
+        
+        const response = await fetch(url, {
+            method: method,
             headers: {
                 ...config.getAuthHeaders(),
                 'Content-Type': 'application/json'
@@ -665,7 +915,11 @@ async function saveSession(event) {
                 name,
                 description,
                 isPublic,
-                allowedBrushTypes: selectedBrushes
+                accessConfig: accessConfig,
+                restrictions: {
+                    allowKaleidoscope,
+                    allowLayers
+                }
             })
         });
         
@@ -673,14 +927,27 @@ async function saveSession(event) {
         
         if (response.ok) {
             if (typeof toast !== 'undefined') {
-                toast.success('Sesión creada exitosamente');
+                toast.success(isEditing ? 'Sesión actualizada exitosamente' : 'Sesión creada exitosamente');
             } else {
-                alert('Sesión creada exitosamente');
+                alert(isEditing ? 'Sesión actualizada exitosamente' : 'Sesión creada exitosamente');
             }
+            
+            // Si estamos editando, notificar por WebSocket
+            if (isEditing && typeof socket !== 'undefined' && socket.connected) {
+                socket.emit('session-updated', {
+                    sessionId: sessionId,
+                    accessConfig: accessConfig,
+                    restrictions: {
+                        allowKaleidoscope,
+                        allowLayers
+                    }
+                });
+            }
+            
             closeSessionModal();
-            loadUserSessions();
+            loadUserSessions(); // Recargar la lista
         } else {
-            throw new Error(data.error || 'Error al crear la sesión');
+            throw new Error(data.message || `Error al ${isEditing ? 'actualizar' : 'crear'} la sesión`);
         }
     } catch (error) {
         console.error('Error saving session:', error);
@@ -726,11 +993,365 @@ async function deleteSession(sessionId) {
 }
 
 async function editSession(sessionId) {
-    // TODO: Implement edit functionality
-    if (typeof toast !== 'undefined') {
-        toast.info('Función de edición próximamente');
-    } else {
-        alert('Función de edición próximamente');
+    console.log('🔧 editSession llamada con ID:', sessionId);
+    console.log('📋 userSessions disponibles:', userSessions);
+    
+    try {
+        // Buscar la sesión en el array local
+        const session = userSessions.find(s => s._id === sessionId);
+        console.log('🔍 Sesión encontrada:', session);
+        
+        if (!session) {
+            console.error('❌ Sesión no encontrada en el array local');
+            if (typeof toast !== 'undefined') {
+                toast.error('Sesión no encontrada');
+            } else {
+                alert('Sesión no encontrada');
+            }
+            return;
+        }
+        
+        // Guardar sesión actual en edición
+        currentEditingSessionId = sessionId;
+        currentEditingSession = session;
+        
+        // Abrir modal en modo edición
+        const modal = document.getElementById('sessionModal');
+        document.getElementById('sessionModalTitle').textContent = 'Editar Sesión - Guardado Automático';
+        
+        // Llenar el formulario con los datos actuales
+        document.getElementById('sessionIdInput').value = session.sessionId;
+        document.getElementById('sessionName').value = session.name;
+        document.getElementById('sessionDescription').value = session.description || '';
+        document.getElementById('sessionIsPublic').checked = session.isPublic;
+        
+        // Populate brush types
+        populateBrushTypesForAllUsers();
+        
+        // Desmarcar todos los checkboxes primero (brushes Y restricciones)
+        document.querySelectorAll('.brush-types-grid input[type="checkbox"]').forEach(cb => {
+            cb.checked = false;
+            cb.closest('.brush-type-item')?.classList.remove('selected');
+        });
+        
+        // Configurar acceso según la sesión
+        if (session.accessConfig) {
+            // Usuarios NO registrados
+            document.getElementById('allowNotLogged').checked = session.accessConfig.notLogged?.allowed || false;
+            if (session.accessConfig.notLogged?.brushes) {
+                session.accessConfig.notLogged.brushes.forEach(brushId => {
+                    const checkbox = document.getElementById(`brush_notLogged_${brushId}`);
+                    if (checkbox) {
+                        checkbox.checked = true;
+                        checkbox.closest('.brush-type-item')?.classList.add('selected');
+                    }
+                });
+            }
+            if (session.accessConfig.notLogged?.restrictions) {
+                // Cargar restricciones (ahora están como checkboxes normales en el grid)
+                Object.keys(session.accessConfig.notLogged.restrictions).forEach(restrictionKey => {
+                    const checkbox = document.getElementById(`brush_notLogged_${restrictionKey}`);
+                    if (checkbox) {
+                        checkbox.checked = session.accessConfig.notLogged.restrictions[restrictionKey] !== false;
+                        if (checkbox.checked) {
+                            checkbox.closest('.brush-type-item')?.classList.add('selected');
+                        }
+                    }
+                });
+            }
+            
+            // Usuarios registrados
+            document.getElementById('allowLogged').checked = session.accessConfig.logged?.allowed || false;
+            if (session.accessConfig.logged?.brushes) {
+                session.accessConfig.logged.brushes.forEach(brushId => {
+                    const checkbox = document.getElementById(`brush_logged_${brushId}`);
+                    if (checkbox) {
+                        checkbox.checked = true;
+                        checkbox.closest('.brush-type-item')?.classList.add('selected');
+                    }
+                });
+            }
+            if (session.accessConfig.logged?.restrictions) {
+                // Cargar restricciones (ahora están como checkboxes normales en el grid)
+                Object.keys(session.accessConfig.logged.restrictions).forEach(restrictionKey => {
+                    const checkbox = document.getElementById(`brush_logged_${restrictionKey}`);
+                    if (checkbox) {
+                        checkbox.checked = session.accessConfig.logged.restrictions[restrictionKey] !== false;
+                        if (checkbox.checked) {
+                            checkbox.closest('.brush-type-item')?.classList.add('selected');
+                        }
+                    }
+                });
+            }
+            
+            // Usuarios específicos
+            document.getElementById('allowSpecific').checked = session.accessConfig.specific?.allowed || false;
+            if (session.accessConfig.specific?.allowed) {
+                document.getElementById('specificUsers').value = session.accessConfig.specific.users.join(', ');
+                document.getElementById('specificUsersConfig').style.display = 'block';
+                if (session.accessConfig.specific.brushes) {
+                    session.accessConfig.specific.brushes.forEach(brushId => {
+                        const checkbox = document.getElementById(`brush_specific_${brushId}`);
+                        if (checkbox) {
+                            checkbox.checked = true;
+                            checkbox.closest('.brush-type-item')?.classList.add('selected');
+                        }
+                    });
+                }
+                if (session.accessConfig.specific?.restrictions) {
+                    // Cargar restricciones (ahora están como checkboxes normales en el grid)
+                    Object.keys(session.accessConfig.specific.restrictions).forEach(restrictionKey => {
+                        const checkbox = document.getElementById(`brush_specific_${restrictionKey}`);
+                        if (checkbox) {
+                            checkbox.checked = session.accessConfig.specific.restrictions[restrictionKey] !== false;
+                            if (checkbox.checked) {
+                                checkbox.closest('.brush-type-item')?.classList.add('selected');
+                            }
+                        }
+                    });
+                }
+            }
+        }
+        
+        // Setup listeners con auto-save
+        console.log('⚙️ Configurando auto-save listeners...');
+        setupAutoSaveListeners();
+        
+        // Unirse a la sesión para recibir actualizaciones en tiempo real
+        if (socket && socket.connected && session.sessionId) {
+            socket.emit('join_session', session.sessionId);
+            console.log(`🔗 Profile unido a sesión ${session.sessionId} para sincronización en tiempo real`);
+        }
+        
+        console.log('✅ Abriendo modal...');
+        modal.classList.add('active');
+        console.log('✅ Modal abierto, clase active agregada');
+        
+    } catch (error) {
+        console.error('❌ Error loading session for edit:', error);
+        if (typeof toast !== 'undefined') {
+            toast.error('Error al cargar la sesión');
+        } else {
+            alert('Error al cargar la sesión');
+        }
+    }
+}
+
+/**
+ * Configura listeners para auto-guardado en cada cambio
+ */
+function setupAutoSaveListeners() {
+    console.log('⚙️ Configurando listeners de auto-guardado...');
+    
+    // NO clonar el modal - eso destruye todo
+    // En su lugar, remover listeners específicos si es necesario
+    
+    // Listener para checkboxes de tipo de usuario
+    document.querySelectorAll('.user-type-toggle').forEach(checkbox => {
+        // Remover listener anterior si existe
+        checkbox.removeEventListener('change', autoSaveSession);
+        checkbox.addEventListener('change', autoSaveSession);
+    });
+    
+    // Listener para checkboxes de brushes (incluyendo restricciones)
+    document.querySelectorAll('.brush-types-grid input[type="checkbox"]').forEach(checkbox => {
+        checkbox.removeEventListener('change', autoSaveSession);
+        checkbox.addEventListener('change', autoSaveSession);
+    });
+    
+    // Listener para usuarios específicos (con debounce)
+    const specificUsersInput = document.getElementById('specificUsers');
+    if (specificUsersInput) {
+        specificUsersInput.removeEventListener('input', specificUsersInput._autoSaveHandler);
+        specificUsersInput._autoSaveHandler = () => {
+            clearTimeout(specificUsersInput._timeout);
+            specificUsersInput._timeout = setTimeout(autoSaveSession, 1000);
+        };
+        specificUsersInput.addEventListener('input', specificUsersInput._autoSaveHandler);
+    }
+    
+    // Listener para nombre y descripción (con debounce)
+    const nameInput = document.getElementById('sessionName');
+    const descInput = document.getElementById('sessionDescription');
+    
+    if (nameInput) {
+        nameInput.removeEventListener('input', nameInput._autoSaveHandler);
+        nameInput._autoSaveHandler = () => {
+            clearTimeout(nameInput._timeout);
+            nameInput._timeout = setTimeout(autoSaveSession, 1000);
+        };
+        nameInput.addEventListener('input', nameInput._autoSaveHandler);
+    }
+    
+    if (descInput) {
+        descInput.removeEventListener('input', descInput._autoSaveHandler);
+        descInput._autoSaveHandler = () => {
+            clearTimeout(descInput._timeout);
+            descInput._timeout = setTimeout(autoSaveSession, 1000);
+        };
+        descInput.addEventListener('input', descInput._autoSaveHandler);
+    }
+    
+    // Listener para sesión pública
+    const publicCheckbox = document.getElementById('sessionIsPublic');
+    if (publicCheckbox) {
+        publicCheckbox.removeEventListener('change', autoSaveSession);
+        publicCheckbox.addEventListener('change', autoSaveSession);
+    }
+    
+    // Listener para mostrar/ocultar usuarios específicos
+    const allowSpecificCheckbox = document.getElementById('allowSpecific');
+    if (allowSpecificCheckbox) {
+        allowSpecificCheckbox.removeEventListener('change', allowSpecificCheckbox._toggleHandler);
+        allowSpecificCheckbox._toggleHandler = function() {
+            const specificConfig = document.getElementById('specificUsersConfig');
+            if (this.checked) {
+                specificConfig.style.display = 'block';
+            } else {
+                specificConfig.style.display = 'none';
+            }
+        };
+        allowSpecificCheckbox.addEventListener('change', allowSpecificCheckbox._toggleHandler);
+    }
+    
+    console.log('✅ Listeners configurados correctamente');
+}
+
+/**
+ * Guarda automáticamente la sesión y envía por WebSocket
+ */
+async function autoSaveSession() {
+    if (!currentEditingSessionId || !currentEditingSession) {
+        console.warn('No hay sesión en edición');
+        return;
+    }
+    
+    console.log('🔄 Auto-guardando sesión...');
+    
+    try {
+        // Recopilar configuración actual
+        const sessionId = document.getElementById('sessionIdInput').value;
+        const name = document.getElementById('sessionName').value;
+        const description = document.getElementById('sessionDescription').value;
+        const isPublic = document.getElementById('sessionIsPublic').checked;
+        
+        const accessConfig = {};
+        
+        // Usuarios NO registrados
+        const allowNotLogged = document.getElementById('allowNotLogged').checked;
+        const notLoggedCheckboxes = Array.from(document.querySelectorAll('#notLoggedBrushes input[type=\"checkbox\"]:checked'));
+        const notLoggedBrushes = notLoggedCheckboxes
+            .filter(cb => !cb.classList.contains('restriction-checkbox'))
+            .map(cb => cb.value);
+        
+        const notLoggedRestrictions = {};
+        ADDITIONAL_RESTRICTIONS.forEach(restriction => {
+            const checkbox = document.getElementById(`brush_notLogged_${restriction.id}`);
+            notLoggedRestrictions[restriction.id] = checkbox ? checkbox.checked : true;
+        });
+        
+        accessConfig.notLogged = {
+            allowed: allowNotLogged,
+            brushes: notLoggedBrushes,
+            restrictions: notLoggedRestrictions
+        };
+        
+        // Usuarios registrados
+        const allowLogged = document.getElementById('allowLogged').checked;
+        const loggedCheckboxes = Array.from(document.querySelectorAll('#loggedBrushes input[type=\"checkbox\"]:checked'));
+        const loggedBrushes = loggedCheckboxes
+            .filter(cb => !cb.classList.contains('restriction-checkbox'))
+            .map(cb => cb.value);
+        
+        const loggedRestrictions = {};
+        ADDITIONAL_RESTRICTIONS.forEach(restriction => {
+            const checkbox = document.getElementById(`brush_logged_${restriction.id}`);
+            loggedRestrictions[restriction.id] = checkbox ? checkbox.checked : true;
+        });
+        
+        accessConfig.logged = {
+            allowed: allowLogged,
+            brushes: loggedBrushes,
+            restrictions: loggedRestrictions
+        };
+        
+        // Usuarios específicos
+        const allowSpecific = document.getElementById('allowSpecific').checked;
+        const specificUsers = document.getElementById('specificUsers').value
+            .split(',')
+            .map(u => u.trim())
+            .filter(u => u.length > 0);
+        const specificCheckboxes = Array.from(document.querySelectorAll('#specificBrushes input[type=\"checkbox\"]:checked'));
+        const specificBrushes = specificCheckboxes
+            .filter(cb => !cb.classList.contains('restriction-checkbox'))
+            .map(cb => cb.value);
+        
+        const specificRestrictions = {};
+        ADDITIONAL_RESTRICTIONS.forEach(restriction => {
+            const checkbox = document.getElementById(`brush_specific_${restriction.id}`);
+            specificRestrictions[restriction.id] = checkbox ? checkbox.checked : true;
+        });
+        
+        accessConfig.specific = {
+            allowed: allowSpecific,
+            users: specificUsers,
+            brushes: specificBrushes,
+            restrictions: specificRestrictions
+        };
+        
+        // Guardar en backend
+        const response = await fetch(`${config.API_URL}/api/sessions/${currentEditingSessionId}`, {
+            method: 'PUT',
+            headers: {
+                ...config.getAuthHeaders(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                sessionId,
+                name,
+                description,
+                isPublic,
+                accessConfig
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            console.log('✅ Sesión guardada automáticamente');
+            
+            // Enviar por WebSocket para sincronización en tiempo real
+            if (socket && socket.connected) {
+                const updateData = {
+                    sessionId: sessionId,
+                    accessConfig: accessConfig,
+                    name: name,
+                    description: description
+                };
+                
+                console.log('📡 Enviando actualización por WebSocket:');
+                console.log('   - sessionId:', sessionId);
+                console.log('   - accessConfig:', accessConfig);
+                
+                socket.emit('session-updated', updateData);
+                console.log('✅ Configuración enviada por WebSocket');
+            } else {
+                console.error('❌ Socket no conectado, no se puede enviar actualización');
+                console.log('   - socket existe:', !!socket);
+                console.log('   - socket.connected:', socket?.connected);
+            }
+            
+            // Actualizar sesión local
+            currentEditingSession.accessConfig = accessConfig;
+            currentEditingSession.name = name;
+            currentEditingSession.description = description;
+            currentEditingSession.isPublic = isPublic;
+            
+        } else {
+            console.error('❌ Error al guardar:', data.message);
+        }
+    } catch (error) {
+        console.error('❌ Error en auto-guardado:', error);
     }
 }
 
@@ -741,5 +1362,34 @@ document.getElementById('sessionModal').addEventListener('click', (e) => {
     }
 });
 
+// Initialize Socket.IO
+function initializeSocket() {
+    const socketConfig = config.getSocketConfig();
+    socket = io(socketConfig.url, socketConfig.options);
+    
+    socket.on('connect', () => {
+        console.log('✅ Socket conectado en profile');
+        
+        // Si hay una sesión en edición, unirse a ella
+        if (currentEditingSession && currentEditingSession.sessionId) {
+            socket.emit('join_session', currentEditingSession.sessionId);
+            console.log(`🔗 Profile unido a sesión ${currentEditingSession.sessionId} para sincronización`);
+        }
+    });
+    
+    socket.on('disconnect', () => {
+        console.log('❌ Socket desconectado en profile');
+    });
+}
+
+// Exponer funciones globalmente para que sean accesibles desde HTML
+window.editSession = editSession;
+window.deleteSession = deleteSession;
+window.openCreateSessionModal = openCreateSessionModal;
+window.closeSessionModal = closeSessionModal;
+window.saveSession = saveSession;
+window.toggleBrushTypeForUser = toggleBrushTypeForUser;
+
 // Initialize
+initializeSocket();
 checkAuth();

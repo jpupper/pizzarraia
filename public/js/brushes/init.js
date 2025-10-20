@@ -29,13 +29,50 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (response.ok) {
                 const data = await response.json();
                 if (data.session) {
-                    // Apply brush restrictions if configured
-                    if (data.session.allowedBrushTypes && data.session.allowedBrushTypes.length > 0) {
-                        console.log(`🔒 Aplicando restricciones de brushes:`, data.session.allowedBrushTypes);
+                    // Determinar el tipo de usuario actual
+                    let userType = 'notLogged'; // Por defecto
+                    let currentUsername = null;
+                    
+                    try {
+                        const authResponse = await fetch(`${config.API_URL}/api/check-session`, {
+                            headers: config.getAuthHeaders()
+                        });
+                        const authData = await authResponse.json();
+                        if (authData.authenticated) {
+                            currentUsername = authData.user?.username;
+                            userType = 'logged';
+                        }
+                    } catch (error) {
+                        console.warn('No se pudo verificar autenticación:', error);
+                    }
+                    
+                    // Aplicar configuración de acceso según tipo de usuario
+                    if (data.session.accessConfig) {
+                        const allowedBrushes = await applyAccessConfig(data.session.accessConfig, userType, currentUsername);
+                        
+                        if (allowedBrushes) {
+                            console.log(`🔒 Aplicando restricciones para ${userType}:`, allowedBrushes);
+                            brushRegistry.setAllowedBrushTypes(allowedBrushes);
+                            console.log(`✓ Brushes permitidos: ${allowedBrushes.join(', ')}`);
+                            console.log(`✓ Total de brushes registrados: ${brushRegistry.getAllIds().length}`);
+                            console.log(`✓ Brushes que se mostrarán: ${brushRegistry.getAllowedBrushes().length}`);
+                            
+                            // Aplicar restricciones específicas del tipo de usuario
+                            const userConfig = data.session.accessConfig[userType];
+                            if (userConfig && userConfig.restrictions) {
+                                console.log(`🔒 Aplicando restricciones específicas para ${userType}:`, userConfig.restrictions);
+                                applySessionRestrictions(userConfig.restrictions);
+                            }
+                        }
+                    } else if (data.session.allowedBrushTypes && data.session.allowedBrushTypes.length > 0) {
+                        // Compatibilidad con formato antiguo
+                        console.log(`🔒 Aplicando restricciones (formato antiguo):`, data.session.allowedBrushTypes);
                         brushRegistry.setAllowedBrushTypes(data.session.allowedBrushTypes);
-                        console.log(`✓ Brushes permitidos: ${data.session.allowedBrushTypes.join(', ')}`);
-                        console.log(`✓ Total de brushes registrados: ${brushRegistry.getAllIds().length}`);
-                        console.log(`✓ Brushes que se mostrarán: ${brushRegistry.getAllowedBrushes().length}`);
+                        
+                        // Apply additional restrictions (formato antiguo)
+                        if (data.session.restrictions) {
+                            applySessionRestrictions(data.session.restrictions);
+                        }
                     } else {
                         console.log(`ℹ️ Sesión ${sessionId} sin restricciones - todos los brushes disponibles`);
                     }
@@ -126,8 +163,129 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 /**
+ * Aplica la configuración de acceso según el tipo de usuario
+ * @param {Object} accessConfig - Configuración de acceso
+ * @param {string} userType - Tipo de usuario ('notLogged', 'logged', 'specific')
+ * @param {string} currentUsername - Nombre del usuario actual (si está logueado)
+ * @returns {Array|null} - Array de brushes permitidos o null si no tiene acceso
+ */
+async function applyAccessConfig(accessConfig, userType, currentUsername) {
+    console.log('🔐 Aplicando configuración de acceso:', { accessConfig, userType, currentUsername });
+    
+    // Verificar si es un usuario específico
+    if (currentUsername && accessConfig.specific?.allowed) {
+        const isSpecificUser = accessConfig.specific.users.includes(currentUsername);
+        if (isSpecificUser) {
+            console.log(`✅ Usuario específico detectado: ${currentUsername}`);
+            if (!accessConfig.specific.brushes || accessConfig.specific.brushes.length === 0) {
+                alert('⛔ Esta sesión no tiene herramientas configuradas para usuarios específicos.');
+                window.location.href = 'index.html';
+                return null;
+            }
+            return accessConfig.specific.brushes;
+        }
+    }
+    
+    // Verificar según tipo de usuario
+    if (userType === 'logged') {
+        if (!accessConfig.logged?.allowed) {
+            alert('⛔ Esta sesión no permite el acceso a usuarios registrados.\n\nPor favor, cierra sesión para continuar.');
+            return null;
+        }
+        if (!accessConfig.logged.brushes || accessConfig.logged.brushes.length === 0) {
+            alert('⛔ Esta sesión no tiene herramientas configuradas para usuarios registrados.');
+            window.location.href = 'index.html';
+            return null;
+        }
+        console.log(`✅ Acceso permitido para usuario registrado`);
+        return accessConfig.logged.brushes;
+    }
+    
+    if (userType === 'notLogged') {
+        if (!accessConfig.notLogged?.allowed) {
+            alert('⛔ Esta sesión solo está disponible para usuarios registrados.\n\nPor favor, inicia sesión para continuar.');
+            window.location.href = 'login.html';
+            return null;
+        }
+        if (!accessConfig.notLogged.brushes || accessConfig.notLogged.brushes.length === 0) {
+            alert('⛔ Esta sesión no tiene herramientas configuradas para usuarios no registrados.');
+            window.location.href = 'index.html';
+            return null;
+        }
+        console.log(`✅ Acceso permitido para usuario no registrado`);
+        return accessConfig.notLogged.brushes;
+    }
+    
+    // Por defecto, denegar acceso
+    alert('⛔ No tienes permiso para acceder a esta sesión.');
+    window.location.href = 'index.html';
+    return null;
+}
+
+/**
+ * Aplica restricciones adicionales de la sesión
+ * @param {Object} restrictions - Objeto con las restricciones
+ */
+function applySessionRestrictions(restrictions) {
+    console.log('🔒 Aplicando restricciones adicionales:', restrictions);
+    
+    // Restricción de Kaleidoscopio
+    if (restrictions.allowKaleidoscope === false) {
+        console.log('🚫 Kaleidoscopio deshabilitado');
+        const kaleidoSlider = document.getElementById('kaleidoSegments');
+        if (kaleidoSlider) {
+            kaleidoSlider.disabled = true;
+            kaleidoSlider.value = 1;
+            kaleidoSlider.style.opacity = '0.5';
+            kaleidoSlider.style.cursor = 'not-allowed';
+            
+            // Actualizar el valor mostrado
+            const valueSpan = document.getElementById('kaleidoSegments-value');
+            if (valueSpan) valueSpan.textContent = '1';
+            
+            // Agregar tooltip
+            kaleidoSlider.title = 'Kaleidoscopio deshabilitado en esta sesión';
+        }
+        
+        // Ocultar el label también
+        const kaleidoLabel = document.querySelector('label[for="kaleidoSegments"]');
+        if (kaleidoLabel) {
+            kaleidoLabel.style.opacity = '0.5';
+        }
+    }
+    
+    // Restricción de Capas
+    if (restrictions.allowLayers === false) {
+        console.log('🚫 Capas deshabilitadas');
+        
+        // Deshabilitar botones de capas si existen
+        const layerButtons = document.querySelectorAll('.layer-btn, [data-layer]');
+        layerButtons.forEach(btn => {
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            btn.style.cursor = 'not-allowed';
+            btn.title = 'Capas deshabilitadas en esta sesión';
+        });
+        
+        // Ocultar controles de capas
+        const layerControls = document.querySelectorAll('.layer-control, #layerSelector');
+        layerControls.forEach(ctrl => {
+            ctrl.style.display = 'none';
+        });
+        
+        // Forzar a usar solo capa 0
+        if (typeof window.currentLayer !== 'undefined') {
+            window.currentLayer = 0;
+        }
+    }
+    
+    // Guardar restricciones globalmente para referencia futura
+    window.sessionRestrictions = restrictions;
+}
+
+/**
  * Fuerza el ocultamiento de botones no permitidos
- * Esta función se ejecuta como medida de seguridad adicional
+ * NUEVO: Usa el sistema polimórfico de cada brush
  */
 function forceHideNonAllowedButtons() {
     if (!brushRegistry) {
@@ -135,48 +293,52 @@ function forceHideNonAllowedButtons() {
         return;
     }
 
-    console.log('🔒 forceHideNonAllowedButtons: Ocultando botones no permitidos...');
+    console.log('🔒 forceHideNonAllowedButtons: Actualizando visibilidad de brushes...');
     
-    // Obtener TODOS los botones del DOM
-    const allButtons = document.querySelectorAll('.brush-btn');
-    console.log(`📊 Total de botones encontrados en el DOM: ${allButtons.length}`);
-    
-    if (allButtons.length === 0) {
-        console.warn('⚠️ No se encontraron botones .brush-btn en el DOM');
-        return;
-    }
+    const allBrushIds = brushRegistry.getAllIds();
+    console.log(`📊 Total de brushes registrados: ${allBrushIds.length}`);
     
     let hiddenCount = 0;
     let visibleCount = 0;
     
-    allButtons.forEach(button => {
-        const brushId = button.getAttribute('data-brush');
+    // POLIMORFISMO: Cada brush controla su propia visibilidad
+    allBrushIds.forEach(brushId => {
+        const brush = brushRegistry.get(brushId);
+        const isAllowed = brushRegistry.isBrushAllowed(brushId);
         
-        if (brushId) {
-            const isAllowed = brushRegistry.isBrushAllowed(brushId);
+        if (brush && typeof brush.setVisible === 'function') {
+            // Usar el método polimórfico del brush
+            brush.setVisible(isAllowed, isAllowed ? null : 'No permitido en esta sesión');
             
             if (isAllowed) {
-                // Asegurar que el botón esté visible
-                button.style.display = '';
-                button.style.visibility = 'visible';
-                button.style.opacity = '1';
                 visibleCount++;
-                console.log(`✅ Brush visible: ${brushId}`);
             } else {
-                // OCULTAR COMPLETAMENTE
-                button.style.display = 'none';
-                button.style.visibility = 'hidden';
-                button.style.opacity = '0';
-                button.style.pointerEvents = 'none';
                 hiddenCount++;
-                console.log(`🚫 Brush OCULTO: ${brushId}`);
+            }
+        } else {
+            // Fallback al método antiguo si el brush no tiene el nuevo sistema
+            console.warn(`⚠️ Brush ${brushId} no tiene método setVisible(), usando fallback`);
+            const button = document.querySelector(`.brush-btn[data-brush="${brushId}"]`);
+            if (button) {
+                if (isAllowed) {
+                    button.style.display = '';
+                    button.style.visibility = 'visible';
+                    button.style.opacity = '1';
+                    visibleCount++;
+                } else {
+                    button.style.display = 'none';
+                    button.style.visibility = 'hidden';
+                    button.style.opacity = '0';
+                    button.style.pointerEvents = 'none';
+                    hiddenCount++;
+                }
             }
         }
     });
     
     console.log(`✅ forceHideNonAllowedButtons completado:`);
-    console.log(`   - Botones visibles: ${visibleCount}`);
-    console.log(`   - Botones ocultos: ${hiddenCount}`);
+    console.log(`   - Brushes visibles: ${visibleCount}`);
+    console.log(`   - Brushes ocultos: ${hiddenCount}`);
 }
 
 /**
