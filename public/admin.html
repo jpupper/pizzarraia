@@ -103,6 +103,19 @@
                             <!-- Se llenará dinámicamente -->
                         </div>
                     </div>
+                    
+                    <!-- Session Filter -->
+                    <div class="session-filters-section" style="margin-top: 15px;">
+                        <label style="font-weight: 600; margin-bottom: 8px; display: block;">Filtrar por sesión:</label>
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <select id="sessionFilter" onchange="applySessionFilter()">
+                                    <option value="">Todas las sesiones</option>
+                                    <!-- Se llenará dinámicamente -->
+                                </select>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Charts Container -->

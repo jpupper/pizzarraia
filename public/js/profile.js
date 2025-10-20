@@ -3,9 +3,9 @@ let currentUser = null;
 let userImages = [];
 let userSessions = [];
 
-// Available brush types
+// Available brush types (IDs must match the actual brush IDs in BrushRegistry)
 const BRUSH_TYPES = [
-    { id: 'standard', name: 'Pincel Estándar' },
+    { id: 'classic', name: 'Pincel Clásico' },
     { id: 'art', name: 'Pincel Artístico' },
     { id: 'pixel', name: 'Pincel Pixel' },
     { id: 'line', name: 'Línea' },
@@ -13,7 +13,8 @@ const BRUSH_TYPES = [
     { id: 'flower', name: 'Flores' },
     { id: 'fill', name: 'Relleno' },
     { id: 'image', name: 'Imagen' },
-    { id: 'text', name: 'Texto' }
+    { id: 'text', name: 'Texto' },
+    { id: 'spirograph', name: 'Espirógrafo' }
 ];
 
 // Check authentication

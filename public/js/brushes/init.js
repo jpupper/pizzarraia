@@ -21,17 +21,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const sessionId = urlParams.get('session') || urlParams.get('sesion');
     
-    // Fetch session configuration if session ID exists
+    // Fetch session configuration BEFORE rendering buttons
     if (sessionId && typeof config !== 'undefined') {
         try {
+            console.log(`🔍 Cargando configuración de sesión ${sessionId}...`);
             const response = await fetch(`${config.API_URL}/api/sessions/${sessionId}`);
             if (response.ok) {
                 const data = await response.json();
                 if (data.session) {
                     // Apply brush restrictions if configured
                     if (data.session.allowedBrushTypes && data.session.allowedBrushTypes.length > 0) {
+                        console.log(`🔒 Aplicando restricciones de brushes:`, data.session.allowedBrushTypes);
                         brushRegistry.setAllowedBrushTypes(data.session.allowedBrushTypes);
-                        console.log(`🔒 Sesión ${sessionId}: Brushes restringidos a:`, data.session.allowedBrushTypes);
+                        console.log(`✓ Brushes permitidos: ${data.session.allowedBrushTypes.join(', ')}`);
+                        console.log(`✓ Total de brushes registrados: ${brushRegistry.getAllIds().length}`);
+                        console.log(`✓ Brushes que se mostrarán: ${brushRegistry.getAllowedBrushes().length}`);
+                    } else {
+                        console.log(`ℹ️ Sesión ${sessionId} sin restricciones - todos los brushes disponibles`);
                     }
                 } else {
                     // Session not found in database
@@ -48,15 +54,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (error) {
             console.warn('⚠ No se pudo cargar la configuración de la sesión:', error);
         }
+    } else {
+        console.log(`ℹ️ Sin ID de sesión - todos los brushes disponibles`);
     }
 
-    // Renderizar botones de brushes
+    // NOW render buttons AFTER restrictions have been applied
     const brushButtonsContainer = document.querySelector('.brush-buttons');
     if (brushButtonsContainer) {
         brushButtonsContainer.id = 'brushButtons';
+        console.log(`🎨 Renderizando botones de brushes...`);
         brushRegistry.renderButtons('brushButtons');
         const allowedCount = brushRegistry.getAllowedBrushes().length;
-        console.log(`✓ ${allowedCount} botones de brushes renderizados`);
+        const totalCount = brushRegistry.getAllIds().length;
+        console.log(`✓ ${allowedCount} de ${totalCount} botones de brushes renderizados`);
+        
+        // Log which brushes are shown
+        const allowedBrushes = brushRegistry.getAllowedBrushes();
+        console.log(`📋 Brushes visibles:`, allowedBrushes.map(b => b.getId()).join(', '));
     } else {
         console.warn('⚠ Contenedor de botones de brushes no encontrado');
     }

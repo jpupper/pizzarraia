@@ -234,11 +234,43 @@ function renderSessions(sessions) {
                         `).join('')}
                     </div>
                 ` : ''}
+                
+                ${session._id ? `
+                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                        <button onclick="deleteSessionAdmin('${session._id}', '${session.sessionId}')" class="btn btn-danger" style="padding: 8px 16px; font-size: 0.85rem;">
+                            🗑️ Eliminar Sesión
+                        </button>
+                    </div>
+                ` : ''}
             </div>
         `;
     }).join('');
     
     container.innerHTML = html;
+}
+
+async function deleteSessionAdmin(sessionId, sessionNumber) {
+    if (!confirm(`¿Estás seguro de que quieres eliminar la sesión ${sessionNumber}?\n\nEsta acción no se puede deshacer.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${config.API_URL}/api/sessions/${sessionId}`, {
+            method: 'DELETE',
+            headers: config.getAuthHeaders()
+        });
+        
+        if (response.ok) {
+            toast.success('Sesión eliminada exitosamente');
+            loadSessions(); // Reload sessions
+        } else {
+            const data = await response.json();
+            toast.error(data.error || 'Error al eliminar la sesión');
+        }
+    } catch (error) {
+        console.error('Error deleting session:', error);
+        toast.error('Error al eliminar la sesión');
+    }
 }
 
 async function logout() {
@@ -255,6 +287,9 @@ async function logout() {
         window.location.href = 'login.html';
     }
 }
+
+// Make function globally available
+window.deleteSessionAdmin = deleteSessionAdmin;
 
 function escapeHtml(text) {
     const div = document.createElement('div');
@@ -284,13 +319,54 @@ async function loadAnalytics() {
         
         // Load users for filter
         await loadUsersForFilter();
+        
+        // Load sessions for filter
+        await loadSessionsForFilter();
     } catch (error) {
         console.error('Error loading analytics:', error);
     }
 }
 
+// Make function globally available
+window.applySessionFilter = applySessionFilter;
+
 // Estado de filtros de usuarios activos
 let activeUserFilters = new Set();
+let activeSessionFilter = ''; // Empty string means all sessions
+
+async function loadSessionsForFilter() {
+    try {
+        const response = await fetch(`${config.API_URL}/api/sessions/public/list`, {
+            headers: config.getAuthHeaders()
+        });
+        const data = await response.json();
+        
+        const select = document.getElementById('sessionFilter');
+        if (data.sessions && select) {
+            // Clear existing options except the first one
+            select.innerHTML = '<option value="">Todas las sesiones</option>';
+            
+            // Add session options
+            data.sessions.forEach(session => {
+                const option = document.createElement('option');
+                option.value = session.sessionId;
+                option.textContent = `Sesión ${session.sessionId}${session.name ? ' - ' + session.name : ''}`;
+                select.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading sessions for filter:', error);
+    }
+}
+
+function applySessionFilter() {
+    const select = document.getElementById('sessionFilter');
+    activeSessionFilter = select.value;
+    console.log('Session filter applied:', activeSessionFilter || 'All sessions');
+    
+    // Reload analytics with new filter
+    updateChartTimeRange();
+}
 
 async function loadUsersForFilter() {
     try {
@@ -517,8 +593,19 @@ async function loadAnalyticsForRange(startDate, endDate) {
         // Si no hay usuarios activos, mostrar todos
         const usersToFetch = activeUserFilters.size > 0 ? Array.from(activeUserFilters) : [];
         
-        if (usersToFetch.length === 0) {
-            // Cargar todos los usuarios
+        // Build URL with filters
+        let url = `${config.API_URL}/api/analytics/stats?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
+        
+        if (usersToFetch.length > 0) {
+            url += `&username=${usersToFetch.join(',')}`;
+        }
+        
+        if (activeSessionFilter) {
+            url += `&session=${activeSessionFilter}`;
+        }
+        
+        if (usersToFetch.length === 0 && !activeSessionFilter) {
+            // Cargar todos los usuarios y sesiones
             let url = `${config.API_URL}/api/analytics/stats?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
             
             const response = await fetch(url, {
