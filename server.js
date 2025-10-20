@@ -724,7 +724,7 @@ app.get('/pizarraia/api/analytics/summary', isAuthenticated, async (req, res) =>
 // Create a new session
 app.post('/pizarraia/api/sessions/create', isAuthenticated, async (req, res) => {
   try {
-    const { sessionId, name, description, isPublic, allowedBrushTypes } = req.body;
+    const { sessionId, name, description, isPublic, allowedBrushTypes, accessConfig, restrictions } = req.body;
     
     if (!sessionId || !name) {
       return res.status(400).json({ error: 'Session ID y nombre son requeridos' });
@@ -745,10 +745,14 @@ app.post('/pizarraia/api/sessions/create', isAuthenticated, async (req, res) => 
       name,
       description: description || '',
       isPublic: isPublic !== undefined ? isPublic : true,
-      allowedBrushTypes: allowedBrushTypes || []
+      allowedBrushTypes: allowedBrushTypes || [],
+      accessConfig: accessConfig || undefined,
+      restrictions: restrictions || undefined
     });
     
     await session.save();
+    
+    console.log(`✅ Nueva sesión creada: ${sessionId} por ${user.username}`);
     
     res.json({ 
       success: true,
@@ -758,7 +762,9 @@ app.post('/pizarraia/api/sessions/create', isAuthenticated, async (req, res) => 
         name: session.name,
         description: session.description,
         isPublic: session.isPublic,
-        allowedBrushTypes: session.allowedBrushTypes
+        allowedBrushTypes: session.allowedBrushTypes,
+        accessConfig: session.accessConfig,
+        restrictions: session.restrictions
       }
     });
   } catch (error) {
@@ -821,14 +827,20 @@ app.put('/pizarraia/api/sessions/:id', isAuthenticated, async (req, res) => {
       return res.status(404).json({ error: 'Sesión no encontrada o no tienes permisos' });
     }
     
-    const { name, description, isPublic, allowedBrushTypes } = req.body;
+    const { sessionId, name, description, isPublic, allowedBrushTypes, accessConfig, restrictions } = req.body;
     
+    // Actualizar campos
+    if (sessionId) session.sessionId = sessionId;
     if (name) session.name = name;
     if (description !== undefined) session.description = description;
     if (isPublic !== undefined) session.isPublic = isPublic;
     if (allowedBrushTypes) session.allowedBrushTypes = allowedBrushTypes;
+    if (accessConfig) session.accessConfig = accessConfig;
+    if (restrictions) session.restrictions = restrictions;
     
     await session.save();
+    
+    console.log(`✅ Sesión ${session.sessionId} actualizada por ${req.userId}`);
     
     res.json({ success: true, session });
   } catch (error) {
@@ -1089,6 +1101,34 @@ io.on('connection', (socket) => {
     }
     
     console.log(`Layer deleted in session ${sessionId}:`, data.layerIndex);
+  });
+  
+  // Handle session configuration updates (real-time sync)
+  socket.on('session-updated', function(data) {
+    const sessionId = data.sessionId;
+    
+    console.log(`\n📡 ========== SESSION-UPDATED RECIBIDO EN SERVIDOR ==========`);
+    console.log(`   Session ID: ${sessionId}`);
+    console.log(`   Data:`, JSON.stringify(data, null, 2));
+    console.log(`   Sesiones activas:`, Object.keys(sessions));
+    
+    if (sessions[sessionId]) {
+      const sessionSockets = sessions[sessionId];
+      console.log(`   ✅ Sesión encontrada con ${sessionSockets.length} usuarios conectados`);
+      console.log(`   Socket IDs en sesión:`, sessionSockets);
+      
+      // Broadcast to ALL sockets in the same session (including sender for confirmation)
+      sessionSockets.forEach(socketId => {
+        console.log(`      → Enviando a socket ${socketId}`);
+        io.to(socketId).emit('session-updated', data);
+      });
+      
+      console.log(`✅ Broadcasted session update to ${sessionSockets.length} connected users`);
+    } else {
+      console.log(`   ⚠️ NO HAY USUARIOS EN SESIÓN ${sessionId}`);
+      console.log(`   Sesiones disponibles:`, Object.keys(sessions));
+    }
+    console.log(`========== FIN SESSION-UPDATED ==========\n`);
   });
   
   // Handle interaction tracking

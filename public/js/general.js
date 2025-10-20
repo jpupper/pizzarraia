@@ -731,6 +731,9 @@ function setupSocketControls() {
   // Inicializar el campo de sesión con la sesión actual
   sessionInput.value = config.getSessionId();
   
+  // Cargar información de la sesión
+  loadSessionInfo(config.getSessionId());
+  
   // Inicializar los botones según la configuración actual
   if (!config.sockets.receiveEnabled) {
     toggleReceiveBtn.classList.remove('active');
@@ -1431,10 +1434,63 @@ function setupGuiAutoClose() {
     });
 }
 
+/**
+ * Carga y muestra la información de la sesión en el chat
+ * @param {string} sessionId - ID de la sesión
+ */
+async function loadSessionInfo(sessionId) {
+  console.log('📋 Cargando información de sesión:', sessionId);
+  
+  if (!sessionId || sessionId === '0') {
+    // Ocultar info si no hay sesión válida
+    const sessionInfoDiv = document.getElementById('sessionInfo');
+    if (sessionInfoDiv) {
+      sessionInfoDiv.style.display = 'none';
+    }
+    console.log('⚠️ Sesión inválida o 0, ocultando info');
+    return;
+  }
+  
+  try {
+    const url = `${config.API_URL}/api/sessions/${sessionId}`;
+    console.log('🌐 Fetching:', url);
+    
+    const response = await fetch(url);
+    console.log('📡 Response status:', response.status);
+    
+    if (response.ok) {
+      const data = await response.json();
+      const session = data.session;
+      
+      console.log('✅ Sesión cargada:', session);
+      
+      if (session) {
+        const sessionInfoDiv = document.getElementById('sessionInfo');
+        const sessionInfoName = document.getElementById('sessionInfoName');
+        const sessionInfoDescription = document.getElementById('sessionInfoDescription');
+        
+        if (sessionInfoDiv && sessionInfoName && sessionInfoDescription) {
+          sessionInfoName.textContent = session.name || `Sesión ${sessionId}`;
+          sessionInfoDescription.textContent = session.description || 'Sin descripción';
+          sessionInfoDiv.style.display = 'block';
+          console.log('✅ Info de sesión mostrada en el chat');
+        } else {
+          console.error('❌ Elementos del DOM no encontrados');
+        }
+      }
+    } else {
+      console.log('⚠️ Sesión no encontrada en la base de datos (status:', response.status, ')');
+    }
+  } catch (error) {
+    console.error('❌ Error cargando información de sesión:', error);
+  }
+}
+
 // Hacer las funciones accesibles globalmente
 window.logoutUser = logoutUser;
 window.saveImageToServer = saveImageToServer;
 window.renderLayerButtons = renderLayerButtons;
 window.closeWelcomeModal = closeWelcomeModal;
+window.loadSessionInfo = loadSessionInfo;
 
 // NO verificar modal aquí, se verifica después de checkUserAuthentication()

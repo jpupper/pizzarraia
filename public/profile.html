@@ -55,8 +55,8 @@
             <form id="sessionForm" onsubmit="saveSession(event)">
                 <div class="form-group">
                     <label for="sessionIdInput">ID de Sesión:</label>
-                    <input type="text" id="sessionIdInput" required placeholder="Ej: 3000" pattern="[0-9]+" title="Solo números">
-                    <small>Número único para identificar la sesión</small>
+                    <input type="text" id="sessionIdInput" required readonly style="background: #f5f5f5; cursor: not-allowed;">
+                    <small>ID único generado automáticamente (15 dígitos)</small>
                 </div>
 
                 <div class="form-group">
@@ -78,11 +78,55 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Herramientas Disponibles:</label>
-                    <div id="brushTypesContainer" class="brush-types-grid">
-                        <!-- Se llenará dinámicamente -->
+                    <label>⚙️ Configuración de Acceso y Herramientas:</label>
+                    <small style="display: block; margin-bottom: 15px;">Configura qué herramientas puede usar cada tipo de usuario</small>
+                    
+                    <!-- Usuarios NO Registrados -->
+                    <div class="access-config-section" data-user-type="notLogged">
+                        <div class="access-config-header">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="allowNotLogged" class="user-type-toggle" data-user-type="notLogged" checked>
+                                <span><strong>👤 Usuarios NO Registrados</strong></span>
+                            </label>
+                        </div>
+                        <div class="user-config-content">
+                            <div id="notLoggedBrushes" class="brush-types-grid" style="margin-top: 10px;">
+                                <!-- Se llenará dinámicamente con brushes + restricciones -->
+                            </div>
+                        </div>
                     </div>
-                    <small>Selecciona las herramientas que estarán disponibles en esta sesión</small>
+
+                    <!-- Usuarios Registrados -->
+                    <div class="access-config-section" data-user-type="logged">
+                        <div class="access-config-header">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="allowLogged" class="user-type-toggle" data-user-type="logged" checked>
+                                <span><strong>🔐 Usuarios Registrados</strong></span>
+                            </label>
+                        </div>
+                        <div class="user-config-content">
+                            <div id="loggedBrushes" class="brush-types-grid" style="margin-top: 10px;">
+                                <!-- Se llenará dinámicamente con brushes + restricciones -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Usuarios Específicos -->
+                    <div class="access-config-section" data-user-type="specific">
+                        <div class="access-config-header">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="allowSpecific" class="user-type-toggle" data-user-type="specific">
+                                <span><strong>👥 Usuarios Específicos</strong></span>
+                            </label>
+                        </div>
+                        <div id="specificUsersConfig" class="user-config-content" style="display: none; margin-top: 10px;">
+                            <input type="text" id="specificUsers" class="jpinput" placeholder="usuario1, usuario2, usuario3" style="width: 100%; margin-bottom: 10px;">
+                            <small style="display: block; margin-bottom: 10px;">Separa los nombres de usuario con comas</small>
+                            <div id="specificBrushes" class="brush-types-grid">
+                                <!-- Se llenará dinámicamente con brushes + restricciones -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="form-actions">
@@ -154,8 +198,23 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
     <script src="js/config.js"></script>
     <script src="js/toast.js"></script>
+    
+    <!-- Cargar BrushRegistry para obtener nombres dinámicamente -->
+    <script src="js/brushes/BaseBrush.js"></script>
+    <script src="js/brushes/BrushRegistry.js"></script>
+    <script src="js/brushes/standardbrush.js"></script>
+    <script src="js/brushes/artbrush.js"></script>
+    <script src="js/brushes/pixelbrush.js"></script>
+    <script src="js/brushes/linebrush.js"></script>
+    <script src="js/brushes/geometrybrush.js"></script>
+    <script src="js/brushes/flowerbrush.js"></script>
+    <script src="js/brushes/fillbrush.js"></script>
+    <script src="js/brushes/imagebrush.js"></script>
+    <script src="js/brushes/textbrush.js"></script>
+    
     <script src="js/profile.js"></script>
 </body>
 </html>
