@@ -76,8 +76,25 @@ function goToSession(sessionId) {
 
 async function loadGallery() {
     try {
-        const response = await fetch(`${config.API_URL}/api/gallery`);
+        // Check if there's a session filter in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionFilter = urlParams.get('session') || urlParams.get('sesion');
+        
+        let url = `${config.API_URL}/api/gallery`;
+        if (sessionFilter) {
+            url += `?session=${sessionFilter}`;
+        }
+        
+        const response = await fetch(url);
         const data = await response.json();
+        
+        // Show session filter info if active
+        if (sessionFilter && data.images) {
+            const header = document.querySelector('.gallery-header h1');
+            if (header) {
+                header.innerHTML = `🎨 Galería Global <span style="font-size: 0.7em; color: #667eea;">(Sesión ${sessionFilter})</span>`;
+            }
+        }
         
         if (data.images) {
             allImages = data.images;
@@ -252,7 +269,7 @@ async function viewImage(imageId) {
         }
     } catch (error) {
         console.error('Error loading image:', error);
-        alert('Error al cargar la imagen');
+        toast.error('Error al cargar la imagen');
     }
 }
 
@@ -278,7 +295,7 @@ function updateLikeButton(likes) {
 
 async function toggleLike() {
     if (!currentUser) {
-        alert('Debes iniciar sesión para dar like');
+        toast.warning('Debes iniciar sesión para dar like');
         return;
     }
     
@@ -297,11 +314,11 @@ async function toggleLike() {
             viewImage(currentImageId);
             loadGallery(); // Refresh gallery
         } else {
-            alert(data.error || 'Error al dar like');
+            toast.error(data.error || 'Error al dar like');
         }
     } catch (error) {
         console.error('Error toggling like:', error);
-        alert('Error al dar like');
+        toast.error('Error al dar like');
     }
 }
 
@@ -344,7 +361,7 @@ function renderComments(comments) {
 
 async function submitComment() {
     if (!currentUser) {
-        alert('Debes iniciar sesión para comentar');
+        toast.warning('Debes iniciar sesión para comentar');
         return;
     }
     
@@ -354,7 +371,7 @@ async function submitComment() {
     const text = commentInput.value.trim();
     
     if (!text) {
-        alert('Escribe un comentario');
+        toast.warning('Escribe un comentario');
         return;
     }
     
@@ -376,11 +393,11 @@ async function submitComment() {
             viewImage(currentImageId);
             loadGallery(); // Refresh gallery
         } else {
-            alert(data.error || 'Error al comentar');
+            toast.error(data.error || 'Error al comentar');
         }
     } catch (error) {
         console.error('Error submitting comment:', error);
-        alert('Error al enviar comentario');
+        toast.error('Error al enviar comentario');
     }
 }
 
@@ -398,11 +415,11 @@ async function deleteComment(commentId) {
             viewImage(currentImageId);
             loadGallery(); // Refresh gallery
         } else {
-            alert('Error al eliminar comentario');
+            toast.error('Error al eliminar comentario');
         }
     } catch (error) {
         console.error('Error deleting comment:', error);
-        alert('Error al eliminar comentario');
+        toast.error('Error al eliminar comentario');
     }
 }
 

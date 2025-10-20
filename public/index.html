@@ -517,10 +517,11 @@
             
             <!-- Controles de QR -->
             <div style="margin-top: 20px; padding: 15px; background: rgba(0, 0, 0, 0.3); border-radius: 8px;">
-                <h4 style="margin-top: 0; margin-bottom: 15px;">QR Code</h4>
+                <h4 style="margin-top: 0; margin-bottom: 15px;">🔗 Compartir Sesión</h4>
                 <div style="margin-bottom: 10px;">
-                    <label style="display: block; margin-bottom: 5px;">URL:</label>
-                    <input type="text" id="qrInput" class="jpinput" style="width: 100%;" placeholder="URL o texto para QR">
+                    <label style="display: block; margin-bottom: 5px; font-size: 0.9rem;">Link de esta sesión:</label>
+                    <input type="text" id="qrInput" class="jpinput" style="width: 100%; font-size: 0.85rem; cursor: pointer;" placeholder="Se generará automáticamente" readonly title="Click en 'Mostrar QR' para generar">
+                    <small style="display: block; margin-top: 5px; color: rgba(255,255,255,0.7); font-size: 0.8rem;">El QR se genera automáticamente con el link de esta sesión</small>
                 </div>
                 <div style="margin-bottom: 10px;">
                     <label>Posición X: <span id="qrX-value">50</span></label>
@@ -537,9 +538,14 @@
                     <input type="range" value="1" id="qrScale" min="0.5" max="3" step="0.1" class="jpslider"
                            oninput="document.getElementById('qrScale-value').textContent = this.value">
                 </div>
-                <button onclick="toggleQR()" id="qrToggleBtn" class="btn-user-action" style="display: block; padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%;">
-                    Mostrar QR
-                </button>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="toggleQR()" id="qrToggleBtn" class="btn-user-action" style="flex: 1; padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                        Mostrar QR
+                    </button>
+                    <button onclick="copySessionLink()" class="btn-user-action" style="flex: 1; padding: 10px 20px; background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                        📋 Copiar Link
+                    </button>
+                </div>
             </div>
         </div>
         </div>

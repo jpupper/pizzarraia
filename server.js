@@ -417,13 +417,22 @@ app.delete('/pizarraia/api/images/:imageId/comment/:commentId', isAuthenticated,
 // Global gallery route (public)
 app.get('/pizarraia/api/gallery', async (req, res) => {
   try {
-    // Get all images with user info, sorted by creation date
-    const images = await Image.find()
+    const { session, sesion } = req.query;
+    const sessionId = session || sesion;
+    
+    // Build query
+    let query = {};
+    if (sessionId) {
+      query.sessionId = sessionId;
+    }
+    
+    // Get images with optional session filter
+    const images = await Image.find(query)
       .sort({ createdAt: -1 })
       .select('-imageData') // Don't send full image data in list
       .limit(100); // Limit to last 100 images
     
-    res.json({ images });
+    res.json({ images, sessionId: sessionId || null });
   } catch (error) {
     console.error('Error getting gallery:', error);
     res.status(500).json({ error: 'Error al obtener la galería' });
