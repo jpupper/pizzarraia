@@ -771,11 +771,9 @@ function toggleBrushTypeForUser(element, brushId, userType) {
         element.classList.remove('selected');
     }
     
-    // DISPARAR EVENTO CHANGE MANUALMENTE
-    console.log('📢 Disparando evento change...');
-    const changeEvent = new Event('change', { bubbles: true });
-    checkbox.dispatchEvent(changeEvent);
-    console.log('✅ Evento change disparado');
+    // LLAMAR DIRECTAMENTE autoSaveSession (sin disparar evento change para evitar duplicados)
+    console.log('💾 Llamando autoSaveSession directamente...');
+    autoSaveSession();
     console.log('========== FIN BOTÓN APRETADO ==========\n');
 }
 
@@ -903,9 +901,9 @@ async function saveSession(event) {
         return;
     }
     
-    // Get additional restrictions
-    const allowKaleidoscope = document.getElementById('allowKaleidoscope').checked;
-    const allowLayers = document.getElementById('allowLayers').checked;
+    // Get additional restrictions (ya no se usan aquí, están en accessConfig)
+    // const allowKaleidoscope = document.getElementById('allowKaleidoscope')?.checked || false;
+    // const allowLayers = document.getElementById('allowLayers')?.checked || false;
     
     // Verificar si estamos en modo edición
     const modal = document.getElementById('sessionModal');
@@ -930,11 +928,7 @@ async function saveSession(event) {
                 name,
                 description,
                 isPublic,
-                accessConfig: accessConfig,
-                restrictions: {
-                    allowKaleidoscope,
-                    allowLayers
-                }
+                accessConfig: accessConfig
             })
         });
         
@@ -1181,6 +1175,12 @@ function setupAutoSaveListeners() {
     modal._autoSaveHandler = function(e) {
         const target = e.target;
         
+        // IGNORAR checkboxes de brushes (se manejan con toggleBrushTypeForUser)
+        if (target.closest('.brush-types-grid')) {
+            console.log('⏭️ [PROFILE] Checkbox de brush - Ya manejado por toggleBrushTypeForUser, ignorando');
+            return;
+        }
+        
         console.log('\n🔔 [PROFILE] ========== EVENTO CHANGE DETECTADO ==========');
         console.log('📊 [PROFILE] Target:', {
             id: target.id,
@@ -1188,21 +1188,20 @@ function setupAutoSaveListeners() {
             checked: target.checked,
             value: target.value,
             classList: Array.from(target.classList),
-            hasParentGrid: !!target.closest('.brush-types-grid'),
             timestamp: new Date().toISOString()
         });
         
-        // Si es un checkbox de brush o user-type-toggle
+        // Solo procesar checkboxes de control (allowNotLogged, allowLogged, sessionIsPublic, etc.)
         if (target.type === 'checkbox' && 
-            (target.closest('.brush-types-grid') || target.classList.contains('user-type-toggle'))) {
-            console.log('✅ [PROFILE] Checkbox de brush detectado - Llamando autoSaveSession()');
-            autoSaveSession();
-        } else if (target.id === 'sessionIsPublic') {
-            // Si es el checkbox de sesión pública
-            console.log('✅ [PROFILE] Checkbox público detectado - Llamando autoSaveSession()');
+            (target.classList.contains('user-type-toggle') || 
+             target.id === 'sessionIsPublic' ||
+             target.id === 'allowNotLogged' ||
+             target.id === 'allowLogged' ||
+             target.id === 'allowSpecific')) {
+            console.log('✅ [PROFILE] Checkbox de control detectado - Llamando autoSaveSession()');
             autoSaveSession();
         } else {
-            console.log('⚠️ [PROFILE] Checkbox NO coincide con condiciones - IGNORADO');
+            console.log('⏭️ [PROFILE] Otro tipo de elemento - IGNORADO');
         }
     };
     

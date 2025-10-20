@@ -479,16 +479,56 @@ body {
     border: 2px solid #ddd;
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+/* Estado APAGADO (no seleccionado) */
+.brush-type-item:not(.selected) {
+    background: #e0e0e0;
+    border-color: #bbb;
+    opacity: 0.6;
+}
+
+.brush-type-item:not(.selected)::after {
+    content: '✕';
+    position: absolute;
+    right: 10px;
+    color: #999;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.brush-type-item:not(.selected) label {
+    color: #888;
+    text-decoration: line-through;
 }
 
 .brush-type-item:hover {
     background: #e8e8e8;
+    transform: scale(1.02);
 }
 
+/* Estado PRENDIDO (seleccionado) */
 .brush-type-item.selected {
-    background: rgba(102, 126, 234, 0.1);
+    background: rgba(102, 126, 234, 0.15);
     border-color: #667eea;
+    opacity: 1;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+}
+
+.brush-type-item.selected::after {
+    content: '✓';
+    position: absolute;
+    right: 10px;
+    color: #667eea;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.brush-type-item.selected label {
+    color: #333;
+    font-weight: 600;
 }
 
 .brush-type-item input[type="checkbox"] {
