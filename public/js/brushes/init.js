@@ -177,12 +177,8 @@ async function applyAccessConfig(accessConfig, userType, currentUsername) {
         const isSpecificUser = accessConfig.specific.users.includes(currentUsername);
         if (isSpecificUser) {
             console.log(`✅ Usuario específico detectado: ${currentUsername}`);
-            if (!accessConfig.specific.brushes || accessConfig.specific.brushes.length === 0) {
-                alert('⛔ Esta sesión no tiene herramientas configuradas para usuarios específicos.');
-                window.location.href = 'index.html';
-                return null;
-            }
-            return accessConfig.specific.brushes;
+            // Si no hay brushes, devolver array vacío (sin botones)
+            return accessConfig.specific.brushes || [];
         }
     }
     
@@ -192,13 +188,9 @@ async function applyAccessConfig(accessConfig, userType, currentUsername) {
             alert('⛔ Esta sesión no permite el acceso a usuarios registrados.\n\nPor favor, cierra sesión para continuar.');
             return null;
         }
-        if (!accessConfig.logged.brushes || accessConfig.logged.brushes.length === 0) {
-            alert('⛔ Esta sesión no tiene herramientas configuradas para usuarios registrados.');
-            window.location.href = 'index.html';
-            return null;
-        }
         console.log(`✅ Acceso permitido para usuario registrado`);
-        return accessConfig.logged.brushes;
+        // Si no hay brushes, devolver array vacío (sin botones)
+        return accessConfig.logged.brushes || [];
     }
     
     if (userType === 'notLogged') {
@@ -207,13 +199,9 @@ async function applyAccessConfig(accessConfig, userType, currentUsername) {
             window.location.href = 'login.html';
             return null;
         }
-        if (!accessConfig.notLogged.brushes || accessConfig.notLogged.brushes.length === 0) {
-            alert('⛔ Esta sesión no tiene herramientas configuradas para usuarios no registrados.');
-            window.location.href = 'index.html';
-            return null;
-        }
         console.log(`✅ Acceso permitido para usuario no registrado`);
-        return accessConfig.notLogged.brushes;
+        // Si no hay brushes, devolver array vacío (sin botones)
+        return accessConfig.notLogged.brushes || [];
     }
     
     // Por defecto, denegar acceso
@@ -231,51 +219,114 @@ function applySessionRestrictions(restrictions) {
     
     // Restricción de Kaleidoscopio
     if (restrictions.allowKaleidoscope === false) {
-        console.log('🚫 Kaleidoscopio deshabilitado');
+        console.log('🚫 Kaleidoscopio deshabilitado - OCULTANDO SOLO EL SLIDER');
+        
+        // Ocultar SOLO el slider (no el contenedor padre)
         const kaleidoSlider = document.getElementById('kaleidoSegments');
         if (kaleidoSlider) {
             kaleidoSlider.disabled = true;
             kaleidoSlider.value = 1;
-            kaleidoSlider.style.opacity = '0.5';
-            kaleidoSlider.style.cursor = 'not-allowed';
-            
-            // Actualizar el valor mostrado
-            const valueSpan = document.getElementById('kaleidoSegments-value');
-            if (valueSpan) valueSpan.textContent = '1';
-            
-            // Agregar tooltip
-            kaleidoSlider.title = 'Kaleidoscopio deshabilitado en esta sesión';
+            kaleidoSlider.style.display = 'none';
+            console.log('   → Slider de kaleidoscopio ocultado');
         }
         
-        // Ocultar el label también
-        const kaleidoLabel = document.querySelector('label[for="kaleidoSegments"]');
-        if (kaleidoLabel) {
-            kaleidoLabel.style.opacity = '0.5';
+        // Ocultar SOLO el valor
+        const valueSpan = document.getElementById('kaleidoSegments-value');
+        if (valueSpan) {
+            valueSpan.textContent = '1';
+            valueSpan.style.display = 'none';
+            console.log('   → Valor de kaleidoscopio ocultado');
         }
+        
+        // Ocultar SOLO el label que contiene "Efecto Kaleido"
+        const labels = document.querySelectorAll('label');
+        labels.forEach(label => {
+            if (label.textContent.includes('Efecto Kaleido') || label.textContent.includes('Kaleido')) {
+                label.style.display = 'none';
+                console.log('   → Label de kaleidoscopio ocultado');
+            }
+        });
+    } else {
+        // Asegurar que esté visible si está permitido
+        console.log('✅ Kaleidoscopio habilitado - MOSTRANDO');
+        const kaleidoSlider = document.getElementById('kaleidoSegments');
+        if (kaleidoSlider) {
+            kaleidoSlider.disabled = false;
+            kaleidoSlider.style.display = '';
+        }
+        
+        const valueSpan = document.getElementById('kaleidoSegments-value');
+        if (valueSpan) {
+            valueSpan.style.display = '';
+        }
+        
+        // Mostrar el label
+        const labels = document.querySelectorAll('label');
+        labels.forEach(label => {
+            if (label.textContent.includes('Efecto Kaleido') || label.textContent.includes('Kaleido')) {
+                label.style.display = '';
+            }
+        });
     }
     
     // Restricción de Capas
     if (restrictions.allowLayers === false) {
-        console.log('🚫 Capas deshabilitadas');
+        console.log('🚫 Capas deshabilitadas - OCULTANDO SOLO LA SECCIÓN DE CAPAS');
         
-        // Deshabilitar botones de capas si existen
-        const layerButtons = document.querySelectorAll('.layer-btn, [data-layer]');
-        layerButtons.forEach(btn => {
-            btn.disabled = true;
-            btn.style.opacity = '0.5';
-            btn.style.cursor = 'not-allowed';
-            btn.title = 'Capas deshabilitadas en esta sesión';
+        // Buscar el contenedor de capas por el label "Sistema de Capas"
+        const labels = document.querySelectorAll('label');
+        let layerSection = null;
+        
+        labels.forEach(label => {
+            if (label.textContent.includes('Sistema de Capas')) {
+                // Encontrar el div padre que contiene toda la sección
+                layerSection = label.closest('div[style*="margin-top"]');
+                if (layerSection) {
+                    layerSection.style.display = 'none';
+                    console.log('   → Sección de capas ocultada');
+                }
+            }
         });
         
-        // Ocultar controles de capas
-        const layerControls = document.querySelectorAll('.layer-control, #layerSelector');
-        layerControls.forEach(ctrl => {
-            ctrl.style.display = 'none';
-        });
+        // También ocultar el contenedor dinámico por si acaso
+        const layersContainer = document.getElementById('layersContainer');
+        if (layersContainer) {
+            layersContainer.style.display = 'none';
+        }
         
-        // Forzar a usar solo capa 0
+        // Ocultar botón de agregar capa
+        const addLayerBtn = document.querySelector('.btn-add-layer');
+        if (addLayerBtn) {
+            addLayerBtn.style.display = 'none';
+        }
+        
+        // Forzar capa 0
         if (typeof window.currentLayer !== 'undefined') {
             window.currentLayer = 0;
+        }
+    } else {
+        // Asegurar que esté visible si está permitido
+        console.log('✅ Capas habilitadas - MOSTRANDO');
+        
+        // Mostrar la sección de capas
+        const labels = document.querySelectorAll('label');
+        labels.forEach(label => {
+            if (label.textContent.includes('Sistema de Capas')) {
+                const layerSection = label.closest('div[style*="margin-top"]');
+                if (layerSection) {
+                    layerSection.style.display = '';
+                }
+            }
+        });
+        
+        const layersContainer = document.getElementById('layersContainer');
+        if (layersContainer) {
+            layersContainer.style.display = '';
+        }
+        
+        const addLayerBtn = document.querySelector('.btn-add-layer');
+        if (addLayerBtn) {
+            addLayerBtn.style.display = '';
         }
     }
     
