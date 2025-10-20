@@ -94,7 +94,19 @@ class BrushRegistry {
      */
     setAllowedBrushTypes(allowedTypes) {
         this.allowedBrushTypes = allowedTypes;
-        console.log('Brushes permitidos:', allowedTypes || 'todos');
+        console.log('🔧 setAllowedBrushTypes llamado con:', allowedTypes);
+        console.log('📊 Brushes registrados actualmente:', this.getAllIds());
+        
+        if (allowedTypes && allowedTypes.length > 0) {
+            const allowedBrushes = this.getAllowedBrushes();
+            console.log('✅ Brushes que pasaron el filtro:', allowedBrushes.map(b => b.getId()));
+            
+            // Verificar si hay brushes que no coinciden
+            const notFound = allowedTypes.filter(id => !this.has(id));
+            if (notFound.length > 0) {
+                console.warn('⚠️ Brushes en allowedTypes pero no registrados:', notFound);
+            }
+        }
     }
 
     /**
@@ -131,18 +143,27 @@ class BrushRegistry {
             return;
         }
 
+        console.log('🎨 renderButtons() - Iniciando renderizado...');
+        console.log('📋 allowedBrushTypes actual:', this.allowedBrushTypes);
+        
         let html = '';
         const allowedBrushes = this.getAllowedBrushes();
         
+        console.log(`🔍 getAllowedBrushes() retornó ${allowedBrushes.length} brushes:`, allowedBrushes.map(b => b.getId()));
+        
         if (allowedBrushes.length === 0) {
             html = '<p style="color: #999; padding: 10px;">No hay herramientas disponibles en esta sesión</p>';
+            console.log('⚠️ No hay brushes permitidos - mostrando mensaje');
         } else {
             allowedBrushes.forEach(brush => {
-                html += brush.renderButton();
+                const buttonHtml = brush.renderButton();
+                console.log(`✓ Renderizando botón para: ${brush.getId()}`);
+                html += buttonHtml;
             });
         }
 
         container.innerHTML = html;
+        console.log(`✅ HTML insertado en contenedor. Total de botones: ${allowedBrushes.length}`);
 
         // Agregar event listeners
         this.attachButtonListeners();
