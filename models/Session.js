@@ -37,7 +37,8 @@ const sessionSchema = new mongoose.Schema({
       brushes: [{ type: String }],
       restrictions: {
         allowKaleidoscope: { type: Boolean, default: true },
-        allowLayers: { type: Boolean, default: true }
+        allowLayers: { type: Boolean, default: true },
+        allowCleanBackground: { type: Boolean, default: true }
       }
     },
     logged: {
@@ -45,7 +46,8 @@ const sessionSchema = new mongoose.Schema({
       brushes: [{ type: String }],
       restrictions: {
         allowKaleidoscope: { type: Boolean, default: true },
-        allowLayers: { type: Boolean, default: true }
+        allowLayers: { type: Boolean, default: true },
+        allowCleanBackground: { type: Boolean, default: true }
       }
     },
     specific: {
@@ -54,7 +56,8 @@ const sessionSchema = new mongoose.Schema({
       brushes: [{ type: String }],
       restrictions: {
         allowKaleidoscope: { type: Boolean, default: true },
-        allowLayers: { type: Boolean, default: true }
+        allowLayers: { type: Boolean, default: true },
+        allowCleanBackground: { type: Boolean, default: true }
       }
     }
   },
