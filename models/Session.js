@@ -67,7 +67,13 @@ const sessionSchema = new mongoose.Schema({
   },
   customization: {
     backgroundImage: { type: String, default: '' }, // Base64 image for gallery background
-    logoImage: { type: String, default: '' } // Base64 image for session logo
+    logoImage: { type: String, default: '' }, // Base64 image for session logo
+    colors: {
+      background: { type: String, default: '#1a1a2e' }, // Color de fondo
+      primary: { type: String, default: '#667eea' }, // Color primario (botones, highlights)
+      secondary: { type: String, default: '#764ba2' }, // Color secundario (acentos)
+      text: { type: String, default: '#ffffff' } // Color de tipografía
+    }
   },
   createdAt: {
     type: Date,

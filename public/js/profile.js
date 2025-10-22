@@ -617,6 +617,7 @@ function renderUserSessions() {
                 if (session.accessConfig.notLogged.restrictions) {
                     if (!session.accessConfig.notLogged.restrictions.allowKaleidoscope) restrictions.push('🚫 Kaleidoscopio');
                     if (!session.accessConfig.notLogged.restrictions.allowLayers) restrictions.push('🚫 Capas');
+                    if (!session.accessConfig.notLogged.restrictions.allowCleanBackground) restrictions.push('🚫 Limpiar Canvas');
                 }
                 const restrictText = restrictions.length > 0 ? ` (${restrictions.join(', ')})` : '';
                 accessParts.push(`👤 No Registrados: ${session.accessConfig.notLogged.brushes.length} herramientas${restrictText}`);
@@ -628,6 +629,7 @@ function renderUserSessions() {
                 if (session.accessConfig.logged.restrictions) {
                     if (!session.accessConfig.logged.restrictions.allowKaleidoscope) restrictions.push('🚫 Kaleidoscopio');
                     if (!session.accessConfig.logged.restrictions.allowLayers) restrictions.push('🚫 Capas');
+                    if (!session.accessConfig.logged.restrictions.allowCleanBackground) restrictions.push('🚫 Limpiar Canvas');
                 }
                 const restrictText = restrictions.length > 0 ? ` (${restrictions.join(', ')})` : '';
                 accessParts.push(`🔐 Registrados: ${session.accessConfig.logged.brushes.length} herramientas${restrictText}`);
@@ -639,6 +641,7 @@ function renderUserSessions() {
                 if (session.accessConfig.specific.restrictions) {
                     if (!session.accessConfig.specific.restrictions.allowKaleidoscope) restrictions.push('🚫 Kaleidoscopio');
                     if (!session.accessConfig.specific.restrictions.allowLayers) restrictions.push('🚫 Capas');
+                    if (!session.accessConfig.specific.restrictions.allowCleanBackground) restrictions.push('🚫 Limpiar Canvas');
                 }
                 const restrictText = restrictions.length > 0 ? ` (${restrictions.join(', ')})` : '';
                 accessParts.push(`👥 Específicos (${session.accessConfig.specific.users.join(', ')}): ${session.accessConfig.specific.brushes.length} herramientas${restrictText}`);
@@ -705,6 +708,12 @@ function openCreateSessionModal() {
     document.getElementById('logoImagePreview').style.display = 'none';
     document.getElementById('backgroundImageInput').value = '';
     document.getElementById('logoImageInput').value = '';
+    
+    // Resetear colores a defaults
+    document.getElementById('colorBackground').value = '#1a1a2e';
+    document.getElementById('colorPrimary').value = '#667eea';
+    document.getElementById('colorSecondary').value = '#764ba2';
+    document.getElementById('colorText').value = '#ffffff';
     
     // Populate brush types for each user type
     populateBrushTypesForAllUsers();
@@ -982,7 +991,13 @@ async function saveSession(event) {
             accessConfig: accessConfig,
             customization: {
                 backgroundImage: currentBackgroundImage || '',
-                logoImage: currentLogoImage || ''
+                logoImage: currentLogoImage || '',
+                colors: {
+                    background: document.getElementById('colorBackground')?.value || '#1a1a2e',
+                    primary: document.getElementById('colorPrimary')?.value || '#667eea',
+                    secondary: document.getElementById('colorSecondary')?.value || '#764ba2',
+                    text: document.getElementById('colorText')?.value || '#ffffff'
+                }
             }
         };
         
@@ -1012,10 +1027,7 @@ async function saveSession(event) {
                 socket.emit('session-updated', {
                     sessionId: sessionId,
                     accessConfig: accessConfig,
-                    restrictions: {
-                        allowKaleidoscope,
-                        allowLayers
-                    }
+                    customization: requestBody.customization
                 });
             }
             
@@ -1210,12 +1222,25 @@ async function editSession(sessionId) {
                 currentLogoImage = '';
                 document.getElementById('logoImagePreview').style.display = 'none';
             }
+            
+            // Cargar colores
+            if (session.customization.colors) {
+                document.getElementById('colorBackground').value = session.customization.colors.background || '#1a1a2e';
+                document.getElementById('colorPrimary').value = session.customization.colors.primary || '#667eea';
+                document.getElementById('colorSecondary').value = session.customization.colors.secondary || '#764ba2';
+                document.getElementById('colorText').value = session.customization.colors.text || '#ffffff';
+            }
         } else {
             // Limpiar si no hay personalización
             currentBackgroundImage = '';
             currentLogoImage = '';
             document.getElementById('backgroundImagePreview').style.display = 'none';
             document.getElementById('logoImagePreview').style.display = 'none';
+            // Resetear colores a defaults
+            document.getElementById('colorBackground').value = '#1a1a2e';
+            document.getElementById('colorPrimary').value = '#667eea';
+            document.getElementById('colorSecondary').value = '#764ba2';
+            document.getElementById('colorText').value = '#ffffff';
         }
         
         // Setup listeners con auto-save

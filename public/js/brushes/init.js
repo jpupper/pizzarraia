@@ -46,6 +46,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                         console.warn('No se pudo verificar autenticación:', error);
                     }
                     
+                    // Aplicar colores personalizados si existen
+                    if (data.session.customization && data.session.customization.colors && typeof applySessionColors === 'function') {
+                        console.log('🎨 Aplicando colores personalizados al cargar sesión');
+                        applySessionColors(data.session.customization.colors);
+                    }
+                    
                     // Aplicar configuración de acceso según tipo de usuario
                     if (data.session.accessConfig) {
                         const allowedBrushes = await applyAccessConfig(data.session.accessConfig, userType, currentUsername);
