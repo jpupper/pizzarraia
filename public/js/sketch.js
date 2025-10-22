@@ -263,8 +263,14 @@ function setup() {
     
     // Configurar evento para actualización de sesión - TIEMPO REAL
     socket.on("session-updated", function(data) {
-        console.log('\n⚡ [SKETCH] ========== SESSION-UPDATED RECIBIDO ==========');
-        console.log('📦 [SKETCH] Datos recibidos:', {
+        console.log('\n⚡⚡⚡ [SKETCH] ========== SESSION-UPDATED RECIBIDO ==========');
+        console.log('📦 [SKETCH] RAW DATA:', JSON.stringify(data, null, 2));
+        console.log('🎨 [SKETCH] Tiene customization?', !!data.customization);
+        console.log('🎨 [SKETCH] Customization object:', data.customization);
+        console.log('🎨 [SKETCH] Tiene colors?', !!(data.customization?.colors));
+        console.log('🎨 [SKETCH] Colors object:', data.customization?.colors);
+        console.log('🖼️ [SKETCH] Tiene logo?', !!(data.customization?.logoImage));
+        console.log('📦 [SKETCH] AccessConfig:', {
             sessionId: data.sessionId,
             timestamp: new Date().toISOString(),
             accessConfig: {
@@ -2440,8 +2446,26 @@ async function handleSessionUpdate(data) {
     }
     
     // Aplicar colores personalizados si existen
+    console.log('🔍 [SKETCH] Verificando colores...');
+    console.log('🔍 [SKETCH] data.customization existe?', !!data.customization);
+    console.log('🔍 [SKETCH] data.customization.colors existe?', !!(data.customization?.colors));
+    
     if (data.customization && data.customization.colors) {
+        console.log('✅ [SKETCH] APLICANDO COLORES:', data.customization.colors);
         applySessionColors(data.customization.colors);
+    } else {
+        console.error('❌ [SKETCH] NO HAY COLORES PARA APLICAR');
+        console.log('❌ [SKETCH] data.customization:', data.customization);
+    }
+    
+    // Actualizar logo de branding si existe
+    if (data.customization && data.customization.logoImage) {
+        const brandingContainer = document.getElementById('sessionBrandingLogo');
+        const brandingImg = document.getElementById('brandingLogoImg');
+        if (brandingContainer && brandingImg) {
+            brandingImg.src = data.customization.logoImage;
+            brandingContainer.style.display = 'block';
+        }
     }
     
     // Aplicar configuración
@@ -2549,75 +2573,210 @@ async function handleSessionUpdate(data) {
  * @param {Object} colors - Objeto con los colores {background, primary, secondary, text}
  */
 function applySessionColors(colors) {
-    console.log('🎨 [SKETCH] Aplicando colores personalizados:', colors);
+    console.log('\n🎨🎨🎨 [SKETCH] ========== APLICANDO COLORES ==========');
+    console.log('🎨 [SKETCH] Colors recibidos:', colors);
+    console.log('🎨 [SKETCH] Background:', colors?.background);
+    console.log('🎨 [SKETCH] Primary:', colors?.primary);
+    console.log('🎨 [SKETCH] Secondary:', colors?.secondary);
+    console.log('🎨 [SKETCH] Text:', colors?.text);
     
-    if (!colors) return;
+    if (!colors) {
+        console.error('❌ [SKETCH] Colors es null/undefined, ABORTANDO');
+        return;
+    }
     
     const root = document.documentElement;
     
-    // Aplicar variables CSS
+    // Aplicar variables CSS principales (estas son las que usa el CSS)
+    root.style.setProperty('--primary-dark', colors.background);
+    root.style.setProperty('--primary', colors.background);
+    root.style.setProperty('--primary-light', colors.primary);
+    root.style.setProperty('--accent', colors.secondary);
+    root.style.setProperty('--text', colors.text);
+    
+    // También establecer las variables personalizadas
     root.style.setProperty('--bg-primary', colors.background);
     root.style.setProperty('--color-primary', colors.primary);
     root.style.setProperty('--color-secondary', colors.secondary);
     root.style.setProperty('--text-primary', colors.text);
     
-    // Aplicar al body
-    document.body.style.backgroundColor = colors.background;
-    document.body.style.color = colors.text;
-    
-    // Aplicar al panel lateral (tabs)
-    const tabsContainer = document.querySelector('.tabs-container');
-    if (tabsContainer) {
-        tabsContainer.style.background = `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`;
-        tabsContainer.style.color = colors.text;
+    // Aplicar al GUI principal
+    const gui = document.getElementById('gui');
+    if (gui) {
+        gui.style.backgroundColor = colors.background;
+        gui.style.color = colors.text;
     }
     
-    // Aplicar a los tabs
-    document.querySelectorAll('.tab').forEach(tab => {
-        tab.style.color = colors.text;
-        if (tab.classList.contains('active')) {
-            tab.style.background = `rgba(255, 255, 255, 0.2)`;
+    // Aplicar al contenedor del logo de branding
+    const brandingLogo = document.getElementById('sessionBrandingLogo');
+    if (brandingLogo) {
+        brandingLogo.style.background = `linear-gradient(135deg, ${colors.primary}40 0%, ${colors.secondary}40 100%)`;
+        brandingLogo.style.borderBottomColor = colors.primary;
+    }
+    
+    // Aplicar a los botones de tabs
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.style.color = colors.text;
+        if (btn.classList.contains('active')) {
+            btn.style.color = colors.secondary;
+            btn.style.borderBottomColor = colors.secondary;
+            btn.style.backgroundColor = `${colors.secondary}1a`; // 10% opacity
         }
     });
     
-    // Aplicar al contenido del panel
-    const tabContent = document.querySelector('.tab-content');
-    if (tabContent) {
-        tabContent.style.backgroundColor = colors.background;
-        tabContent.style.color = colors.text;
-    }
+    // Aplicar a todos los tab-content
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.style.color = colors.text;
+    });
+    
+    // Aplicar a secciones con background
+    document.querySelectorAll('.color-palette-section, .about-section, .chat-section, .user-section').forEach(section => {
+        section.style.color = colors.text;
+    });
+    
+    // Aplicar a labels
+    document.querySelectorAll('#gui label').forEach(label => {
+        label.style.color = colors.text;
+    });
+    
+    // Aplicar a inputs y textareas
+    document.querySelectorAll('.jpinput, #gui input[type="text"], #gui textarea').forEach(input => {
+        input.style.backgroundColor = `${colors.background}cc`;
+        input.style.borderColor = colors.secondary;
+        input.style.color = colors.text;
+    });
     
     // Aplicar a botones de brush
-    document.querySelectorAll('.brush-button').forEach(btn => {
-        btn.style.backgroundColor = `${colors.primary}40`;
-        btn.style.borderColor = colors.primary;
+    document.querySelectorAll('.brush-btn, [data-brush]').forEach(btn => {
         btn.style.color = colors.text;
         
         if (btn.classList.contains('active')) {
+            // Usar setProperty con important para sobrescribir CSS
+            btn.style.setProperty('background', `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`, 'important');
+            btn.style.setProperty('border-color', colors.secondary, 'important');
+            btn.style.setProperty('box-shadow', `0 0 15px ${colors.secondary}80`, 'important');
+        } else {
+            btn.style.setProperty('background-color', 'rgba(255, 255, 255, 0.1)', 'important');
+            btn.style.setProperty('border-color', colors.primary, 'important');
+        }
+    });
+    
+    // Aplicar a otros botones generales
+    document.querySelectorAll('.btn, .btn-user-action').forEach(btn => {
+        // Solo si tiene gradiente en el estilo inline
+        if (btn.style.background && btn.style.background.includes('gradient')) {
             btn.style.background = `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`;
         }
     });
     
     // Aplicar a sliders
-    document.querySelectorAll('.jpslider').forEach(slider => {
-        slider.style.setProperty('--slider-color', colors.primary);
+    document.querySelectorAll('.jpslider, #gui input[type="range"]').forEach(slider => {
+        // Los sliders usan las variables CSS, ya están actualizados
     });
-    
-    // Aplicar a inputs
-    document.querySelectorAll('.jpinput').forEach(input => {
-        input.style.backgroundColor = `${colors.background}dd`;
-        input.style.borderColor = colors.primary;
-        input.style.color = colors.text;
-    });
-    
-    // Aplicar a la paleta de colores
-    const colorPalette = document.querySelector('.color-palette');
-    if (colorPalette) {
-        colorPalette.style.backgroundColor = `${colors.background}dd`;
-        colorPalette.style.borderColor = colors.primary;
-    }
     
     console.log('✅ [SKETCH] Colores aplicados correctamente');
+}
+
+/**
+ * Ver galería de la sesión actual
+ */
+function viewSessionGallery() {
+    if (sessionId) {
+        window.open(`gallery.html?sesion=${sessionId}`, '_blank');
+    } else {
+        if (typeof toast !== 'undefined') {
+            toast.warning('No estás en ninguna sesión');
+        }
+    }
+}
+
+/**
+ * Cargar información de la sesión en la pestaña INFO y mostrar branding
+ */
+async function loadSessionInfo() {
+    if (!sessionId || typeof config === 'undefined') {
+        console.log('⚠️ loadSessionInfo: No sessionId o config');
+        return;
+    }
+    
+    console.log('🔍 loadSessionInfo: Cargando info de sesión:', sessionId);
+    
+    try {
+        const response = await fetch(`${config.API_URL}/api/sessions/${sessionId}`);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.session) {
+                const session = data.session;
+                console.log('📦 Sesión cargada:', {
+                    name: session.name,
+                    hasCustomization: !!session.customization,
+                    hasLogo: !!(session.customization?.logoImage),
+                    hasColors: !!(session.customization?.colors)
+                });
+                
+                // Actualizar nombre y descripción en pestaña INFO
+                const nameEl = document.getElementById('sessionNameDisplay');
+                const descEl = document.getElementById('sessionDescDisplay');
+                if (nameEl) nameEl.textContent = session.name || `Sesión ${sessionId}`;
+                if (descEl) descEl.textContent = session.description || 'Sin descripción';
+                
+                // Mostrar logo si existe
+                if (session.customization && session.customization.logoImage) {
+                    console.log('🖼️ Logo encontrado en sesión, esperando DOM...');
+                    
+                    // Esperar a que el DOM esté completamente listo
+                    const loadLogo = () => {
+                        // Logo en pestaña INFO
+                        const logoContainer = document.getElementById('sessionLogoContainer');
+                        const logoImg = document.getElementById('sessionLogo');
+                        if (logoContainer && logoImg) {
+                            logoImg.src = session.customization.logoImage;
+                            logoContainer.style.display = 'block';
+                            console.log('✅ Logo cargado en pestaña INFO');
+                        } else {
+                            console.warn('⚠️ Elementos INFO no encontrados');
+                        }
+                        
+                        // Logo de branding en la parte superior del GUI
+                        const brandingContainer = document.getElementById('sessionBrandingLogo');
+                        const brandingImg = document.getElementById('brandingLogoImg');
+                        
+                        console.log('🔍 Buscando elementos de branding:', {
+                            container: !!brandingContainer,
+                            img: !!brandingImg,
+                            containerHTML: brandingContainer?.outerHTML?.substring(0, 100),
+                            imgHTML: brandingImg?.outerHTML?.substring(0, 100)
+                        });
+                        
+                        if (brandingContainer && brandingImg) {
+                            brandingImg.src = session.customization.logoImage;
+                            brandingContainer.style.display = 'block';
+                            console.log('✅✅✅ Logo de branding cargado en GUI superior ✅✅✅');
+                        } else {
+                            console.error('❌ Elementos de branding NO ENCONTRADOS');
+                            console.log('🔍 Todos los elementos con id sessionBrandingLogo:', 
+                                document.querySelectorAll('[id*="sessionBranding"]'));
+                            console.log('🔍 Todos los elementos con id brandingLogoImg:', 
+                                document.querySelectorAll('[id*="brandingLogo"]'));
+                        }
+                    };
+                    
+                    // Intentar inmediatamente
+                    loadLogo();
+                    
+                    // Reintentar después de 500ms por si el DOM no estaba listo
+                    setTimeout(loadLogo, 500);
+                    
+                    // Reintentar después de 1s
+                    setTimeout(loadLogo, 1000);
+                } else {
+                    console.log('ℹ️ No hay logo en esta sesión');
+                }
+            }
+        }
+    } catch (error) {
+        console.error('❌ Error loading session info:', error);
+    }
 }
 
 // Exponer funciones globalmente
@@ -2626,3 +2785,5 @@ window.copySessionLink = copySessionLink;
 window.downloadQR = downloadQR;
 window.handleSessionUpdate = handleSessionUpdate;
 window.applySessionColors = applySessionColors;
+window.viewSessionGallery = viewSessionGallery;
+window.loadSessionInfo = loadSessionInfo;

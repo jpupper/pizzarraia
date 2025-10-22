@@ -52,6 +52,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                         applySessionColors(data.session.customization.colors);
                     }
                     
+                    // Cargar información de sesión en la pestaña INFO
+                    if (typeof loadSessionInfo === 'function') {
+                        loadSessionInfo();
+                    }
+                    
                     // Aplicar configuración de acceso según tipo de usuario
                     if (data.session.accessConfig) {
                         const allowedBrushes = await applyAccessConfig(data.session.accessConfig, userType, currentUsername);

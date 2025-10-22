@@ -1397,16 +1397,23 @@ function checkWelcomeModal() {
   
   // Verificar si hay parámetro modalintro=true en la URL (fuerza mostrar)
   const urlParams = new URLSearchParams(window.location.search);
-  const forceModal = urlParams.get('modalintro') === 'true';
+  const forceModal = urlParams.get('modalintro') === 'true' || urlParams.get('intromodal') === 'true';
+  const hideModal = urlParams.get('modalintro') === 'false' || urlParams.get('intromodal') === 'false';
   
   // Verificar si el usuario está logueado
   const isUserLoggedIn = currentUser !== null && currentUser !== undefined;
   
   if (modal) {
+    // NO mostrar el modal si:
+    // 1. Se fuerza ocultar con intromodal=false o modalintro=false
+    if (hideModal) {
+      modal.classList.remove('active');
+      console.log('🚫 Modal ocultado por parámetro URL');
+    }
     // Mostrar el modal si:
-    // 1. Se fuerza con modalintro=true, O
-    // 2. El usuario NO está logueado
-    if (forceModal || !isUserLoggedIn) {
+    // 1. Se fuerza con modalintro=true o intromodal=true, O
+    // 2. El usuario NO está logueado (y no se forzó ocultar)
+    else if (forceModal || !isUserLoggedIn) {
       // Mostrar el modal después de un pequeño delay
       setTimeout(() => {
         modal.classList.add('active');

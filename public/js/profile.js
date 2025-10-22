@@ -715,6 +715,11 @@ function openCreateSessionModal() {
     document.getElementById('colorSecondary').value = '#764ba2';
     document.getElementById('colorText').value = '#ffffff';
     
+    // Desactivar checkbox de colores personalizados
+    document.getElementById('useCustomColors').checked = false;
+    document.getElementById('customColorsContainer').style.opacity = '0.5';
+    document.getElementById('customColorsContainer').style.pointerEvents = 'none';
+    
     // Populate brush types for each user type
     populateBrushTypesForAllUsers();
     
@@ -983,6 +988,20 @@ async function saveSession(event) {
         
         const method = isEditing ? 'PUT' : 'POST';
         
+        // Determinar si usar colores personalizados
+        const useCustomColors = document.getElementById('useCustomColors')?.checked || false;
+        const colors = useCustomColors ? {
+            background: document.getElementById('colorBackground')?.value || '#1a1a2e',
+            primary: document.getElementById('colorPrimary')?.value || '#667eea',
+            secondary: document.getElementById('colorSecondary')?.value || '#764ba2',
+            text: document.getElementById('colorText')?.value || '#ffffff'
+        } : {
+            background: '#1a1a2e',
+            primary: '#667eea',
+            secondary: '#764ba2',
+            text: '#ffffff'
+        };
+        
         const requestBody = {
             sessionId,
             name,
@@ -992,12 +1011,7 @@ async function saveSession(event) {
             customization: {
                 backgroundImage: currentBackgroundImage || '',
                 logoImage: currentLogoImage || '',
-                colors: {
-                    background: document.getElementById('colorBackground')?.value || '#1a1a2e',
-                    primary: document.getElementById('colorPrimary')?.value || '#667eea',
-                    secondary: document.getElementById('colorSecondary')?.value || '#764ba2',
-                    text: document.getElementById('colorText')?.value || '#ffffff'
-                }
+                colors: colors
             }
         };
         
@@ -1225,10 +1239,29 @@ async function editSession(sessionId) {
             
             // Cargar colores
             if (session.customization.colors) {
-                document.getElementById('colorBackground').value = session.customization.colors.background || '#1a1a2e';
-                document.getElementById('colorPrimary').value = session.customization.colors.primary || '#667eea';
-                document.getElementById('colorSecondary').value = session.customization.colors.secondary || '#764ba2';
-                document.getElementById('colorText').value = session.customization.colors.text || '#ffffff';
+                const colors = session.customization.colors;
+                document.getElementById('colorBackground').value = colors.background || '#1a1a2e';
+                document.getElementById('colorPrimary').value = colors.primary || '#667eea';
+                document.getElementById('colorSecondary').value = colors.secondary || '#764ba2';
+                document.getElementById('colorText').value = colors.text || '#ffffff';
+                
+                // Activar checkbox si los colores son diferentes a los defaults
+                const hasCustomColors = colors.background !== '#1a1a2e' || 
+                                       colors.primary !== '#667eea' || 
+                                       colors.secondary !== '#764ba2' || 
+                                       colors.text !== '#ffffff';
+                
+                const checkbox = document.getElementById('useCustomColors');
+                const container = document.getElementById('customColorsContainer');
+                if (hasCustomColors) {
+                    checkbox.checked = true;
+                    container.style.opacity = '1';
+                    container.style.pointerEvents = 'auto';
+                } else {
+                    checkbox.checked = false;
+                    container.style.opacity = '0.5';
+                    container.style.pointerEvents = 'none';
+                }
             }
         } else {
             // Limpiar si no hay personalización
@@ -1659,6 +1692,18 @@ function removeLogoImage() {
     document.getElementById('logoImagePreview').style.display = 'none';
     document.getElementById('logoPreviewImg').src = '';
 }
+
+// Listener para checkbox de colores personalizados
+document.getElementById('useCustomColors')?.addEventListener('change', function(e) {
+    const container = document.getElementById('customColorsContainer');
+    if (e.target.checked) {
+        container.style.opacity = '1';
+        container.style.pointerEvents = 'auto';
+    } else {
+        container.style.opacity = '0.5';
+        container.style.pointerEvents = 'none';
+    }
+});
 
 // Exponer funciones globalmente para que sean accesibles desde HTML
 window.editSession = editSession;
