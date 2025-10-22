@@ -2708,84 +2708,48 @@ function viewSessionGallery() {
 /**
  * Cargar información de la sesión en la pestaña INFO y mostrar branding
  */
-async function loadSessionInfo() {
-    if (!sessionId || typeof config === 'undefined') {
+async function loadSessionInfo(sid) {
+    const sessionIdToUse = sid || sessionId;
+    
+    if (!sessionIdToUse || typeof config === 'undefined') {
         console.log('⚠️ loadSessionInfo: No sessionId o config');
         return;
     }
     
-    console.log('🔍 loadSessionInfo: Cargando info de sesión:', sessionId);
+    console.log('🔍 loadSessionInfo: Cargando info de sesión:', sessionIdToUse);
     
     try {
-        const response = await fetch(`${config.API_URL}/api/sessions/${sessionId}`);
+        const response = await fetch(`${config.API_URL}/api/sessions/${sessionIdToUse}`);
         if (response.ok) {
             const data = await response.json();
             if (data.session) {
                 const session = data.session;
-                console.log('📦 Sesión cargada:', {
-                    name: session.name,
-                    hasCustomization: !!session.customization,
-                    hasLogo: !!(session.customization?.logoImage),
-                    hasColors: !!(session.customization?.colors)
-                });
+                const custom = session.customization || {};
+                
+                console.log('📦 Sesión cargada:', session.name);
+                console.log('🎨 Customization:', custom);
                 
                 // Actualizar nombre y descripción en pestaña INFO
                 const nameEl = document.getElementById('sessionNameDisplay');
                 const descEl = document.getElementById('sessionDescDisplay');
-                if (nameEl) nameEl.textContent = session.name || `Sesión ${sessionId}`;
+                if (nameEl) nameEl.textContent = session.name || `Sesión ${sessionIdToUse}`;
                 if (descEl) descEl.textContent = session.description || 'Sin descripción';
                 
-                // Mostrar logo si existe
-                if (session.customization && session.customization.logoImage) {
-                    console.log('🖼️ Logo encontrado en sesión, esperando DOM...');
+                // EXACTAMENTE COMO EN GALLERY.JS
+                const brandingContainer = document.getElementById('sessionBrandingLogo');
+                if (brandingContainer) {
+                    let logoHTML = '';
+                    if (custom.logoImage) {
+                        logoHTML = `<img src="${custom.logoImage}" style="max-width: 100%; max-height: 80px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);" alt="Logo de sesión">`;
+                        console.log('✅ Logo encontrado, asignando HTML');
+                    } else {
+                        console.log('⚠️ No hay logo en customization');
+                    }
                     
-                    // Esperar a que el DOM esté completamente listo
-                    const loadLogo = () => {
-                        // Logo en pestaña INFO
-                        const logoContainer = document.getElementById('sessionLogoContainer');
-                        const logoImg = document.getElementById('sessionLogo');
-                        if (logoContainer && logoImg) {
-                            logoImg.src = session.customization.logoImage;
-                            logoContainer.style.display = 'block';
-                            console.log('✅ Logo cargado en pestaña INFO');
-                        } else {
-                            console.warn('⚠️ Elementos INFO no encontrados');
-                        }
-                        
-                        // Logo de branding en la parte superior del GUI
-                        const brandingContainer = document.getElementById('sessionBrandingLogo');
-                        const brandingImg = document.getElementById('brandingLogoImg');
-                        
-                        console.log('🔍 Buscando elementos de branding:', {
-                            container: !!brandingContainer,
-                            img: !!brandingImg,
-                            containerHTML: brandingContainer?.outerHTML?.substring(0, 100),
-                            imgHTML: brandingImg?.outerHTML?.substring(0, 100)
-                        });
-                        
-                        if (brandingContainer && brandingImg) {
-                            brandingImg.src = session.customization.logoImage;
-                            brandingContainer.style.display = 'block';
-                            console.log('✅✅✅ Logo de branding cargado en GUI superior ✅✅✅');
-                        } else {
-                            console.error('❌ Elementos de branding NO ENCONTRADOS');
-                            console.log('🔍 Todos los elementos con id sessionBrandingLogo:', 
-                                document.querySelectorAll('[id*="sessionBranding"]'));
-                            console.log('🔍 Todos los elementos con id brandingLogoImg:', 
-                                document.querySelectorAll('[id*="brandingLogo"]'));
-                        }
-                    };
+                    brandingContainer.innerHTML = logoHTML;
+                    brandingContainer.style.display = logoHTML ? 'block' : 'none';
                     
-                    // Intentar inmediatamente
-                    loadLogo();
-                    
-                    // Reintentar después de 500ms por si el DOM no estaba listo
-                    setTimeout(loadLogo, 500);
-                    
-                    // Reintentar después de 1s
-                    setTimeout(loadLogo, 1000);
-                } else {
-                    console.log('ℹ️ No hay logo en esta sesión');
+                    console.log('✅ Branding actualizado - display:', brandingContainer.style.display);
                 }
             }
         }

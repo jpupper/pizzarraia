@@ -1484,6 +1484,18 @@ async function loadSessionInfo(sessionId) {
         } else {
           console.error('❌ Elementos del DOM no encontrados');
         }
+        
+        // CARGAR LOGO DE SESIÓN
+        if (session.customization && session.customization.logoImage) {
+          const brandingContainer = document.getElementById('sessionBrandingLogo');
+          if (brandingContainer) {
+            brandingContainer.innerHTML = `<img src="${session.customization.logoImage}" style="max-width: 100%; max-height: 80px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);" alt="Logo de sesión">`;
+            brandingContainer.style.display = 'block';
+            console.log('✅ Logo de sesión cargado desde general.js');
+          } else {
+            console.log('⚠️ Elemento sessionBrandingLogo no encontrado');
+          }
+        }
       }
     } else {
       console.log('⚠️ Sesión no encontrada en la base de datos (status:', response.status, ')');

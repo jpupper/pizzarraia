@@ -24,7 +24,7 @@ class BrushRegistry {
         }
 
         this.brushes.set(brush.getId(), brush);
-        console.log(`✓ Brush registrado: ${brush.getName()} (${brush.getId()})`);
+        // console.log(`✓ Brush registrado: ${brush.getName()} (${brush.getId()})`);
         return true;
     }
 

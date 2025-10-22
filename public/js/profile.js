@@ -1015,7 +1015,10 @@ async function saveSession(event) {
             }
         };
         
-        console.log('📤 Enviando request:', { url, method, body: requestBody });
+        console.log('📤 Enviando request:', { url, method });
+        console.log('📦 Body completo:', requestBody);
+        console.log('🖼️ Logo length:', currentLogoImage ? currentLogoImage.length : 0);
+        console.log('🎨 Background length:', currentBackgroundImage ? currentBackgroundImage.length : 0);
         
         const response = await fetch(url, {
             method: method,
