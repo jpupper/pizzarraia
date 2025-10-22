@@ -251,6 +251,20 @@ canvas[style*="z-index: 1"] {
     scrollbar-color: var(--accent) var(--primary-dark);
 }
 
+/* Logo de sesión */
+#sessionBrandingLogo {
+    display: none;
+    margin-bottom: 15px;
+}
+
+#sessionBrandingLogo img {
+    max-width: 90%;
+    max-height: 70px;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+    opacity: 0.95;
+}
+
 #opengui {
     position: fixed;
     top: 1rem;
