@@ -21,7 +21,6 @@
     <script src="js/kaleidoscope.js"></script>
     <script src="js/analyticsTracker.js"></script>
     <script src="js/cursorserver.js"></script>
-    <script src="js/config.js"></script>
     
     <!-- Brush System - New Architecture -->
     <script src="js/brushes/BaseBrush.js"></script>
@@ -58,12 +57,17 @@
     <script src="js/sketch.js"></script>
     
     <div id="gui" >
+        <!-- Logo de la sesión (si existe) -->
+        <div id="sessionBrandingLogo" style="text-align: center; padding: 15px 15px 10px 15px; display: none; background: rgba(0, 0, 0, 0.2); border-bottom: 2px solid rgba(255, 255, 255, 0.1);">
+            <img id="brandingLogoImg" style="max-width: 100%; max-height: 80px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);" alt="Logo">
+        </div>
+        
         <!-- Menú de pestañas -->
         <div class="tab-menu">
             <button class="tab-btn active" data-tab="drawing">Draw</button>
             <button class="tab-btn" data-tab="chat">Chat</button>
             <button class="tab-btn" data-tab="user">User</button>
-            <button class="tab-btn" data-tab="about">Read</button>
+            <button class="tab-btn" data-tab="about">Info</button>
         </div>
         
         <!-- Contenido de la pestaña: Interfaz de dibujo -->
@@ -409,20 +413,78 @@
         </div>
         </div>
         
-        <!-- Contenido de la pestaña: About -->
+        <!-- Contenido de la pestaña: Info -->
         <div id="tab-about" class="tab-content">
         <div class="about-section">
-            <h4>About PizarraCollab</h4>
-            <p style="font-size: 0.85rem; line-height: 1.4; color: rgba(255,255,255,0.85);">
-                PizarraCollab es una pizarra colaborativa en tiempo real que permite a múltiples usuarios dibujar juntos desde cualquier lugar del mundo. 
-                Creado por <strong>JPupper</strong>, este proyecto combina arte, tecnología y colaboración.
-            </p>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <a href="gallery.html" target="_blank" class="about-link">
-                    🖼️ Ver Galería Global
+            <h4>ℹ️ Información de Sesión</h4>
+            
+            <!-- Logo de la sesión (si existe) -->
+            <div id="sessionLogoContainer" style="text-align: center; margin-bottom: 15px; display: none;">
+                <img id="sessionLogo" style="max-width: 150px; max-height: 150px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" alt="Logo de sesión">
+            </div>
+            
+            <!-- Info de la sesión -->
+            <div id="sessionInfoDisplay" style="margin-bottom: 15px; padding: 15px; background: rgba(138, 79, 191, 0.2); border-radius: 8px;">
+                <p style="color: rgba(255,255,255,0.7); margin: 0 0 5px 0; font-size: 0.85rem;">Sesión:</p>
+                <p id="sessionNameDisplay" style="color: var(--accent); font-weight: bold; font-size: 1.1rem; margin: 0 0 10px 0;">Cargando...</p>
+                <p id="sessionDescDisplay" style="color: rgba(255,255,255,0.85); margin: 0; font-size: 0.9rem; line-height: 1.4;"></p>
+            </div>
+            
+            <!-- Botones de acción -->
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+                <button onclick="viewSessionGallery()" class="btn-user-action" style="padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    🖼️ Ver Galería de esta Sesión
+                </button>
+                <button onclick="shareSession()" class="btn-user-action" style="padding: 10px 20px; background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    📤 Compartir Sesión
+                </button>
+            </div>
+            
+            <!-- QR Configuration -->
+            <div style="padding: 15px; background: rgba(0, 0, 0, 0.3); border-radius: 8px; margin-bottom: 15px;">
+                <h4 style="margin-top: 0; margin-bottom: 15px;">📱 Código QR</h4>
+                <div style="margin-bottom: 10px;">
+                    <label>Posición X: <span id="qrX-value">50</span></label>
+                    <input type="range" value="50" id="qrX" min="0" max="100" step="1" class="jpslider"
+                           oninput="document.getElementById('qrX-value').textContent = this.value">
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <label>Posición Y: <span id="qrY-value">50</span></label>
+                    <input type="range" value="50" id="qrY" min="0" max="100" step="1" class="jpslider"
+                           oninput="document.getElementById('qrY-value').textContent = this.value">
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <label>Escala: <span id="qrScale-value">1</span></label>
+                    <input type="range" value="1" id="qrScale" min="0.5" max="3" step="0.1" class="jpslider"
+                           oninput="document.getElementById('qrScale-value').textContent = this.value">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button onclick="toggleQR()" id="qrToggleBtn" class="btn-user-action" style="padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                        Mostrar QR
+                    </button>
+                    <button onclick="copySessionLink()" class="btn-user-action" style="padding: 10px 20px; background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                        📋 Copiar Link
+                    </button>
+                    <button onclick="downloadQR()" class="btn-user-action" style="grid-column: 1 / -1; padding: 10px 20px; background: linear-gradient(135deg, #FF6B6B 0%, #EE5A6F 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                            <path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z"/>
+                        </svg>
+                        Descargar QR
+                    </button>
+                </div>
+            </div>
+            
+            <!-- About -->
+            <div style="padding: 15px; background: rgba(0, 0, 0, 0.2); border-radius: 8px;">
+                <h4 style="margin-top: 0;">About PizarraCollab</h4>
+                <p style="font-size: 0.85rem; line-height: 1.4; color: rgba(255,255,255,0.85); margin-bottom: 10px;">
+                    Pizarra colaborativa en tiempo real. Creado por <strong>JPupper</strong>.
+                </p>
+                <a href="gallery.html" target="_blank" class="about-link" style="display: inline-block; margin-right: 10px;">
+                    🖼️ Galería Global
                 </a>
-                <a href="https://jeyder.com.ar/jpupper/" target="_blank" class="about-link">
-                    🌐 Visitar sitio web
+                <a href="https://jeyder.com.ar/jpupper/" target="_blank" class="about-link" style="display: inline-block;">
+                    🌐 Web
                 </a>
             </div>
         </div>
@@ -515,49 +577,15 @@
                     <p style="color: rgba(255,255,255,0.7); margin: 0 0 5px 0;">Usuario:</p>
                     <p id="loggedUsername" style="color: var(--accent); font-weight: bold; font-size: 1.2rem; margin: 0;">Cargando...</p>
                 </div>
-                <a href="profile.html" class="btn-user-action" style="display: inline-block; padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; margin-bottom: 10px; width: 100%; text-align: center; box-sizing: border-box;">
-                    Ver Mi Galería
-                </a>
-                <button onclick="shareSession()" class="btn-user-action" style="display: block; padding: 10px 20px; background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; margin-bottom: 10px;">
-                    📤 Share
+                <button onclick="saveDrawing()" class="btn-user-action" style="display: block; padding: 10px 20px; background: linear-gradient(135deg, #FF6B6B 0%, #EE5A6F 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; margin-bottom: 10px;">
+                    💾 Guardar Imagen
                 </button>
+                <a href="profile.html" class="btn-user-action" style="display: inline-block; padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; margin-bottom: 10px; width: 100%; text-align: center; box-sizing: border-box;">
+                    🖼️ Ver Mi Galería
+                </a>
                 <button onclick="logoutUser()" class="btn-user-action" style="display: block; padding: 10px 20px; background: rgba(244, 67, 54, 0.8); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%;">
                     Cerrar Sesión
                 </button>
-            </div>
-            
-            <!-- QR Configuration -->
-            <div style="margin-top: 20px; padding: 15px; background: rgba(0, 0, 0, 0.3); border-radius: 8px;">
-                <h4 style="margin-top: 0; margin-bottom: 15px;">⚙️ QR Configuration</h4>
-                <div style="margin-bottom: 10px;">
-                    <label>Posición X: <span id="qrX-value">50</span></label>
-                    <input type="range" value="50" id="qrX" min="0" max="100" step="1" class="jpslider"
-                           oninput="document.getElementById('qrX-value').textContent = this.value">
-                </div>
-                <div style="margin-bottom: 10px;">
-                    <label>Posición Y: <span id="qrY-value">50</span></label>
-                    <input type="range" value="50" id="qrY" min="0" max="100" step="1" class="jpslider"
-                           oninput="document.getElementById('qrY-value').textContent = this.value">
-                </div>
-                <div style="margin-bottom: 10px;">
-                    <label>Escala: <span id="qrScale-value">1</span></label>
-                    <input type="range" value="1" id="qrScale" min="0.5" max="3" step="0.1" class="jpslider"
-                           oninput="document.getElementById('qrScale-value').textContent = this.value">
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <button onclick="toggleQR()" id="qrToggleBtn" class="btn-user-action" style="padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
-                        Mostrar QR
-                    </button>
-                    <button onclick="copySessionLink()" class="btn-user-action" style="padding: 10px 20px; background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
-                        📋 Copiar Link
-                    </button>
-                    <button onclick="downloadQR()" class="btn-user-action" style="grid-column: 1 / -1; padding: 10px 20px; background: linear-gradient(135deg, #FF6B6B 0%, #EE5A6F 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                            <path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z"/>
-                        </svg>
-                        Descargar QR
-                    </button>
-                </div>
             </div>
         </div>
         </div>
