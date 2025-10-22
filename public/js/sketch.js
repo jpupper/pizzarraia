@@ -2439,6 +2439,11 @@ async function handleSessionUpdate(data) {
         toast.info('⚡ Configuración actualizada');
     }
     
+    // Aplicar colores personalizados si existen
+    if (data.customization && data.customization.colors) {
+        applySessionColors(data.customization.colors);
+    }
+    
     // Aplicar configuración
     if (!data.accessConfig || typeof applyAccessConfig !== 'function') {
         console.warn('⚠️ [SKETCH] No hay accessConfig o applyAccessConfig');
@@ -2539,8 +2544,85 @@ async function handleSessionUpdate(data) {
     }
 }
 
+/**
+ * Aplica los colores personalizados de la sesión a la interfaz
+ * @param {Object} colors - Objeto con los colores {background, primary, secondary, text}
+ */
+function applySessionColors(colors) {
+    console.log('🎨 [SKETCH] Aplicando colores personalizados:', colors);
+    
+    if (!colors) return;
+    
+    const root = document.documentElement;
+    
+    // Aplicar variables CSS
+    root.style.setProperty('--bg-primary', colors.background);
+    root.style.setProperty('--color-primary', colors.primary);
+    root.style.setProperty('--color-secondary', colors.secondary);
+    root.style.setProperty('--text-primary', colors.text);
+    
+    // Aplicar al body
+    document.body.style.backgroundColor = colors.background;
+    document.body.style.color = colors.text;
+    
+    // Aplicar al panel lateral (tabs)
+    const tabsContainer = document.querySelector('.tabs-container');
+    if (tabsContainer) {
+        tabsContainer.style.background = `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`;
+        tabsContainer.style.color = colors.text;
+    }
+    
+    // Aplicar a los tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.style.color = colors.text;
+        if (tab.classList.contains('active')) {
+            tab.style.background = `rgba(255, 255, 255, 0.2)`;
+        }
+    });
+    
+    // Aplicar al contenido del panel
+    const tabContent = document.querySelector('.tab-content');
+    if (tabContent) {
+        tabContent.style.backgroundColor = colors.background;
+        tabContent.style.color = colors.text;
+    }
+    
+    // Aplicar a botones de brush
+    document.querySelectorAll('.brush-button').forEach(btn => {
+        btn.style.backgroundColor = `${colors.primary}40`;
+        btn.style.borderColor = colors.primary;
+        btn.style.color = colors.text;
+        
+        if (btn.classList.contains('active')) {
+            btn.style.background = `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`;
+        }
+    });
+    
+    // Aplicar a sliders
+    document.querySelectorAll('.jpslider').forEach(slider => {
+        slider.style.setProperty('--slider-color', colors.primary);
+    });
+    
+    // Aplicar a inputs
+    document.querySelectorAll('.jpinput').forEach(input => {
+        input.style.backgroundColor = `${colors.background}dd`;
+        input.style.borderColor = colors.primary;
+        input.style.color = colors.text;
+    });
+    
+    // Aplicar a la paleta de colores
+    const colorPalette = document.querySelector('.color-palette');
+    if (colorPalette) {
+        colorPalette.style.backgroundColor = `${colors.background}dd`;
+        colorPalette.style.borderColor = colors.primary;
+    }
+    
+    console.log('✅ [SKETCH] Colores aplicados correctamente');
+}
+
 // Exponer funciones globalmente
 window.toggleQR = toggleQR;
 window.copySessionLink = copySessionLink;
 window.downloadQR = downloadQR;
 window.handleSessionUpdate = handleSessionUpdate;
+window.applySessionColors = applySessionColors;

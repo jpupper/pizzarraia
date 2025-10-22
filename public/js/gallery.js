@@ -508,6 +508,44 @@ async function loadSessionCustomization(sessionId) {
             if (activeSessionsSection) {
                 activeSessionsSection.style.display = 'none';
             }
+            
+            // Aplicar colores personalizados
+            if (custom.colors) {
+                const colors = custom.colors;
+                const root = document.documentElement;
+                
+                // Aplicar colores CSS
+                root.style.setProperty('--bg-primary', colors.background);
+                root.style.setProperty('--color-primary', colors.primary);
+                root.style.setProperty('--color-secondary', colors.secondary);
+                root.style.setProperty('--text-primary', colors.text);
+                
+                // Aplicar al body y elementos principales
+                document.body.style.backgroundColor = colors.background;
+                document.body.style.color = colors.text;
+                
+                // Header
+                const galleryHeader = document.querySelector('.gallery-header');
+                if (galleryHeader) {
+                    galleryHeader.style.background = `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`;
+                    galleryHeader.style.color = colors.text;
+                }
+                
+                // Botones
+                document.querySelectorAll('.btn-primary').forEach(btn => {
+                    btn.style.background = `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`;
+                    btn.style.color = colors.text;
+                });
+                
+                // Stats
+                document.querySelectorAll('.stat').forEach(stat => {
+                    stat.style.background = `linear-gradient(135deg, ${colors.primary}20 0%, ${colors.secondary}20 100%)`;
+                    stat.style.color = colors.text;
+                    stat.style.borderColor = colors.primary;
+                });
+                
+                console.log('🎨 Colores aplicados:', colors);
+            }
         }
     } catch (error) {
         console.error('Error loading session customization:', error);

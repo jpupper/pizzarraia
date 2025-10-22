@@ -131,8 +131,8 @@
 
                 <!-- Personalización Visual -->
                 <div class="form-group">
-                    <label>🎨 Personalización Visual de la Galería:</label>
-                    <small style="display: block; margin-bottom: 15px; color: #999;">Personaliza cómo se ve la galería de esta sesión</small>
+                    <label>🎨 Personalización Visual:</label>
+                    <small style="display: block; margin-bottom: 15px; color: #999;">Personaliza cómo se ve la galería y la interfaz de dibujo de esta sesión</small>
                     
                     <div style="margin-bottom: 20px;">
                         <label for="backgroundImageInput" style="font-weight: 600;">Imagen de Fondo:</label>
@@ -152,6 +152,29 @@
                             <img id="logoPreviewImg" style="max-width: 150px; max-height: 150px; border-radius: 8px; border: 2px solid #667eea;">
                             <button type="button" onclick="removeLogoImage()" class="btn btn-danger btn-small" style="margin-top: 5px;">Eliminar Logo</button>
                         </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="font-weight: 600; display: block; margin-bottom: 10px;">Colores de la Interfaz:</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div>
+                                <label for="colorBackground" style="display: block; margin-bottom: 5px;">🎨 Fondo:</label>
+                                <input type="color" id="colorBackground" value="#1a1a2e" style="width: 100%; height: 40px; border-radius: 8px; border: 2px solid #667eea; cursor: pointer;">
+                            </div>
+                            <div>
+                                <label for="colorPrimary" style="display: block; margin-bottom: 5px;">✨ Color Primario:</label>
+                                <input type="color" id="colorPrimary" value="#667eea" style="width: 100%; height: 40px; border-radius: 8px; border: 2px solid #667eea; cursor: pointer;">
+                            </div>
+                            <div>
+                                <label for="colorSecondary" style="display: block; margin-bottom: 5px;">🌟 Color Secundario:</label>
+                                <input type="color" id="colorSecondary" value="#764ba2" style="width: 100%; height: 40px; border-radius: 8px; border: 2px solid #667eea; cursor: pointer;">
+                            </div>
+                            <div>
+                                <label for="colorText" style="display: block; margin-bottom: 5px;">📝 Tipografía:</label>
+                                <input type="color" id="colorText" value="#ffffff" style="width: 100%; height: 40px; border-radius: 8px; border: 2px solid #667eea; cursor: pointer;">
+                            </div>
+                        </div>
+                        <small style="color: #999; display: block; margin-top: 10px;">Estos colores se aplicarán en la galería y en la interfaz de dibujo</small>
                     </div>
                 </div>
 
