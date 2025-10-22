@@ -2369,6 +2369,55 @@ function copySessionLink() {
 }
 
 /**
+ * Descargar el QR como imagen PNG
+ */
+function downloadQR() {
+    if (!qrImage) {
+        if (typeof toast !== 'undefined') {
+            toast.error('Primero debes generar el QR (botón "Mostrar QR")');
+        }
+        return;
+    }
+    
+    try {
+        // Crear un canvas temporal con el QR
+        const tempCanvas = document.createElement('canvas');
+        const ctx = tempCanvas.getContext('2d');
+        
+        // Establecer tamaño del canvas (QR + margen)
+        const margin = 40;
+        tempCanvas.width = qrImage.width + margin * 2;
+        tempCanvas.height = qrImage.height + margin * 2;
+        
+        // Fondo blanco
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+        
+        // Dibujar el QR en el centro
+        ctx.drawImage(qrImage.canvas, margin, margin);
+        
+        // Convertir a blob y descargar
+        tempCanvas.toBlob(function(blob) {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.download = `QR-Session-${sessionId}.png`;
+            link.href = url;
+            link.click();
+            URL.revokeObjectURL(url);
+            
+            if (typeof toast !== 'undefined') {
+                toast.success('QR descargado correctamente');
+            }
+        });
+    } catch (error) {
+        console.error('Error al descargar QR:', error);
+        if (typeof toast !== 'undefined') {
+            toast.error('Error al descargar el QR');
+        }
+    }
+}
+
+/**
  * Maneja la actualización de configuración de sesión en tiempo real - SIMPLIFICADO
  * @param {Object} data - Datos de la sesión actualizada
  */
@@ -2493,4 +2542,5 @@ async function handleSessionUpdate(data) {
 // Exponer funciones globalmente
 window.toggleQR = toggleQR;
 window.copySessionLink = copySessionLink;
+window.downloadQR = downloadQR;
 window.handleSessionUpdate = handleSessionUpdate;

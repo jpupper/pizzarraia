@@ -88,11 +88,16 @@ async function loadGallery() {
         const response = await fetch(url);
         const data = await response.json();
         
+        // Load session customization if filtering by session
+        if (sessionFilter) {
+            await loadSessionCustomization(sessionFilter);
+        }
+        
         // Show session filter info if active
         if (sessionFilter && data.images) {
             const header = document.querySelector('.gallery-header h1');
             if (header) {
-                header.innerHTML = `🎨 Galería Global <span style="font-size: 0.7em; color: #667eea;">(Sesión ${sessionFilter})</span>`;
+                header.innerHTML = `🎨 Galería de Sesión <span style="font-size: 0.7em; color: #667eea;">${sessionFilter}</span>`;
             }
         }
         
@@ -447,6 +452,67 @@ document.addEventListener('keydown', (e) => {
         closeModal();
     }
 });
+
+async function loadSessionCustomization(sessionId) {
+    try {
+        const response = await fetch(`${config.API_URL}/api/sessions/${sessionId}`);
+        const data = await response.json();
+        
+        if (data.session) {
+            const session = data.session;
+            const custom = session.customization || {};
+            console.log('🎨 Aplicando personalización de sesión:', custom);
+            
+            // Aplicar background image
+            if (custom.backgroundImage) {
+                document.body.style.backgroundImage = `url(${custom.backgroundImage})`;
+                document.body.style.backgroundSize = 'cover';
+                document.body.style.backgroundPosition = 'center';
+                document.body.style.backgroundAttachment = 'fixed';
+                // Agregar overlay oscuro para mejor legibilidad
+                document.body.style.position = 'relative';
+                const overlay = document.createElement('div');
+                overlay.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0, 0, 0, 0.7);
+                    z-index: -1;
+                `;
+                document.body.appendChild(overlay);
+            }
+            
+            // Reemplazar completamente el header
+            const header = document.querySelector('.gallery-header');
+            if (header) {
+                let logoHTML = '';
+                if (custom.logoImage) {
+                    logoHTML = `<img src="${custom.logoImage}" style="max-height: 100px; max-width: 250px; margin-bottom: 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" alt="Logo">`;
+                }
+                
+                header.innerHTML = `
+                    ${logoHTML}
+                    <h1>${session.name || 'Galería de Sesión'}</h1>
+                    <p>${session.description || 'Explora las creaciones de esta sesión'}</p>
+                    <div class="header-actions">
+                        <a href="index.html?sesion=${sessionId}" class="btn btn-primary">🎨 Pintar</a>
+                        <a href="profile.html" class="btn btn-secondary">Mi Perfil</a>
+                    </div>
+                `;
+            }
+            
+            // Ocultar sección de sesiones activas
+            const activeSessionsSection = document.querySelector('.active-sessions-section');
+            if (activeSessionsSection) {
+                activeSessionsSection.style.display = 'none';
+            }
+        }
+    } catch (error) {
+        console.error('Error loading session customization:', error);
+    }
+}
 
 // Make functions global
 window.viewImage = viewImage;

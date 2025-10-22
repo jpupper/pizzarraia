@@ -544,12 +544,18 @@
                     <input type="range" value="1" id="qrScale" min="0.5" max="3" step="0.1" class="jpslider"
                            oninput="document.getElementById('qrScale-value').textContent = this.value">
                 </div>
-                <div style="display: flex; gap: 10px;">
-                    <button onclick="toggleQR()" id="qrToggleBtn" class="btn-user-action" style="flex: 1; padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button onclick="toggleQR()" id="qrToggleBtn" class="btn-user-action" style="padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
                         Mostrar QR
                     </button>
-                    <button onclick="copySessionLink()" class="btn-user-action" style="flex: 1; padding: 10px 20px; background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    <button onclick="copySessionLink()" class="btn-user-action" style="padding: 10px 20px; background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
                         📋 Copiar Link
+                    </button>
+                    <button onclick="downloadQR()" class="btn-user-action" style="grid-column: 1 / -1; padding: 10px 20px; background: linear-gradient(135deg, #FF6B6B 0%, #EE5A6F 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                            <path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z"/>
+                        </svg>
+                        Descargar QR
                     </button>
                 </div>
             </div>

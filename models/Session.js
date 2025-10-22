@@ -65,6 +65,10 @@ const sessionSchema = new mongoose.Schema({
     allowKaleidoscope: { type: Boolean, default: true },
     allowLayers: { type: Boolean, default: true }
   },
+  customization: {
+    backgroundImage: { type: String, default: '' }, // Base64 image for gallery background
+    logoImage: { type: String, default: '' } // Base64 image for session logo
+  },
   createdAt: {
     type: Date,
     default: Date.now

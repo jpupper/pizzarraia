@@ -677,6 +677,7 @@ function renderUserSessions() {
                 
                 <div class="session-actions">
                     <a href="index.html?sesion=${session.sessionId}" class="btn btn-primary btn-small">🎨 Ir a Sesión</a>
+                    <a href="gallery.html?sesion=${session.sessionId}" class="btn btn-secondary btn-small" target="_blank">🖼️ Galería</a>
                     <button onclick="editSession('${session._id}')" class="btn btn-secondary btn-small">✏️ Editar</button>
                     <button onclick="deleteSession('${session._id}')" class="btn btn-danger btn-small">🗑️ Eliminar</button>
                 </div>
@@ -687,12 +688,23 @@ function renderUserSessions() {
 
 function openCreateSessionModal() {
     const modal = document.getElementById('sessionModal');
+    modal.dataset.editingMode = 'false';
+    modal.dataset.editingSessionId = '';
+    
     document.getElementById('sessionModalTitle').textContent = 'Crear Nueva Sesión';
     document.getElementById('sessionForm').reset();
     
     // Generar ID de sesión automáticamente (15 dígitos)
     const sessionId = generateSessionId();
     document.getElementById('sessionIdInput').value = sessionId;
+    
+    // Limpiar personalización
+    currentBackgroundImage = '';
+    currentLogoImage = '';
+    document.getElementById('backgroundImagePreview').style.display = 'none';
+    document.getElementById('logoImagePreview').style.display = 'none';
+    document.getElementById('backgroundImageInput').value = '';
+    document.getElementById('logoImageInput').value = '';
     
     // Populate brush types for each user type
     populateBrushTypesForAllUsers();
@@ -831,32 +843,62 @@ async function saveSession(event) {
     // Usuarios NO registrados
     const allowNotLogged = document.getElementById('allowNotLogged').checked;
     if (allowNotLogged) {
-        const notLoggedBrushes = Array.from(document.querySelectorAll('#notLoggedBrushes input[type="checkbox"]:checked'))
+        const allChecked = Array.from(document.querySelectorAll('#notLoggedBrushes input[type="checkbox"]:checked'))
             .map(cb => cb.value);
+        
+        // Separar brushes de restricciones
+        const brushes = allChecked.filter(id => !id.startsWith('allow'));
+        const restrictions = {
+            allowKaleidoscope: allChecked.includes('allowKaleidoscope'),
+            allowLayers: allChecked.includes('allowLayers'),
+            allowCleanBackground: allChecked.includes('allowCleanBackground')
+        };
+        
         accessConfig.notLogged = {
             allowed: true,
-            brushes: notLoggedBrushes
+            brushes: brushes,
+            restrictions: restrictions
         };
     } else {
         accessConfig.notLogged = {
             allowed: false,
-            brushes: []
+            brushes: [],
+            restrictions: {
+                allowKaleidoscope: true,
+                allowLayers: true,
+                allowCleanBackground: true
+            }
         };
     }
     
     // Usuarios registrados
     const allowLogged = document.getElementById('allowLogged').checked;
     if (allowLogged) {
-        const loggedBrushes = Array.from(document.querySelectorAll('#loggedBrushes input[type="checkbox"]:checked'))
+        const allChecked = Array.from(document.querySelectorAll('#loggedBrushes input[type="checkbox"]:checked'))
             .map(cb => cb.value);
+        
+        // Separar brushes de restricciones
+        const brushes = allChecked.filter(id => !id.startsWith('allow'));
+        const restrictions = {
+            allowKaleidoscope: allChecked.includes('allowKaleidoscope'),
+            allowLayers: allChecked.includes('allowLayers'),
+            allowCleanBackground: allChecked.includes('allowCleanBackground')
+        };
+        
         accessConfig.logged = {
             allowed: true,
-            brushes: loggedBrushes
+            brushes: brushes,
+            restrictions: restrictions
         };
     } else {
         accessConfig.logged = {
             allowed: false,
-            brushes: []
+            brushes: [],
+            restrictions: {
+                allowKaleidoscope: true,
+                allowLayers: true,
+                allowCleanBackground: true
+            }
         };
     }
     
@@ -867,7 +909,7 @@ async function saveSession(event) {
             .split(',')
             .map(u => u.trim())
             .filter(u => u.length > 0);
-        const specificBrushes = Array.from(document.querySelectorAll('#specificBrushes input[type="checkbox"]:checked'))
+        const allChecked = Array.from(document.querySelectorAll('#specificBrushes input[type="checkbox"]:checked'))
             .map(cb => cb.value);
         
         if (specificUsers.length === 0) {
@@ -879,16 +921,30 @@ async function saveSession(event) {
             return;
         }
         
+        // Separar brushes de restricciones
+        const brushes = allChecked.filter(id => !id.startsWith('allow'));
+        const restrictions = {
+            allowKaleidoscope: allChecked.includes('allowKaleidoscope'),
+            allowLayers: allChecked.includes('allowLayers'),
+            allowCleanBackground: allChecked.includes('allowCleanBackground')
+        };
+        
         accessConfig.specific = {
             allowed: true,
             users: specificUsers,
-            brushes: specificBrushes
+            brushes: brushes,
+            restrictions: restrictions
         };
     } else {
         accessConfig.specific = {
             allowed: false,
             users: [],
-            brushes: []
+            brushes: [],
+            restrictions: {
+                allowKaleidoscope: true,
+                allowLayers: true,
+                allowCleanBackground: true
+            }
         };
     }
     
@@ -918,22 +974,31 @@ async function saveSession(event) {
         
         const method = isEditing ? 'PUT' : 'POST';
         
+        const requestBody = {
+            sessionId,
+            name,
+            description,
+            isPublic,
+            accessConfig: accessConfig,
+            customization: {
+                backgroundImage: currentBackgroundImage || '',
+                logoImage: currentLogoImage || ''
+            }
+        };
+        
+        console.log('📤 Enviando request:', { url, method, body: requestBody });
+        
         const response = await fetch(url, {
             method: method,
             headers: {
                 ...config.getAuthHeaders(),
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                sessionId,
-                name,
-                description,
-                isPublic,
-                accessConfig: accessConfig
-            })
+            body: JSON.stringify(requestBody)
         });
         
         const data = await response.json();
+        console.log('📥 Respuesta del servidor:', data);
         
         if (response.ok) {
             if (typeof toast !== 'undefined') {
@@ -1027,6 +1092,9 @@ async function editSession(sessionId) {
         
         // Abrir modal en modo edición
         const modal = document.getElementById('sessionModal');
+        modal.dataset.editingMode = 'true';
+        modal.dataset.editingSessionId = sessionId;
+        
         document.getElementById('sessionModalTitle').textContent = 'Editar Sesión - Guardado Automático';
         
         // Llenar el formulario con los datos actuales
@@ -1121,6 +1189,33 @@ async function editSession(sessionId) {
                     });
                 }
             }
+        }
+        
+        // Cargar personalización si existe
+        if (session.customization) {
+            if (session.customization.backgroundImage) {
+                currentBackgroundImage = session.customization.backgroundImage;
+                document.getElementById('backgroundImagePreview').style.display = 'block';
+                document.getElementById('previewImg').src = currentBackgroundImage;
+            } else {
+                currentBackgroundImage = '';
+                document.getElementById('backgroundImagePreview').style.display = 'none';
+            }
+            
+            if (session.customization.logoImage) {
+                currentLogoImage = session.customization.logoImage;
+                document.getElementById('logoImagePreview').style.display = 'block';
+                document.getElementById('logoPreviewImg').src = currentLogoImage;
+            } else {
+                currentLogoImage = '';
+                document.getElementById('logoImagePreview').style.display = 'none';
+            }
+        } else {
+            // Limpiar si no hay personalización
+            currentBackgroundImage = '';
+            currentLogoImage = '';
+            document.getElementById('backgroundImagePreview').style.display = 'none';
+            document.getElementById('logoImagePreview').style.display = 'none';
         }
         
         // Setup listeners con auto-save
@@ -1494,6 +1589,52 @@ function initializeSocket() {
     });
 }
 
+// Variables para imágenes de personalización
+let currentBackgroundImage = '';
+let currentLogoImage = '';
+
+// Listener para imagen de fondo
+document.getElementById('backgroundImageInput')?.addEventListener('change', async function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            currentBackgroundImage = event.target.result;
+            document.getElementById('backgroundImagePreview').style.display = 'block';
+            document.getElementById('previewImg').src = currentBackgroundImage;
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+// Listener para logo
+document.getElementById('logoImageInput')?.addEventListener('change', async function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            currentLogoImage = event.target.result;
+            document.getElementById('logoImagePreview').style.display = 'block';
+            document.getElementById('logoPreviewImg').src = currentLogoImage;
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+function removeBackgroundImage() {
+    currentBackgroundImage = '';
+    document.getElementById('backgroundImageInput').value = '';
+    document.getElementById('backgroundImagePreview').style.display = 'none';
+    document.getElementById('previewImg').src = '';
+}
+
+function removeLogoImage() {
+    currentLogoImage = '';
+    document.getElementById('logoImageInput').value = '';
+    document.getElementById('logoImagePreview').style.display = 'none';
+    document.getElementById('logoPreviewImg').src = '';
+}
+
 // Exponer funciones globalmente para que sean accesibles desde HTML
 window.editSession = editSession;
 window.deleteSession = deleteSession;
@@ -1501,6 +1642,8 @@ window.openCreateSessionModal = openCreateSessionModal;
 window.closeSessionModal = closeSessionModal;
 window.saveSession = saveSession;
 window.toggleBrushTypeForUser = toggleBrushTypeForUser;
+window.removeBackgroundImage = removeBackgroundImage;
+window.removeLogoImage = removeLogoImage;
 
 // Initialize
 initializeSocket();
