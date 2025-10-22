@@ -492,15 +492,20 @@ async function loadSessionCustomization(sessionId) {
                     logoHTML = `<img src="${custom.logoImage}" style="max-height: 100px; max-width: 250px; margin-bottom: 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" alt="Logo">`;
                 }
                 
+                const sessionName = session.name || `Sesión ${sessionId}`;
+                const sessionDesc = session.description || 'Explora las creaciones de esta sesión';
+                
                 header.innerHTML = `
                     ${logoHTML}
-                    <h1>${session.name || 'Galería de Sesión'}</h1>
-                    <p>${session.description || 'Explora las creaciones de esta sesión'}</p>
+                    <h1 style="margin: 10px 0; font-size: 2rem; font-weight: 700;">${sessionName}</h1>
+                    <p style="margin: 5px 0 20px 0; font-size: 1.1rem; opacity: 0.9;">${sessionDesc}</p>
                     <div class="header-actions">
                         <a href="index.html?sesion=${sessionId}" class="btn btn-primary">🎨 Pintar</a>
                         <a href="profile.html" class="btn btn-secondary">Mi Perfil</a>
                     </div>
                 `;
+                
+                console.log('✅ Header actualizado con nombre:', sessionName);
             }
             
             // Ocultar sección de sesiones activas

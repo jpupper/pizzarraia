@@ -43,10 +43,17 @@ Fuerza mostrar el modal de bienvenida (incluso si el usuario está logueado).
 https://tu-dominio.com/pizarraia/index.html?intromodal=true
 ```
 
+### `?showgui=false`
+Oculta por defecto el botón de interfaz y los controles de zoom. Útil para presentaciones o capturas limpias.
+```
+https://tu-dominio.com/pizarraia/index.html?showgui=false
+```
+**Nota:** Puedes presionar la tecla **G** para mostrar/ocultar estos controles en cualquier momento.
+
 ### Combinación de parámetros
 Puedes combinar múltiples parámetros:
 ```
-https://tu-dominio.com/pizarraia/index.html?session=ABC123&intromodal=false
+https://tu-dominio.com/pizarraia/index.html?sesion=ABC123&intromodal=false&showgui=false
 ```
 
 ## 🎨 Personalización de Sesiones (Session Workspace)
