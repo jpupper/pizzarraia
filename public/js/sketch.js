@@ -232,6 +232,17 @@ function setup() {
     // Obtener ID de sesión desde URL
     sessionId = config.getSessionId();
     
+    // Verificar parámetro showgui
+    const urlParams = new URLSearchParams(window.location.search);
+    const showGui = urlParams.get('showgui');
+    if (showGui === 'false') {
+        console.log('🚫 showgui=false detectado - Ocultando controles');
+        const openGuiButton = document.getElementById('opengui');
+        const zoomControls = document.getElementById('zoom-controls');
+        if (openGuiButton) openGuiButton.style.display = 'none';
+        if (zoomControls) zoomControls.style.display = 'none';
+    }
+    
     // Configurar socket
     const socketConfig = config.getSocketConfig();
     socket = io(socketConfig.url, socketConfig.options);
@@ -1725,13 +1736,17 @@ function convertToP5Color(colorObj) {
     return color(255); // color por defecto si algo sale mal
 }
 
-// Función para alternar la visibilidad del botón GUI
+// Función para alternar la visibilidad del botón GUI y controles de zoom
 function toggleGuiButtonVisibility() {
     const openGuiButton = document.getElementById('opengui');
+    const zoomControls = document.getElementById('zoom-controls');
+    
     if (openGuiButton.style.display === 'none') {
         openGuiButton.style.display = 'block';
+        if (zoomControls) zoomControls.style.display = 'flex';
     } else {
         openGuiButton.style.display = 'none';
+        if (zoomControls) zoomControls.style.display = 'none';
     }
 }
 
