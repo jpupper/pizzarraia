@@ -49,7 +49,8 @@ let BRUSH_TYPES = [];
 // Additional restrictions (treated as special brushes)
 const ADDITIONAL_RESTRICTIONS = [
     { id: 'allowKaleidoscope', name: '🔮 Kaleidoscopio', icon: '🔮' },
-    { id: 'allowLayers', name: '📚 Capas', icon: '📚' }
+    { id: 'allowLayers', name: '📚 Capas', icon: '📚' },
+    { id: 'allowCleanBackground', name: '💣 Limpiar Canvas', icon: '💣' }
 ];
 
 // Check authentication

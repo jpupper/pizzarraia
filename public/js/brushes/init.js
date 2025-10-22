@@ -358,6 +358,22 @@ function applySessionRestrictions(restrictions) {
         }
     }
     
+    // Restricción de Limpiar Canvas
+    if (restrictions.allowCleanBackground === false) {
+        console.log('🚫 Limpiar Canvas deshabilitado - OCULTANDO BOTÓN');
+        const cleanBtn = document.querySelector('[data-brush="background"]');
+        if (cleanBtn) {
+            cleanBtn.style.display = 'none';
+            console.log('   → Botón de limpiar canvas ocultado');
+        }
+    } else {
+        console.log('✅ Limpiar Canvas habilitado - MOSTRANDO');
+        const cleanBtn = document.querySelector('[data-brush="background"]');
+        if (cleanBtn) {
+            cleanBtn.style.display = '';
+        }
+    }
+    
     // Guardar restricciones globalmente para referencia futura
     window.sessionRestrictions = restrictions;
 }
@@ -390,6 +406,12 @@ function forceHideNonAllowedButtons() {
     allButtons.forEach(button => {
         const brushId = button.getAttribute('data-brush');
         if (!brushId) return;
+        
+        // EXCLUIR el botón de limpiar canvas - se maneja con su propia restricción
+        if (brushId === 'background') {
+            console.log('⏭️ [INIT] Saltando botón "background" - se maneja con restricción allowCleanBackground');
+            return;
+        }
         
         const isAllowed = brushRegistry.isBrushAllowed(brushId);
         
