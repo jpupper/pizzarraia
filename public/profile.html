@@ -129,6 +129,32 @@
                     </div>
                 </div>
 
+                <!-- Personalización Visual -->
+                <div class="form-group">
+                    <label>🎨 Personalización Visual de la Galería:</label>
+                    <small style="display: block; margin-bottom: 15px; color: #999;">Personaliza cómo se ve la galería de esta sesión</small>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label for="backgroundImageInput" style="font-weight: 600;">Imagen de Fondo:</label>
+                        <input type="file" id="backgroundImageInput" accept="image/*" style="display: block; margin-top: 5px;">
+                        <small style="color: #999;">Esta imagen aparecerá como fondo en la galería de la sesión</small>
+                        <div id="backgroundImagePreview" style="margin-top: 10px; display: none;">
+                            <img id="previewImg" style="max-width: 200px; max-height: 150px; border-radius: 8px; border: 2px solid #667eea;">
+                            <button type="button" onclick="removeBackgroundImage()" class="btn btn-danger btn-small" style="margin-top: 5px;">Eliminar Imagen</button>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label for="logoImageInput" style="font-weight: 600;">Logo de la Sesión:</label>
+                        <input type="file" id="logoImageInput" accept="image/*" style="display: block; margin-top: 5px;">
+                        <small style="color: #999;">Este logo aparecerá en el header de la galería</small>
+                        <div id="logoImagePreview" style="margin-top: 10px; display: none;">
+                            <img id="logoPreviewImg" style="max-width: 150px; max-height: 150px; border-radius: 8px; border: 2px solid #667eea;">
+                            <button type="button" onclick="removeLogoImage()" class="btn btn-danger btn-small" style="margin-top: 5px;">Eliminar Logo</button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeSessionModal()">Cancelar</button>
                     <button type="submit" class="btn btn-primary">Guardar Sesión</button>
