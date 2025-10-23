@@ -1505,11 +1505,158 @@ async function loadSessionInfo(sessionId) {
   }
 }
 
+/**
+ * Maneja la actualización de configuración de sesión en tiempo real
+ * @param {Object} data - Datos de la sesión actualizada
+ */
+async function handleSessionUpdate(data) {
+    console.log('🔄 [GENERAL] handleSessionUpdate() INICIADO');
+    console.log('📊 [GENERAL] Sesión actual:', sessionId);
+    console.log('📊 [GENERAL] Sesión recibida:', data.sessionId);
+    
+    // Validar sesión
+    if (data.sessionId !== sessionId) {
+        console.log('⚠️ [GENERAL] Sesión diferente, IGNORANDO');
+        return;
+    }
+    
+    console.log('✅ [GENERAL] Sesión coincide - Continuando...');
+    
+    // Notificación
+    if (typeof toast !== 'undefined') {
+        toast.info('⚡ Configuración actualizada');
+    }
+    
+    // Aplicar colores personalizados si existen
+    console.log('🔍 [GENERAL] Verificando colores...');
+    console.log('🔍 [GENERAL] data.accessConfig.colors existe?', !!(data.accessConfig?.colors));
+    
+    if (data.accessConfig && data.accessConfig.colors) {
+        console.log('✅ [GENERAL] APLICANDO COLORES:', data.accessConfig.colors);
+        // Llamar a applySessionColors que está en sketch.js
+        if (typeof applySessionColors === 'function') {
+            applySessionColors(data.accessConfig.colors);
+        }
+    } else {
+        console.log('⚠️ [GENERAL] No hay colores personalizados, usando defaults');
+    }
+    
+    // Aplicar configuración
+    if (!data.accessConfig || typeof applyAccessConfig !== 'function') {
+        console.warn('⚠️ [GENERAL] No hay accessConfig o applyAccessConfig');
+        return;
+    }
+    
+    try {
+        console.log('👤 [GENERAL] Determinando tipo de usuario...');
+        
+        // Determinar tipo de usuario
+        let userType = 'notLogged';
+        let currentUsername = null;
+        
+        const response = await fetch(`${config.API_URL}/api/check-session`, {
+            headers: config.getAuthHeaders()
+        });
+        const authData = await response.json();
+        
+        if (authData.authenticated) {
+            currentUsername = authData.user?.username;
+            userType = 'logged';
+        }
+        
+        console.log('✅ [GENERAL] Usuario:', { tipo: userType, username: currentUsername });
+        console.log('🔐 [GENERAL] Aplicando configuración de acceso...');
+        
+        // Aplicar configuración
+        const allowedBrushes = await applyAccessConfig(data.accessConfig, userType, currentUsername);
+        
+        console.log('📋 [GENERAL] Brushes permitidos:', allowedBrushes);
+        
+        if (allowedBrushes && typeof brushRegistry !== 'undefined') {
+            console.log('🔒 [GENERAL] Actualizando BrushRegistry...');
+            brushRegistry.setAllowedBrushTypes(allowedBrushes);
+            
+            console.log('🔘 [GENERAL] Actualizando botones...');
+            // Actualizar botones INMEDIATAMENTE
+            if (typeof forceHideNonAllowedButtons === 'function') {
+                forceHideNonAllowedButtons();
+            } else {
+                console.error('❌ [GENERAL] forceHideNonAllowedButtons NO disponible');
+            }
+            
+            // Cambiar brush si el actual no está permitido
+            if (typeof currentBrush !== 'undefined' && !allowedBrushes.includes(currentBrush)) {
+                console.log('⚠️ [GENERAL] Brush actual no permitido, cambiando...');
+                if (allowedBrushes.length > 0 && typeof selectBrush === 'function') {
+                    selectBrush(allowedBrushes[0]);
+                }
+            }
+        } else {
+            console.error('❌ [GENERAL] No se recibieron brushes o BrushRegistry no disponible');
+        }
+        
+        // Aplicar restricciones específicas
+        const userConfigKey = userType === 'logged' ? 'logged' : 'notLogged';
+        const userConfig = data.accessConfig[userConfigKey];
+        
+        console.log('🔐 [GENERAL] Aplicando restricciones para:', userConfigKey);
+        
+        if (userConfig && userConfig.restrictions && typeof applySessionRestrictions === 'function') {
+            applySessionRestrictions(userConfig.restrictions);
+            console.log('✅ [GENERAL] Restricciones aplicadas');
+        }
+        
+        // Actualizar nombre y descripción de la sesión en el chat
+        if (data.name || data.description) {
+            console.log('📝 [GENERAL] Actualizando nombre y descripción de sesión...');
+            
+            // Actualizar nombre
+            if (data.name) {
+                const nameElement = document.getElementById('sessionInfoName');
+                if (nameElement) {
+                    nameElement.textContent = data.name;
+                    console.log('✅ [GENERAL] Nombre actualizado en #sessionInfoName:', data.name);
+                } else {
+                    console.warn('⚠️ [GENERAL] Elemento #sessionInfoName no encontrado');
+                }
+            }
+            
+            // Actualizar descripción
+            if (data.description) {
+                const descElement = document.getElementById('sessionInfoDescription');
+                if (descElement) {
+                    descElement.textContent = data.description;
+                    console.log('✅ [GENERAL] Descripción actualizada en #sessionInfoDescription:', data.description);
+                } else {
+                    console.warn('⚠️ [GENERAL] Elemento #sessionInfoDescription no encontrado');
+                }
+            }
+        }
+        
+        // Actualizar logo si existe
+        if (data.customization && data.customization.logoImage) {
+            const brandingContainer = document.getElementById('sessionBrandingLogo');
+            if (brandingContainer) {
+                brandingContainer.innerHTML = `<img src="${data.customization.logoImage}" alt="Logo de sesión">`;
+                brandingContainer.style.display = 'block';
+                console.log('✅ [GENERAL] Logo actualizado');
+            }
+        }
+        
+        console.log('✅ [GENERAL] ========== ACTUALIZACIÓN COMPLETADA ==========\n');
+        
+    } catch (error) {
+        console.error('❌ [GENERAL] Error:', error);
+        console.error('❌ [GENERAL] Stack:', error.stack);
+    }
+}
+
 // Hacer las funciones accesibles globalmente
 window.logoutUser = logoutUser;
 window.saveImageToServer = saveImageToServer;
 window.renderLayerButtons = renderLayerButtons;
 window.closeWelcomeModal = closeWelcomeModal;
 window.loadSessionInfo = loadSessionInfo;
+window.handleSessionUpdate = handleSessionUpdate;
 
 // NO verificar modal aquí, se verifica después de checkUserAuthentication()

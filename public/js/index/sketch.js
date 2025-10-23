@@ -2435,148 +2435,7 @@ function downloadQR() {
     }
 }
 
-/**
- * Maneja la actualización de configuración de sesión en tiempo real - SIMPLIFICADO
- * @param {Object} data - Datos de la sesión actualizada
- */
-async function handleSessionUpdate(data) {
-    console.log('🔄 [SKETCH] handleSessionUpdate() INICIADO');
-    console.log('📊 [SKETCH] Sesión actual:', sessionId);
-    console.log('📊 [SKETCH] Sesión recibida:', data.sessionId);
-    
-    // Validar sesión
-    if (data.sessionId !== sessionId) {
-        console.log('⚠️ [SKETCH] Sesión diferente, IGNORANDO');
-        return;
-    }
-    
-    console.log('✅ [SKETCH] Sesión coincide - Continuando...');
-    
-    // Notificación
-    if (typeof toast !== 'undefined') {
-        toast.info('⚡ Configuración actualizada');
-    }
-    
-    // Aplicar colores personalizados si existen
-    console.log('🔍 [SKETCH] Verificando colores...');
-    console.log('🔍 [SKETCH] data.accessConfig.colors existe?', !!(data.accessConfig?.colors));
-    
-    if (data.accessConfig && data.accessConfig.colors) {
-        console.log('✅ [SKETCH] APLICANDO COLORES:', data.accessConfig.colors);
-        applySessionColors(data.accessConfig.colors);
-    } else {
-        console.log('⚠️ [SKETCH] No hay colores personalizados, usando defaults');
-    }
-    
-    // Actualizar logo de branding si existe
-    if (data.customization && data.customization.logoImage) {
-        const brandingContainer = document.getElementById('sessionBrandingLogo');
-        const brandingImg = document.getElementById('brandingLogoImg');
-        if (brandingContainer && brandingImg) {
-            brandingImg.src = data.customization.logoImage;
-            brandingContainer.style.display = 'block';
-        }
-    }
-    
-    // Aplicar configuración
-    if (!data.accessConfig || typeof applyAccessConfig !== 'function') {
-        console.warn('⚠️ [SKETCH] No hay accessConfig o applyAccessConfig');
-        return;
-    }
-    
-    try {
-        console.log('👤 [SKETCH] Determinando tipo de usuario...');
-        
-        // Determinar tipo de usuario
-        let userType = 'notLogged';
-        let currentUsername = null;
-        
-        const response = await fetch(`${config.API_URL}/api/check-session`, {
-            headers: config.getAuthHeaders()
-        });
-        const authData = await response.json();
-        
-        if (authData.authenticated) {
-            currentUsername = authData.user?.username;
-            userType = 'logged';
-        }
-        
-        console.log('✅ [SKETCH] Usuario:', { tipo: userType, username: currentUsername });
-        console.log('🔐 [SKETCH] Aplicando configuración de acceso...');
-        
-        // Aplicar configuración
-        const allowedBrushes = await applyAccessConfig(data.accessConfig, userType, currentUsername);
-        
-        console.log('📋 [SKETCH] Brushes permitidos:', allowedBrushes);
-        
-        if (allowedBrushes && typeof brushRegistry !== 'undefined') {
-            console.log('🔒 [SKETCH] Actualizando BrushRegistry...');
-            brushRegistry.setAllowedBrushTypes(allowedBrushes);
-            
-            console.log('🔘 [SKETCH] Actualizando botones...');
-            // Actualizar botones INMEDIATAMENTE
-            if (typeof forceHideNonAllowedButtons === 'function') {
-                forceHideNonAllowedButtons();
-            } else {
-                console.error('❌ [SKETCH] forceHideNonAllowedButtons NO disponible');
-            }
-            
-            // Cambiar brush si el actual no está permitido
-            if (typeof currentBrush !== 'undefined' && !allowedBrushes.includes(currentBrush)) {
-                console.log('⚠️ [SKETCH] Brush actual no permitido, cambiando...');
-                if (allowedBrushes.length > 0) {
-                    selectBrush(allowedBrushes[0]);
-                }
-            }
-        } else {
-            console.error('❌ [SKETCH] No se recibieron brushes o BrushRegistry no disponible');
-        }
-        
-        // Aplicar restricciones específicas
-        const userConfigKey = userType === 'logged' ? 'logged' : 'notLogged';
-        const userConfig = data.accessConfig[userConfigKey];
-        
-        console.log('🔐 [SKETCH] Aplicando restricciones para:', userConfigKey);
-        
-        if (userConfig && userConfig.restrictions && typeof applySessionRestrictions === 'function') {
-            applySessionRestrictions(userConfig.restrictions);
-            console.log('✅ [SKETCH] Restricciones aplicadas');
-        }
-        
-        // Actualizar nombre y descripción de la sesión en el chat
-        if (data.name || data.description) {
-            console.log('📝 [SKETCH] Actualizando nombre y descripción de sesión...');
-            
-            // Actualizar nombre
-            if (data.name) {
-                const nameElement = document.getElementById('sessionInfoName');
-                if (nameElement) {
-                    nameElement.textContent = data.name;
-                    console.log('✅ [SKETCH] Nombre actualizado en #sessionInfoName:', data.name);
-                } else {
-                    console.warn('⚠️ [SKETCH] Elemento #sessionInfoName no encontrado');
-                }
-            }
-            
-            // Actualizar descripción
-            if (data.description) {
-                const descElement = document.getElementById('sessionInfoDescription');
-                if (descElement) {
-                    descElement.textContent = data.description;
-                    console.log('✅ [SKETCH] Descripción actualizada en #sessionInfoDescription:', data.description);
-                } else {
-                    console.warn('⚠️ [SKETCH] Elemento #sessionInfoDescription no encontrado');
-                }
-            }
-        }
-        
-        console.log('✅ [SKETCH] ========== ACTUALIZACIÓN COMPLETADA ==========\n');
-        
-    } catch (error) {
-        console.error('❌ [SKETCH] Error:', error);
-        console.error('❌ [SKETCH] Stack:', error.stack);
-    }
-}
+// handleSessionUpdate ahora está en general.js - centralizado
 
 /**
  * Aplica los colores personalizados de la sesión a la interfaz
@@ -2723,22 +2582,7 @@ async function loadSessionInfo(sid) {
                 if (nameEl) nameEl.textContent = session.name || `Sesión ${sessionIdToUse}`;
                 if (descEl) descEl.textContent = session.description || 'Sin descripción';
                 
-                // EXACTAMENTE COMO EN GALLERY.JS
-                const brandingContainer = document.getElementById('sessionBrandingLogo');
-                if (brandingContainer) {
-                    let logoHTML = '';
-                    if (custom.logoImage) {
-                        logoHTML = `<img src="${custom.logoImage}" style="max-width: 100%; max-height: 80px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);" alt="Logo de sesión">`;
-                        console.log('✅ Logo encontrado, asignando HTML');
-                    } else {
-                        console.log('⚠️ No hay logo en customization');
-                    }
-                    
-                    brandingContainer.innerHTML = logoHTML;
-                    brandingContainer.style.display = logoHTML ? 'block' : 'none';
-                    
-                    console.log('✅ Branding actualizado - display:', brandingContainer.style.display);
-                }
+                // NO manipular HTML aquí - eso lo hace general.js
             }
         }
     } catch (error) {
@@ -2750,7 +2594,7 @@ async function loadSessionInfo(sid) {
 window.toggleQR = toggleQR;
 window.copySessionLink = copySessionLink;
 window.downloadQR = downloadQR;
-window.handleSessionUpdate = handleSessionUpdate;
+// handleSessionUpdate ahora está en general.js
 window.applySessionColors = applySessionColors;
 window.viewSessionGallery = viewSessionGallery;
 window.loadSessionInfo = loadSessionInfo;

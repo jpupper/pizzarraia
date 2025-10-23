@@ -6,10 +6,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.7.1/addons/p5.dom.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
     <script src="https://unpkg.com/qrcode-generator@1.4.4/qrcode.js"></script>
-    <script src='js/jquery.js'> </script>
+    <script src='js/lib/jquery.js'> </script>
     <script src='js/config.js'> </script>
-    <script src='js/nameGenerator.js'> </script>
-    <script src='js/cursorGui.js'> </script>
+    <script src='js/index/nameGenerator.js'> </script>
+    <script src='js/index/cursorGui.js'> </script>
     
     <!-- Agregando las fuentes de Google -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto&family=Montserrat&family=Lato&family=Open+Sans&family=Poppins&family=Dancing+Script&family=Pacifico&family=Indie+Flower&family=Shadows+Into+Light&family=Permanent+Marker&family=Caveat&family=Satisfy&family=Quicksand&family=Comfortaa&family=Josefin+Sans&display=swap" rel="stylesheet">
@@ -18,24 +18,24 @@
   </head>
   <body>
     <!-- Core libraries -->
-    <script src="js/kaleidoscope.js"></script>
+    <script src="js/index/kaleidoscope.js"></script>
     <script src="js/analyticsTracker.js"></script>
-    <script src="js/cursorserver.js"></script>
+    <script src="js/index/cursorserver.js"></script>
     
     <!-- Brush System - New Architecture -->
-    <script src="js/brushes/BaseBrush.js"></script>
-    <script src="js/brushes/BrushRegistry.js"></script>
+    <script src="js/index/brushes/BaseBrush.js"></script>
+    <script src="js/index/brushes/BrushRegistry.js"></script>
     
     <!-- Brush Implementations (Class-based) -->
-    <script src="js/brushes/standardbrush.js"></script>
-    <script src="js/brushes/pixelbrush.js"></script>
-    <script src="js/brushes/artbrush.js"></script>
-    <script src="js/brushes/linebrush.js"></script>
-    <script src="js/brushes/textbrush.js"></script>
-    <script src="js/brushes/geometrybrush.js"></script>
-    <script src="js/brushes/fillbrush.js"></script>
-    <script src="js/brushes/imagebrush.js"></script>
-    <script src="js/brushes/flowerbrush.js"></script>
+    <script src="js/index/brushes/standardbrush.js"></script>
+    <script src="js/index/brushes/pixelbrush.js"></script>
+    <script src="js/index/brushes/artbrush.js"></script>
+    <script src="js/index/brushes/linebrush.js"></script>
+    <script src="js/index/brushes/textbrush.js"></script>
+    <script src="js/index/brushes/geometrybrush.js"></script>
+    <script src="js/index/brushes/fillbrush.js"></script>
+    <script src="js/index/brushes/imagebrush.js"></script>
+    <script src="js/index/brushes/flowerbrush.js"></script>
     
     <!-- Legacy brushes (COMENTADOS - ya migrados a clases) -->
     <!-- <script src="js/brushes/standardbrush.js"></script> -->
@@ -48,13 +48,13 @@
     <!-- <script src="js/brushes/imagebrush.js"></script> -->
     
     <!-- Brush System Initialization -->
-    <script src="js/brushes/init.js"></script>
+    <script src="js/index/brushes/init.js"></script>
     
     <!-- Image Search System -->
-    <script src="js/imageSearch.js"></script>
+    <script src="js/index/imageSearch.js"></script>
     
     <!-- Main sketch (debe cargarse después de los brushes) -->
-    <script src="js/sketch.js"></script>
+    <script src="js/index/sketch.js"></script>
     
     <div id="gui" >
         <!-- Logo de la sesión (se llena con JS) -->
@@ -701,7 +701,7 @@
         </div>
     </div>
     
-  <script src="js/toast.js"></script>
-  <script src="js/general.js"></script>
+  <script src="js/index/toast.js"></script>
+  <script src="js/index/general.js"></script>
   </body>
 </html>
