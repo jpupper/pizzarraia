@@ -1421,7 +1421,28 @@ function setupAutoSaveListeners() {
         allowSpecificCheckbox.addEventListener('change', allowSpecificCheckbox._toggleHandler);
     }
     
-    console.log('✅ Listeners configurados correctamente');
+    // Listeners para colores personalizados
+    const useCustomColorsCheckbox = document.getElementById('useCustomColors');
+    if (useCustomColorsCheckbox) {
+        useCustomColorsCheckbox.removeEventListener('change', autoSaveSession);
+        useCustomColorsCheckbox.addEventListener('change', autoSaveSession);
+    }
+    
+    // Listeners para inputs de color (con debounce)
+    const colorInputs = ['colorBackground', 'colorPrimary', 'colorSecondary', 'colorText'];
+    colorInputs.forEach(inputId => {
+        const colorInput = document.getElementById(inputId);
+        if (colorInput) {
+            colorInput.removeEventListener('input', colorInput._autoSaveHandler);
+            colorInput._autoSaveHandler = () => {
+                clearTimeout(colorInput._timeout);
+                colorInput._timeout = setTimeout(autoSaveSession, 500);
+            };
+            colorInput.addEventListener('input', colorInput._autoSaveHandler);
+        }
+    });
+    
+    console.log('✅ Listeners configurados correctamente (incluyendo colores)');
 }
 
 /**
@@ -1524,6 +1545,20 @@ async function performAutoSave() {
             users: specificUsers,
             brushes: specificBrushes,
             restrictions: specificRestrictions
+        };
+        
+        // Colores dentro de accessConfig
+        const useCustomColors = document.getElementById('useCustomColors')?.checked || false;
+        accessConfig.colors = useCustomColors ? {
+            background: document.getElementById('colorBackground')?.value || '#1a1a2e',
+            primary: document.getElementById('colorPrimary')?.value || '#667eea',
+            secondary: document.getElementById('colorSecondary')?.value || '#764ba2',
+            text: document.getElementById('colorText')?.value || '#ffffff'
+        } : {
+            background: '#1a1a2e',
+            primary: '#667eea',
+            secondary: '#764ba2',
+            text: '#ffffff'
         };
         
         console.log('✅ [PROFILE] Configuración recopilada exitosamente');
