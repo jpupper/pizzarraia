@@ -2617,13 +2617,6 @@ function applySessionColors(colors) {
         gui.style.color = colors.text;
     }
     
-    // Aplicar al contenedor del logo de branding
-    const brandingLogo = document.getElementById('sessionBrandingLogo');
-    if (brandingLogo) {
-        brandingLogo.style.background = `linear-gradient(135deg, ${colors.primary}40 0%, ${colors.secondary}40 100%)`;
-        brandingLogo.style.borderBottomColor = colors.primary;
-    }
-    
     // Aplicar a los botones de tabs
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.style.color = colors.text;
