@@ -276,11 +276,8 @@ function setup() {
     socket.on("session-updated", function(data) {
         console.log('\n⚡⚡⚡ [SKETCH] ========== SESSION-UPDATED RECIBIDO ==========');
         console.log('📦 [SKETCH] RAW DATA:', JSON.stringify(data, null, 2));
-        console.log('🎨 [SKETCH] Tiene customization?', !!data.customization);
-        console.log('🎨 [SKETCH] Customization object:', data.customization);
-        console.log('🎨 [SKETCH] Tiene colors?', !!(data.customization?.colors));
-        console.log('🎨 [SKETCH] Colors object:', data.customization?.colors);
-        console.log('🖼️ [SKETCH] Tiene logo?', !!(data.customization?.logoImage));
+        console.log('🎨 [SKETCH] Tiene colors?', !!(data.accessConfig?.colors));
+        console.log('🎨 [SKETCH] Colors object:', data.accessConfig?.colors);
         console.log('📦 [SKETCH] AccessConfig:', {
             sessionId: data.sessionId,
             timestamp: new Date().toISOString(),
@@ -2462,15 +2459,13 @@ async function handleSessionUpdate(data) {
     
     // Aplicar colores personalizados si existen
     console.log('🔍 [SKETCH] Verificando colores...');
-    console.log('🔍 [SKETCH] data.customization existe?', !!data.customization);
-    console.log('🔍 [SKETCH] data.customization.colors existe?', !!(data.customization?.colors));
+    console.log('🔍 [SKETCH] data.accessConfig.colors existe?', !!(data.accessConfig?.colors));
     
-    if (data.customization && data.customization.colors) {
-        console.log('✅ [SKETCH] APLICANDO COLORES:', data.customization.colors);
-        applySessionColors(data.customization.colors);
+    if (data.accessConfig && data.accessConfig.colors) {
+        console.log('✅ [SKETCH] APLICANDO COLORES:', data.accessConfig.colors);
+        applySessionColors(data.accessConfig.colors);
     } else {
-        console.error('❌ [SKETCH] NO HAY COLORES PARA APLICAR');
-        console.log('❌ [SKETCH] data.customization:', data.customization);
+        console.log('⚠️ [SKETCH] No hay colores personalizados, usando defaults');
     }
     
     // Actualizar logo de branding si existe
