@@ -1496,6 +1496,20 @@ async function loadSessionInfo(sessionId) {
             console.log('⚠️ Elemento sessionBrandingLogo no encontrado');
           }
         }
+        
+        // CARGAR NOMBRE Y DESCRIPCIÓN DEBAJO DEL LOGO
+        const brandingName = document.getElementById('sessionBrandingName');
+        const brandingDesc = document.getElementById('sessionBrandingDescription');
+        
+        if (session.name && brandingName) {
+          brandingName.textContent = session.name;
+          console.log('✅ Nombre de sesión cargado:', session.name);
+        }
+        
+        if (session.description && brandingDesc) {
+          brandingDesc.textContent = session.description;
+          console.log('✅ Descripción de sesión cargada');
+        }
       }
     } else {
       console.log('⚠️ Sesión no encontrada en la base de datos (status:', response.status, ')');

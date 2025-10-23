@@ -175,23 +175,23 @@ function updateSessionNameAndDescription(data) {
         
         // Actualizar nombre
         if (data.name) {
-            const nameElement = document.getElementById('sessionInfoName');
+            const nameElement = document.getElementById('sessionBrandingName');
             if (nameElement) {
                 nameElement.textContent = data.name;
                 console.log('✅ [UPDATE] Nombre actualizado:', data.name);
             } else {
-                console.warn('⚠️ [UPDATE] Elemento #sessionInfoName no encontrado');
+                console.warn('⚠️ [UPDATE] Elemento #sessionBrandingName no encontrado');
             }
         }
         
         // Actualizar descripción
         if (data.description) {
-            const descElement = document.getElementById('sessionInfoDescription');
+            const descElement = document.getElementById('sessionBrandingDescription');
             if (descElement) {
                 descElement.textContent = data.description;
                 console.log('✅ [UPDATE] Descripción actualizada:', data.description);
             } else {
-                console.warn('⚠️ [UPDATE] Elemento #sessionInfoDescription no encontrado');
+                console.warn('⚠️ [UPDATE] Elemento #sessionBrandingDescription no encontrado');
             }
         }
     }
