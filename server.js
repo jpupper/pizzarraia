@@ -75,6 +75,20 @@ const isAuthenticated = (req, res, next) => {
   }
 };
 
+// Middleware to check admin permissions
+const isAdmin = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user || !user.permissions || !user.permissions.canAccessAdmin) {
+      return res.status(403).json({ error: 'No tienes permisos de administrador' });
+    }
+    next();
+  } catch (error) {
+    console.error('Error checking admin permissions:', error);
+    return res.status(500).json({ error: 'Error verificando permisos' });
+  }
+};
+
 // Main route
 app.get('/pizarraia', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -456,7 +470,7 @@ app.get('/pizarraia/api/gallery/:id', async (req, res) => {
 });
 
 // Admin routes
-app.get('/pizarraia/api/admin/users', isAuthenticated, async (req, res) => {
+app.get('/pizarraia/api/admin/users', isAuthenticated, isAdmin, async (req, res) => {
   try {
     // Get all users from database
     const users = await User.find().select('-password').sort({ createdAt: -1 });
@@ -467,7 +481,7 @@ app.get('/pizarraia/api/admin/users', isAuthenticated, async (req, res) => {
   }
 });
 
-app.get('/pizarraia/api/admin/connected', (req, res) => {
+app.get('/pizarraia/api/admin/connected', isAuthenticated, isAdmin, (req, res) => {
   try {
     // Get connected users info
     const connected = Array.from(connectedUsers.values());
@@ -501,7 +515,7 @@ app.get('/pizarraia/api/sessions', (req, res) => {
 });
 
 // Admin endpoint - shows ALL sessions (active socket sessions + database sessions)
-app.get('/pizarraia/api/admin/sessions', async (req, res) => {
+app.get('/pizarraia/api/admin/sessions', isAuthenticated, isAdmin, async (req, res) => {
   try {
     // Get active socket sessions with user count
     const activeSessions = Object.keys(sessions)
@@ -724,7 +738,7 @@ app.get('/pizarraia/api/analytics/summary', isAuthenticated, async (req, res) =>
 // Create a new session
 app.post('/pizarraia/api/sessions/create', isAuthenticated, async (req, res) => {
   try {
-    const { sessionId, name, description, isPublic, allowedBrushTypes, accessConfig, restrictions, customization } = req.body;
+    const { sessionId, name, description, isPublic, allowedBrushTypes, accessConfig, restrictions, customization, initialLayers, defaultImageBrush } = req.body;
     
     if (!sessionId || !name) {
       return res.status(400).json({ error: 'Session ID y nombre son requeridos' });
@@ -738,6 +752,11 @@ app.post('/pizarraia/api/sessions/create', isAuthenticated, async (req, res) => 
     
     const user = await User.findById(req.userId);
     
+    // Check if user has permission to create sessions
+    if (!user.permissions || !user.permissions.canCreateSessions) {
+      return res.status(403).json({ error: 'No tienes permisos para crear sesiones' });
+    }
+    
     const session = new Session({
       sessionId,
       creatorId: req.userId,
@@ -748,7 +767,9 @@ app.post('/pizarraia/api/sessions/create', isAuthenticated, async (req, res) => 
       allowedBrushTypes: allowedBrushTypes || [],
       accessConfig: accessConfig || undefined,
       restrictions: restrictions || undefined,
-      customization: customization || undefined
+      customization: customization || undefined,
+      initialLayers: initialLayers || [],
+      defaultImageBrush: defaultImageBrush || undefined
     });
     
     await session.save();
@@ -766,7 +787,8 @@ app.post('/pizarraia/api/sessions/create', isAuthenticated, async (req, res) => 
         allowedBrushTypes: session.allowedBrushTypes,
         accessConfig: session.accessConfig,
         restrictions: session.restrictions,
-        customization: session.customization
+        customization: session.customization,
+        defaultImageBrush: session.defaultImageBrush
       }
     });
   } catch (error) {
@@ -829,7 +851,7 @@ app.put('/pizarraia/api/sessions/:id', isAuthenticated, async (req, res) => {
       return res.status(404).json({ error: 'Sesión no encontrada o no tienes permisos' });
     }
     
-    const { sessionId, name, description, isPublic, allowedBrushTypes, accessConfig, restrictions, customization } = req.body;
+    const { sessionId, name, description, isPublic, allowedBrushTypes, accessConfig, restrictions, customization, initialLayers, defaultImageBrush } = req.body;
     
     // Actualizar campos
     if (sessionId) session.sessionId = sessionId;
@@ -840,6 +862,8 @@ app.put('/pizarraia/api/sessions/:id', isAuthenticated, async (req, res) => {
     if (accessConfig) session.accessConfig = accessConfig;
     if (restrictions) session.restrictions = restrictions;
     if (customization !== undefined) session.customization = customization;
+    if (initialLayers !== undefined) session.initialLayers = initialLayers;
+    if (defaultImageBrush !== undefined) session.defaultImageBrush = defaultImageBrush;
     
     await session.save();
     

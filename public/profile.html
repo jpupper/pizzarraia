@@ -185,6 +185,46 @@
                     </div>
                 </div>
 
+                <!-- Configuración de Capas Iniciales -->
+                <div class="form-group">
+                    <label>🎨 Capas Iniciales:</label>
+                    <small style="display: block; margin-bottom: 15px; color: #999;">Configura con cuántas capas empezará la sesión y qué imagen tendrá cada una</small>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label for="layerCount" style="font-weight: 600; display: block; margin-bottom: 5px;">Número de capas:</label>
+                        <input type="number" id="layerCount" min="1" max="10" value="1" style="width: 100px; padding: 8px; border: 2px solid #667eea; border-radius: 5px;" onchange="generateLayerConfiguration()">
+                        <small style="color: #999; margin-left: 10px;">Máximo 10 capas</small>
+                    </div>
+                    
+                    <div id="layersConfiguration" style="border: 2px solid #667eea; border-radius: 10px; padding: 15px; background: rgba(102, 126, 234, 0.05);">
+                        <!-- Las configuraciones de capas se generarán dinámicamente aquí -->
+                    </div>
+                </div>
+
+                <!-- Configuración de Imágenes por Defecto para Brush de Imagen -->
+                <div class="form-group">
+                    <label>🖼️ Imágenes por Defecto para Brush de Imagen:</label>
+                    <small style="display: block; margin-bottom: 15px; color: #999;">Configura imágenes que estarán disponibles por defecto en el brush de imagen de esta sesión</small>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: flex; align-items: center; gap: 10px;">
+                            <input type="checkbox" id="enableDefaultImages" style="transform: scale(1.2);">
+                            <span style="font-weight: 600;">Habilitar imágenes por defecto</span>
+                        </label>
+                    </div>
+                    
+                    <div id="defaultImagesContainer" style="border: 2px solid #667eea; border-radius: 10px; padding: 15px; background: rgba(102, 126, 234, 0.05); display: none;">
+                        <div style="margin-bottom: 15px;">
+                            <button type="button" onclick="addDefaultImage()" style="background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;">
+                                ➕ Agregar Imagen
+                            </button>
+                        </div>
+                        <div id="defaultImagesList">
+                            <!-- Las imágenes por defecto se generarán dinámicamente aquí -->
+                        </div>
+                    </div>
+                </div>
+
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeSessionModal()">Cancelar</button>
                     <button type="submit" class="btn btn-primary">Guardar Sesión</button>

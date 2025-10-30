@@ -205,7 +205,7 @@ function updateSessionLogo(data) {
     if (data.customization && data.customization.logoImage) {
         const brandingContainer = document.getElementById('sessionBrandingLogo');
         if (brandingContainer) {
-            brandingContainer.innerHTML = `<img src="${data.customization.logoImage}" alt="Logo de sesión">`;
+            brandingContainer.innerHTML = `<img src="${data.customization.logoImage}" alt="Logo de sesión" style="max-width: 100%; max-height: 60px; border-radius: 6px;">`;
             brandingContainer.style.display = 'block';
             console.log('✅ [UPDATE] Logo actualizado');
         } else {

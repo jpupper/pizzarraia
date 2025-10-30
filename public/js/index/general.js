@@ -1445,6 +1445,104 @@ function setupGuiAutoClose() {
  * Carga y muestra la información de la sesión en el chat
  * @param {string} sessionId - ID de la sesión
  */
+/**
+ * Cargar capas iniciales desde la configuración de la sesión
+ */
+async function loadInitialLayers(initialLayersConfig) {
+  console.log('🎨 Cargando capas iniciales:', initialLayersConfig);
+  
+  if (!window.layers || !window.layerVisibility) {
+    console.error('❌ Sistema de capas no inicializado');
+    return;
+  }
+  
+  try {
+    // Limpiar capas existentes (excepto la primera que es el fondo)
+    while (window.layers.length > 1) {
+      window.layers.pop();
+      window.layerVisibility.pop();
+    }
+    
+    // Ordenar las capas por índice
+    const sortedLayers = [...initialLayersConfig].sort((a, b) => a.layerIndex - b.layerIndex);
+    
+    for (const layerConfig of sortedLayers) {
+      const { layerIndex, name, imageData, opacity, visible } = layerConfig;
+      
+      console.log(`🖼️ Procesando capa ${layerIndex}: ${name || 'Sin nombre'}`);
+      
+      // Asegurar que tenemos suficientes capas
+       while (window.layers.length <= layerIndex) {
+         if (typeof createGraphics === 'function') {
+           const newLayer = createGraphics(windowWidth, windowHeight);
+           newLayer.background(0); // Fondo negro por defecto
+           window.layers.push(newLayer);
+           window.layerVisibility.push(true);
+         } else {
+           console.error('❌ createGraphics no está disponible');
+           return;
+         }
+       }
+       
+       // Si hay datos de imagen, cargarlos
+       if (imageData && imageData.trim() !== '') {
+         try {
+           if (typeof loadImage === 'function') {
+             // Usar p5.js loadImage para cargar la imagen
+             loadImage(imageData, 
+               function(img) {
+                 // Callback de éxito
+                 const layer = window.layers[layerIndex];
+                 if (layer) {
+                   // Limpiar la capa
+                   layer.clear();
+                   layer.background(0);
+                   
+                   // Dibujar la imagen cargada
+                   layer.image(img, 0, 0, windowWidth, windowHeight);
+                   
+                   console.log(`✅ Imagen cargada en capa ${layerIndex}`);
+                   
+                   // Actualizar la UI de capas si existe
+                   if (typeof window.updateLayerUI === 'function') {
+                     window.updateLayerUI();
+                   }
+                 }
+               },
+               function() {
+                 // Callback de error
+                 console.error(`❌ Error cargando imagen para capa ${layerIndex}`);
+               }
+             );
+           } else {
+             console.error('❌ loadImage no está disponible');
+           }
+         } catch (error) {
+           console.error(`❌ Error procesando imagen de capa ${layerIndex}:`, error);
+         }
+       }
+      
+      // Configurar visibilidad y opacidad
+      window.layerVisibility[layerIndex] = visible !== false; // Default true
+      
+      // TODO: Implementar opacidad si el sistema lo soporta
+      if (opacity !== undefined && opacity !== 1.0) {
+        console.log(`⚠️ Opacidad ${opacity} para capa ${layerIndex} - funcionalidad pendiente`);
+      }
+    }
+    
+    // Actualizar la UI de capas
+    if (typeof window.updateLayerUI === 'function') {
+      window.updateLayerUI();
+    }
+    
+    console.log('✅ Capas iniciales cargadas exitosamente');
+    
+  } catch (error) {
+    console.error('❌ Error cargando capas iniciales:', error);
+  }
+}
+
 async function loadSessionInfo(sessionId) {
   console.log('📋 Cargando información de sesión:', sessionId);
   
@@ -1489,7 +1587,7 @@ async function loadSessionInfo(sessionId) {
         if (session.customization && session.customization.logoImage) {
           const brandingContainer = document.getElementById('sessionBrandingLogo');
           if (brandingContainer) {
-            brandingContainer.innerHTML = `<img src="${session.customization.logoImage}" alt="Logo de sesión">`;
+            brandingContainer.innerHTML = `<img src="${session.customization.logoImage}" alt="Logo de sesión" style="max-width: 100%; max-height: 60px; border-radius: 6px;">`;
             brandingContainer.style.display = 'block';
             console.log('✅ Logo de sesión cargado desde general.js');
           } else {
@@ -1510,6 +1608,11 @@ async function loadSessionInfo(sessionId) {
           brandingDesc.textContent = session.description;
           console.log('✅ Descripción de sesión cargada');
         }
+        
+        // CARGAR CAPAS INICIALES
+        if (session.initialLayers && session.initialLayers.length > 0) {
+          loadInitialLayers(session.initialLayers);
+        }
       }
     } else {
       console.log('⚠️ Sesión no encontrada en la base de datos (status:', response.status, ')');
@@ -1527,6 +1630,7 @@ window.saveImageToServer = saveImageToServer;
 window.renderLayerButtons = renderLayerButtons;
 window.closeWelcomeModal = closeWelcomeModal;
 window.loadSessionInfo = loadSessionInfo;
+window.loadInitialLayers = loadInitialLayers;
 // handleSessionUpdate ahora está en updateSessionDraw.js
 
 // NO verificar modal aquí, se verifica después de checkUserAuthentication()
