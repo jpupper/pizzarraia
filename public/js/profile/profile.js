@@ -80,7 +80,7 @@ function loadUserProfile() {
     document.getElementById('username').textContent = currentUser.username;
     document.getElementById('userAvatar').textContent = currentUser.username.charAt(0).toUpperCase();
     
-    // Get user details for member since date
+    // Get user details for member since date and permissions
     fetch(`${config.API_URL}/api/user`, {
             headers: config.getAuthHeaders()
         })
@@ -93,6 +93,36 @@ function loadUserProfile() {
                     month: 'long',
                     day: 'numeric'
                 });
+            }
+            
+            // Check permissions and show/hide UI elements
+            const user = data.user;
+            const canCreateSessions = user.permissions && user.permissions.canCreateSessions;
+            const canAccessAdmin = user.permissions && user.permissions.canAccessAdmin;
+            
+            // Show/hide create session button
+            const createSessionBtn = document.querySelector('.create-session-btn');
+            if (createSessionBtn) {
+                if (canCreateSessions) {
+                    createSessionBtn.style.display = 'block';
+                } else {
+                    createSessionBtn.style.display = 'none';
+                    // Show message about no permissions
+                    const sessionsContainer = document.querySelector('.sessions-container');
+                    if (sessionsContainer && !document.querySelector('.no-permission-message')) {
+                        const message = document.createElement('div');
+                        message.className = 'no-permission-message';
+                        message.style.cssText = 'background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center;';
+                        message.innerHTML = '⚠️ No tienes permisos para crear sesiones. Contacta al administrador.';
+                        sessionsContainer.insertBefore(message, sessionsContainer.firstChild);
+                    }
+                }
+            }
+            
+            // Show/hide admin panel link
+            const adminLink = document.querySelector('.admin-link');
+            if (adminLink) {
+                adminLink.style.display = canAccessAdmin ? 'block' : 'none';
             }
         })
         .catch(err => console.error('Error loading user details:', err));
@@ -726,6 +756,27 @@ function openCreateSessionModal() {
     // Setup access control listeners
     setupAccessControlListeners();
     
+    // Initialize layer configuration
+    setupLayerConfiguration();
+    
+    // Initialize default image brush configuration
+    setupDefaultImageBrush();
+    
+    // Mostrar por defecto el selector de imágenes y preparar primera fila
+    const enableDefaultImagesEl = document.getElementById('enableDefaultImages');
+    const defaultImagesContainerEl = document.getElementById('defaultImagesContainer');
+    const defaultImagesListEl = document.getElementById('defaultImagesList');
+    if (enableDefaultImagesEl && defaultImagesContainerEl && defaultImagesListEl) {
+        enableDefaultImagesEl.checked = true;
+        defaultImagesContainerEl.style.display = 'block';
+        if (defaultImagesListEl.children.length === 0) {
+            addDefaultImage();
+        }
+    }
+
+    // Generar la primera capa visible
+    generateLayerConfiguration();
+    
     modal.classList.add('active');
 }
 
@@ -1002,6 +1053,12 @@ async function saveSession(event) {
             text: '#ffffff'
         };
         
+        // Collect initial layer configuration
+        const initialLayers = collectLayerConfiguration();
+        
+        // Collect default image brush configuration
+        const defaultImageBrush = collectDefaultImageBrushConfiguration();
+        
         const requestBody = {
             sessionId,
             name,
@@ -1012,7 +1069,9 @@ async function saveSession(event) {
                 backgroundImage: currentBackgroundImage || '',
                 logoImage: currentLogoImage || '',
                 colors: colors
-            }
+            },
+            initialLayers: initialLayers,
+            defaultImageBrush: defaultImageBrush
         };
         
         console.log('📤 Enviando request:', { url, method });
@@ -1277,6 +1336,51 @@ async function editSession(sessionId) {
             document.getElementById('colorPrimary').value = '#667eea';
             document.getElementById('colorSecondary').value = '#764ba2';
             document.getElementById('colorText').value = '#ffffff';
+        }
+
+        // Cargar configuración de imágenes por defecto para Brush de Imagen
+        try {
+            const enableCheckbox = document.getElementById('enableDefaultImages');
+            const container = document.getElementById('defaultImagesContainer');
+            const list = document.getElementById('defaultImagesList');
+            
+            // Reset UI
+            enableCheckbox.checked = false;
+            container.style.display = 'none';
+            list.innerHTML = '';
+            
+            if (session.defaultImageBrush && session.defaultImageBrush.enabled) {
+                enableCheckbox.checked = true;
+                container.style.display = 'block';
+                
+                const images = Array.isArray(session.defaultImageBrush.images) ? session.defaultImageBrush.images : [];
+                if (images.length === 0) {
+                    // Asegurar al menos un item visible para que el usuario cargue
+                    addDefaultImage();
+                }
+                images.forEach(img => {
+                    // Crear item
+                    addDefaultImage();
+                    const idx = list.children.length - 1;
+                    
+                    // Setear valores
+                    const nameInput = document.getElementById(`defaultImageName_${idx}`);
+                    const categoryInput = document.getElementById(`defaultImageCategory_${idx}`);
+                    const previewDiv = document.getElementById(`defaultImagePreview_${idx}`);
+                    
+                    if (nameInput) nameInput.value = img.name || '';
+                    if (categoryInput) categoryInput.value = img.category || 'general';
+                    if (previewDiv && img.imageData) {
+                        previewDiv.innerHTML = `
+                            <img src="${img.imageData}" style="max-width: 200px; max-height: 150px; border: 1px solid #ddd; border-radius: 4px;">
+                            <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">Imagen cargada</p>
+                        `;
+                        previewDiv.dataset.imageData = img.imageData;
+                    }
+                });
+            }
+        } catch (e) {
+            console.warn('No se pudo cargar defaultImageBrush:', e);
         }
         
         // Setup listeners con auto-save
@@ -1744,6 +1848,313 @@ document.getElementById('useCustomColors')?.addEventListener('change', function(
 });
 
 // Exponer funciones globalmente para que sean accesibles desde HTML
+// Initial Layers Configuration Functions
+function setupLayerConfiguration() {
+    const layerCountInput = document.getElementById('layerCount');
+    const layersConfigDiv = document.getElementById('layersConfiguration');
+    
+    if (layerCountInput && layersConfigDiv) {
+        layerCountInput.addEventListener('input', function() {
+            generateLayerConfiguration(parseInt(this.value) || 1);
+        });
+        
+        // Initialize with 1 layer
+        generateLayerConfiguration(1);
+    }
+}
+
+function generateLayerConfiguration(layerCount) {
+    // Permitir llamada sin argumento desde el atributo onchange del HTML
+    if (typeof layerCount !== 'number' || isNaN(layerCount) || layerCount < 1) {
+        const layerCountInput = document.getElementById('layerCount');
+        layerCount = parseInt(layerCountInput?.value) || 1;
+    }
+    const layersConfigDiv = document.getElementById('layersConfiguration');
+    if (!layersConfigDiv) return;
+    
+    layersConfigDiv.innerHTML = '';
+    
+    for (let i = 0; i < layerCount; i++) {
+        const layerDiv = document.createElement('div');
+        layerDiv.className = 'layer-config-item';
+        layerDiv.innerHTML = `
+            <div class="layer-config-header">
+                <h4>Capa ${i + 1}</h4>
+                ${i > 0 ? `<button type="button" class="remove-layer-btn" onclick="removeLayer(${i})">×</button>` : ''}
+            </div>
+            <div class="layer-config-content">
+                
+                <div class="layer-image-upload">
+                    <label for="layerImage_${i}">Imagen inicial (opcional):</label>
+                    <input type="file" id="layerImage_${i}" name="layerImage_${i}" accept="image/*" onchange="handleLayerImageUpload(${i}, this)">
+                    <div class="layer-image-preview" id="layerPreview_${i}">
+                        <div class="layer-image-placeholder">
+                            <span>Sin imagen - Fondo negro</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="layer-controls">
+                    <div class="layer-control-group">
+                        <label for="layerOpacity_${i}">Opacidad:</label>
+                        <input type="range" id="layerOpacity_${i}" name="layerOpacity_${i}" min="0" max="100" value="100" oninput="updateOpacityDisplay(${i}, this.value)">
+                        <span class="opacity-display" id="opacityDisplay_${i}">100%</span>
+                    </div>
+                    
+                    <div class="layer-control-group">
+                        <label>
+                            <input type="checkbox" id="layerVisible_${i}" name="layerVisible_${i}" checked>
+                            Visible
+                        </label>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        layersConfigDiv.appendChild(layerDiv);
+    }
+}
+
+function handleLayerImageUpload(layerIndex, input) {
+    const file = input.files[0];
+    const previewDiv = document.getElementById(`layerPreview_${layerIndex}`);
+    
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewDiv.innerHTML = `
+                <img src="${e.target.result}" alt="Preview" style="max-width: 100%; max-height: 150px;">
+                <button type="button" class="remove-image-btn" onclick="removeLayerImage(${layerIndex})">Quitar imagen</button>
+            `;
+            
+            // Store the image data for later use
+            previewDiv.dataset.imageData = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function removeLayerImage(layerIndex) {
+    const previewDiv = document.getElementById(`layerPreview_${layerIndex}`);
+    const fileInput = document.getElementById(`layerImage_${layerIndex}`);
+    
+    previewDiv.innerHTML = `
+        <div class="layer-image-placeholder">
+            <span>Sin imagen - Fondo negro</span>
+        </div>
+    `;
+    
+    fileInput.value = '';
+    delete previewDiv.dataset.imageData;
+}
+
+function removeLayer(layerIndex) {
+    const layerCountInput = document.getElementById('layerCount');
+    const currentCount = parseInt(layerCountInput.value);
+    
+    if (currentCount > 1) {
+        layerCountInput.value = currentCount - 1;
+        generateLayerConfiguration(currentCount - 1);
+    }
+}
+
+function updateOpacityDisplay(layerIndex, value) {
+    const display = document.getElementById(`opacityDisplay_${layerIndex}`);
+    if (display) {
+        display.textContent = `${value}%`;
+    }
+}
+
+function collectLayerConfiguration() {
+    const layerCount = parseInt(document.getElementById('layerCount').value) || 1;
+    const layers = [];
+    
+    for (let i = 0; i < layerCount; i++) {
+        const opacityInput = document.getElementById(`layerOpacity_${i}`);
+        const visibleInput = document.getElementById(`layerVisible_${i}`);
+        const previewDiv = document.getElementById(`layerPreview_${i}`);
+        
+        const layer = {
+            layerIndex: i,
+            name: '',
+            imageData: previewDiv && previewDiv.dataset.imageData ? previewDiv.dataset.imageData : null,
+            // Convertir 0-100% a 0-1 para cumplir con el esquema del backend
+            opacity: opacityInput ? Math.max(0, Math.min(100, parseInt(opacityInput.value))) / 100 : 1.0,
+            visible: visibleInput ? visibleInput.checked : true
+        };
+        
+        layers.push(layer);
+    }
+    
+    return layers;
+}
+
+// ========== DEFAULT IMAGE BRUSH FUNCTIONS ==========
+
+function setupDefaultImageBrush() {
+    const enableCheckbox = document.getElementById('enableDefaultImages');
+    const container = document.getElementById('defaultImagesContainer');
+    
+    if (enableCheckbox) {
+        // Aplicar estado inicial según el checkbox
+        container.style.display = enableCheckbox.checked ? 'block' : 'none';
+        
+        // Reaccionar a cambios del usuario
+        enableCheckbox.addEventListener('change', function() {
+            container.style.display = this.checked ? 'block' : 'none';
+            if (this.checked) {
+                const list = document.getElementById('defaultImagesList');
+                if (list && list.children.length === 0) {
+                    addDefaultImage();
+                }
+            }
+        });
+    }
+}
+
+function addDefaultImage() {
+    const imagesList = document.getElementById('defaultImagesList');
+    const imageIndex = imagesList.children.length;
+    
+    const imageDiv = document.createElement('div');
+    imageDiv.className = 'default-image-item';
+    imageDiv.style.cssText = 'border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: white;';
+    
+    imageDiv.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h4 style="margin: 0; color: #333;">Imagen ${imageIndex + 1}</h4>
+            <button type="button" onclick="removeDefaultImage(${imageIndex})" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">
+                🗑️ Eliminar
+            </button>
+        </div>
+        
+        <div style="margin-bottom: 10px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Nombre:</label>
+            <input type="text" id="defaultImageName_${imageIndex}" placeholder="Ej: Logo, Fondo, Decoración..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+        
+        <div style="margin-bottom: 10px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Categoría:</label>
+            <input type="text" id="defaultImageCategory_${imageIndex}" placeholder="Ej: logos, fondos, decoraciones..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" value="general">
+        </div>
+        
+        <div style="margin-bottom: 10px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Imagen:</label>
+            <input type="file" id="defaultImageFile_${imageIndex}" accept="image/*" onchange="previewDefaultImage(${imageIndex})" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+        
+        <div id="defaultImagePreview_${imageIndex}" style="margin-top: 10px; text-align: center;">
+            <!-- Preview will appear here -->
+        </div>
+    `;
+    
+    imagesList.appendChild(imageDiv);
+}
+
+function removeDefaultImage(imageIndex) {
+    const imagesList = document.getElementById('defaultImagesList');
+    const imageItem = imagesList.children[imageIndex];
+    if (imageItem) {
+        imageItem.remove();
+        // Re-index remaining items
+        Array.from(imagesList.children).forEach((item, index) => {
+            updateDefaultImageIndexes(item, index);
+        });
+    }
+}
+
+function updateDefaultImageIndexes(item, newIndex) {
+    // Update all IDs and onclick handlers in the item
+    const elements = item.querySelectorAll('[id*="_"], [onclick*="("]');
+    elements.forEach(el => {
+        if (el.id) {
+            el.id = el.id.replace(/_\d+$/, `_${newIndex}`);
+        }
+        if (el.onclick) {
+            el.onclick = el.onclick.toString().replace(/\(\d+\)/, `(${newIndex})`);
+        }
+    });
+    
+    // Update the title
+    const title = item.querySelector('h4');
+    if (title) {
+        title.textContent = `Imagen ${newIndex + 1}`;
+    }
+}
+
+async function previewDefaultImage(imageIndex) {
+    const fileInput = document.getElementById(`defaultImageFile_${imageIndex}`);
+    const previewDiv = document.getElementById(`defaultImagePreview_${imageIndex}`);
+    
+    if (fileInput.files && fileInput.files[0]) {
+        const file = fileInput.files[0];
+        
+        // Validar tamaño de archivo (máximo 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('La imagen es demasiado grande. Máximo 5MB.');
+            fileInput.value = '';
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = () => {
+                // Redimensionar a 50x50 como el algoritmo del brush
+                const targetSize = 50;
+                const canvas = document.createElement('canvas');
+                canvas.width = targetSize;
+                canvas.height = targetSize;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, targetSize, targetSize);
+                const resizedData = canvas.toDataURL('image/png');
+                
+                previewDiv.innerHTML = `
+                    <img src="${resizedData}" style="max-width: 200px; max-height: 150px; border: 1px solid #ddd; border-radius: 4px;">
+                    <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">
+                        Redimensionada a 50x50
+                    </p>
+                `;
+                
+                // Guardar la imagen redimensionada
+                previewDiv.dataset.imageData = resizedData;
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    } else {
+        previewDiv.innerHTML = '';
+        delete previewDiv.dataset.imageData;
+    }
+}
+
+function collectDefaultImageBrushConfiguration() {
+    const enabled = document.getElementById('enableDefaultImages').checked;
+    
+    if (!enabled) {
+        return { enabled: false, images: [] };
+    }
+    
+    const imagesList = document.getElementById('defaultImagesList');
+    const images = [];
+    
+    Array.from(imagesList.children).forEach((item, index) => {
+        const nameInput = document.getElementById(`defaultImageName_${index}`);
+        const categoryInput = document.getElementById(`defaultImageCategory_${index}`);
+        const previewDiv = document.getElementById(`defaultImagePreview_${index}`);
+        
+        if (nameInput && nameInput.value && previewDiv && previewDiv.dataset.imageData) {
+            images.push({
+                name: nameInput.value,
+                category: categoryInput ? categoryInput.value : 'general',
+                imageData: previewDiv.dataset.imageData
+            });
+        }
+    });
+    
+    return { enabled: true, images };
+}
+
 window.editSession = editSession;
 window.deleteSession = deleteSession;
 window.openCreateSessionModal = openCreateSessionModal;
@@ -1752,6 +2163,18 @@ window.saveSession = saveSession;
 window.toggleBrushTypeForUser = toggleBrushTypeForUser;
 window.removeBackgroundImage = removeBackgroundImage;
 window.removeLogoImage = removeLogoImage;
+window.setupLayerConfiguration = setupLayerConfiguration;
+window.generateLayerConfiguration = generateLayerConfiguration;
+window.handleLayerImageUpload = handleLayerImageUpload;
+window.removeLayerImage = removeLayerImage;
+window.removeLayer = removeLayer;
+window.updateOpacityDisplay = updateOpacityDisplay;
+window.collectLayerConfiguration = collectLayerConfiguration;
+window.setupDefaultImageBrush = setupDefaultImageBrush;
+window.addDefaultImage = addDefaultImage;
+window.removeDefaultImage = removeDefaultImage;
+window.previewDefaultImage = previewDefaultImage;
+window.collectDefaultImageBrushConfiguration = collectDefaultImageBrushConfiguration;
 
 // Initialize
 initializeSocket();

@@ -44,6 +44,26 @@ async function checkAuth() {
             return;
         }
         
+        // Check admin permissions
+        const userResponse = await fetch(`${config.API_URL}/api/user`, {
+            headers: config.getAuthHeaders()
+        });
+        const userData = await userResponse.json();
+        
+        if (!userData.user || !userData.user.permissions || !userData.user.permissions.canAccessAdmin) {
+            // Show access denied message
+            document.body.innerHTML = `
+                <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background: #f8f9fa;">
+                    <div style="text-align: center; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        <h1 style="color: #dc3545; margin-bottom: 20px;">🚫 Acceso Denegado</h1>
+                        <p style="color: #6c757d; margin-bottom: 30px;">No tienes permisos para acceder al panel de administración.</p>
+                        <a href="profile.html" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Volver al Perfil</a>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+        
         // Load initial data
         loadAllData();
         loadAnalytics();

@@ -75,6 +75,21 @@ const sessionSchema = new mongoose.Schema({
       text: { type: String, default: '#ffffff' } // Color de tipografía
     }
   },
+  initialLayers: [{
+    layerIndex: { type: Number, required: true }, // Índice de la capa (0, 1, 2, etc.)
+    name: { type: String, default: '' }, // Nombre opcional de la capa
+    imageData: { type: String, default: '' }, // Base64 de la imagen inicial (vacío = capa negra)
+    opacity: { type: Number, default: 1.0, min: 0, max: 1 }, // Opacidad de la capa
+    visible: { type: Boolean, default: true } // Si la capa está visible al inicio
+  }],
+  defaultImageBrush: {
+    enabled: { type: Boolean, default: false }, // Si está habilitado el sistema de imágenes por defecto
+    images: [{ 
+      name: { type: String, required: true }, // Nombre descriptivo de la imagen
+      imageData: { type: String, required: true }, // Base64 de la imagen
+      category: { type: String, default: 'general' } // Categoría opcional para organizar
+    }]
+  },
   createdAt: {
     type: Date,
     default: Date.now

@@ -12,6 +12,16 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  permissions: {
+    canCreateSessions: {
+      type: Boolean,
+      default: false
+    },
+    canAccessAdmin: {
+      type: Boolean,
+      default: false
+    }
+  },
   createdAt: {
     type: Date,
     default: Date.now
