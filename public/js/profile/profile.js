@@ -1355,29 +1355,14 @@ async function editSession(sessionId) {
                 
                 const images = Array.isArray(session.defaultImageBrush.images) ? session.defaultImageBrush.images : [];
                 if (images.length === 0) {
-                    // Asegurar al menos un item visible para que el usuario cargue
-                    addDefaultImage();
+                    // Si no hay imágenes, no agregamos nada; el usuario puede usar el botón "Agregar Imagen"
+                } else {
+                    images.forEach(img => {
+                        if (img && img.imageData) {
+                            addDefaultImageWithData(img.imageData);
+                        }
+                    });
                 }
-                images.forEach(img => {
-                    // Crear item
-                    addDefaultImage();
-                    const idx = list.children.length - 1;
-                    
-                    // Setear valores
-                    const nameInput = document.getElementById(`defaultImageName_${idx}`);
-                    const categoryInput = document.getElementById(`defaultImageCategory_${idx}`);
-                    const previewDiv = document.getElementById(`defaultImagePreview_${idx}`);
-                    
-                    if (nameInput) nameInput.value = img.name || '';
-                    if (categoryInput) categoryInput.value = img.category || 'general';
-                    if (previewDiv && img.imageData) {
-                        previewDiv.innerHTML = `
-                            <img src="${img.imageData}" style="max-width: 200px; max-height: 150px; border: 1px solid #ddd; border-radius: 4px;">
-                            <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">Imagen cargada</p>
-                        `;
-                        previewDiv.dataset.imageData = img.imageData;
-                    }
-                });
             }
         } catch (e) {
             console.warn('No se pudo cargar defaultImageBrush:', e);
@@ -2013,42 +1998,69 @@ function setupDefaultImageBrush() {
 }
 
 function addDefaultImage() {
+    // Mantener compatibilidad, pero ahora preferimos pickAndAddDefaultImage()
+    pickAndAddDefaultImage();
+}
+
+function addDefaultImageWithData(imageData) {
     const imagesList = document.getElementById('defaultImagesList');
     const imageIndex = imagesList.children.length;
     
     const imageDiv = document.createElement('div');
     imageDiv.className = 'default-image-item';
-    imageDiv.style.cssText = 'border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: white;';
+    imageDiv.style.cssText = 'position: relative; background: white; border: 1px solid #ddd; border-radius: 8px; padding: 8px;';
     
     imageDiv.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <h4 style="margin: 0; color: #333;">Imagen ${imageIndex + 1}</h4>
-            <button type="button" onclick="removeDefaultImage(${imageIndex})" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">
-                🗑️ Eliminar
-            </button>
+        <div id="defaultImagePreview_${imageIndex}" style="text-align: center;">
+            <img src="${imageData}" style="width: 100%; max-width: 100px; max-height: 100px; border-radius: 6px; border: 1px solid #eee;" />
         </div>
-        
-        <div style="margin-bottom: 10px;">
-            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Nombre:</label>
-            <input type="text" id="defaultImageName_${imageIndex}" placeholder="Ej: Logo, Fondo, Decoración..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-        </div>
-        
-        <div style="margin-bottom: 10px;">
-            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Categoría:</label>
-            <input type="text" id="defaultImageCategory_${imageIndex}" placeholder="Ej: logos, fondos, decoraciones..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" value="general">
-        </div>
-        
-        <div style="margin-bottom: 10px;">
-            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Imagen:</label>
-            <input type="file" id="defaultImageFile_${imageIndex}" accept="image/*" onchange="previewDefaultImage(${imageIndex})" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-        </div>
-        
-        <div id="defaultImagePreview_${imageIndex}" style="margin-top: 10px; text-align: center;">
-            <!-- Preview will appear here -->
-        </div>
+        <button type="button" onclick="removeDefaultImage(${imageIndex})" title="Eliminar" style="position: absolute; top: 6px; right: 6px; background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 50%; cursor: pointer; line-height: 1;">✖</button>
     `;
     
     imagesList.appendChild(imageDiv);
+    const previewDiv = document.getElementById(`defaultImagePreview_${imageIndex}`);
+    if (previewDiv) {
+        previewDiv.dataset.imageData = imageData;
+    }
+}
+
+function pickAndAddDefaultImage() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.style.display = 'none';
+    document.body.appendChild(input);
+    
+    input.addEventListener('change', async () => {
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            if (file.size > 5 * 1024 * 1024) {
+                alert('La imagen es demasiado grande. Máximo 5MB.');
+                document.body.removeChild(input);
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = () => {
+                    const targetSize = 50;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = targetSize;
+                    canvas.height = targetSize;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, targetSize, targetSize);
+                    const resizedData = canvas.toDataURL('image/png');
+                    addDefaultImageWithData(resizedData);
+                    document.body.removeChild(input);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        } else {
+            document.body.removeChild(input);
+        }
+    });
+    input.click();
 }
 
 function removeDefaultImage(imageIndex) {
@@ -2139,14 +2151,9 @@ function collectDefaultImageBrushConfiguration() {
     const images = [];
     
     Array.from(imagesList.children).forEach((item, index) => {
-        const nameInput = document.getElementById(`defaultImageName_${index}`);
-        const categoryInput = document.getElementById(`defaultImageCategory_${index}`);
         const previewDiv = document.getElementById(`defaultImagePreview_${index}`);
-        
-        if (nameInput && nameInput.value && previewDiv && previewDiv.dataset.imageData) {
+        if (previewDiv && previewDiv.dataset.imageData) {
             images.push({
-                name: nameInput.value,
-                category: categoryInput ? categoryInput.value : 'general',
                 imageData: previewDiv.dataset.imageData
             });
         }
@@ -2172,6 +2179,8 @@ window.updateOpacityDisplay = updateOpacityDisplay;
 window.collectLayerConfiguration = collectLayerConfiguration;
 window.setupDefaultImageBrush = setupDefaultImageBrush;
 window.addDefaultImage = addDefaultImage;
+window.addDefaultImageWithData = addDefaultImageWithData;
+window.pickAndAddDefaultImage = pickAndAddDefaultImage;
 window.removeDefaultImage = removeDefaultImage;
 window.previewDefaultImage = previewDefaultImage;
 window.collectDefaultImageBrushConfiguration = collectDefaultImageBrushConfiguration;

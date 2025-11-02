@@ -85,9 +85,10 @@ const sessionSchema = new mongoose.Schema({
   defaultImageBrush: {
     enabled: { type: Boolean, default: false }, // Si está habilitado el sistema de imágenes por defecto
     images: [{ 
-      name: { type: String, required: true }, // Nombre descriptivo de la imagen
+      // Nombre y categoría ya no son obligatorios en la UI; mantenerlos opcionales para compatibilidad
+      name: { type: String, required: false },
       imageData: { type: String, required: true }, // Base64 de la imagen
-      category: { type: String, default: 'general' } // Categoría opcional para organizar
+      category: { type: String, default: 'general', required: false }
     }]
   },
   createdAt: {
