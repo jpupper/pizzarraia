@@ -758,20 +758,19 @@ function openCreateSessionModal() {
     
     // Initialize layer configuration
     setupLayerConfiguration();
+    // Forzar que inicie con 1 capa y generar configuración inicial
+    const layerCountInputInit = document.getElementById('layerCount');
+    if (layerCountInputInit) {
+        layerCountInputInit.value = '1';
+        generateLayerConfiguration(1);
+    }
     
     // Initialize default image brush configuration
     setupDefaultImageBrush();
-    
-    // Mostrar por defecto el selector de imágenes y preparar primera fila
-    const enableDefaultImagesEl = document.getElementById('enableDefaultImages');
+    // Asegurar que el contenedor esté visible y el botón disponible
     const defaultImagesContainerEl = document.getElementById('defaultImagesContainer');
-    const defaultImagesListEl = document.getElementById('defaultImagesList');
-    if (enableDefaultImagesEl && defaultImagesContainerEl && defaultImagesListEl) {
-        enableDefaultImagesEl.checked = true;
+    if (defaultImagesContainerEl) {
         defaultImagesContainerEl.style.display = 'block';
-        if (defaultImagesListEl.children.length === 0) {
-            addDefaultImage();
-        }
     }
 
     // Generar la primera capa visible
@@ -1340,29 +1339,20 @@ async function editSession(sessionId) {
 
         // Cargar configuración de imágenes por defecto para Brush de Imagen
         try {
-            const enableCheckbox = document.getElementById('enableDefaultImages');
             const container = document.getElementById('defaultImagesContainer');
             const list = document.getElementById('defaultImagesList');
             
             // Reset UI
-            enableCheckbox.checked = false;
-            container.style.display = 'none';
-            list.innerHTML = '';
+            if (container) container.style.display = 'block';
+            if (list) list.innerHTML = '';
             
-            if (session.defaultImageBrush && session.defaultImageBrush.enabled) {
-                enableCheckbox.checked = true;
-                container.style.display = 'block';
-                
+            if (session.defaultImageBrush) {
                 const images = Array.isArray(session.defaultImageBrush.images) ? session.defaultImageBrush.images : [];
-                if (images.length === 0) {
-                    // Si no hay imágenes, no agregamos nada; el usuario puede usar el botón "Agregar Imagen"
-                } else {
-                    images.forEach(img => {
-                        if (img && img.imageData) {
-                            addDefaultImageWithData(img.imageData);
-                        }
-                    });
-                }
+                images.forEach(img => {
+                    if (img && img.imageData) {
+                        addDefaultImageWithData(img.imageData);
+                    }
+                });
             }
         } catch (e) {
             console.warn('No se pudo cargar defaultImageBrush:', e);
@@ -1977,23 +1967,10 @@ function collectLayerConfiguration() {
 // ========== DEFAULT IMAGE BRUSH FUNCTIONS ==========
 
 function setupDefaultImageBrush() {
-    const enableCheckbox = document.getElementById('enableDefaultImages');
     const container = document.getElementById('defaultImagesContainer');
     
-    if (enableCheckbox) {
-        // Aplicar estado inicial según el checkbox
-        container.style.display = enableCheckbox.checked ? 'block' : 'none';
-        
-        // Reaccionar a cambios del usuario
-        enableCheckbox.addEventListener('change', function() {
-            container.style.display = this.checked ? 'block' : 'none';
-            if (this.checked) {
-                const list = document.getElementById('defaultImagesList');
-                if (list && list.children.length === 0) {
-                    addDefaultImage();
-                }
-            }
-        });
+    if (container) {
+        container.style.display = 'block';
     }
 }
 
@@ -2141,25 +2118,19 @@ async function previewDefaultImage(imageIndex) {
 }
 
 function collectDefaultImageBrushConfiguration() {
-    const enabled = document.getElementById('enableDefaultImages').checked;
-    
-    if (!enabled) {
-        return { enabled: false, images: [] };
-    }
-    
+    // El estado enabled depende de si hay imágenes: si hay 0, no se guarda nada.
     const imagesList = document.getElementById('defaultImagesList');
     const images = [];
     
     Array.from(imagesList.children).forEach((item, index) => {
         const previewDiv = document.getElementById(`defaultImagePreview_${index}`);
         if (previewDiv && previewDiv.dataset.imageData) {
-            images.push({
-                imageData: previewDiv.dataset.imageData
-            });
+            images.push({ imageData: previewDiv.dataset.imageData });
         }
     });
     
-    return { enabled: true, images };
+    const enabled = images.length > 0;
+    return { enabled, images };
 }
 
 window.editSession = editSession;

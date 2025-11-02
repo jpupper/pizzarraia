@@ -97,14 +97,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     if (img && img.imageData) {
                                         const thumb = document.createElement('img');
                                         thumb.src = img.imageData;
-                                        thumb.style.cssText = 'width: 64px; height: 64px; object-fit: cover; border: 1px solid var(--accent); border-radius: 5px; cursor: pointer; background: rgba(255,255,255,0.1)';
+                                        thumb.style.cssText = 'width: 64px; height: 64px; object-fit: cover; border: 2px solid rgba(255,255,255,0.3); border-radius: 5px; cursor: pointer; background: rgba(255,255,255,0.05)';
                                         thumb.title = `Imagen ${i+1}`;
                                         thumb.addEventListener('click', () => {
                                             if (mgr) {
                                                 loadImage(img.imageData, (p5img) => {
                                                     mgr.currentImage = p5img;
                                                     mgr.imageData = img.imageData;
-                                                    mgr.updatePreview();
+                                                    // Marcar visualmente la miniatura seleccionada
+                                                    markSavedImageSelected(i);
                                                 });
                                             }
                                         });
@@ -119,12 +120,23 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 loadImage(firstImg.imageData, (p5img) => {
                                     mgr.currentImage = p5img;
                                     mgr.imageData = firstImg.imageData;
-                                    mgr.updatePreview();
+                                    markSavedImageSelected(0);
                                 });
                             }
                         }
                     } catch (e) {
                         console.warn('No se pudieron aplicar las imágenes por defecto del ImageBrush:', e);
+                    }
+
+                    // Función auxiliar para marcar selección en la grilla
+                    function markSavedImageSelected(index) {
+                        const grid = document.getElementById('savedImagesGrid');
+                        if (!grid) return;
+                        Array.from(grid.children).forEach((child, i) => {
+                            child.style.borderColor = i === index ? 'var(--accent)' : 'rgba(255,255,255,0.3)';
+                            child.style.boxShadow = i === index ? '0 0 8px rgba(102,126,234,0.7)' : 'none';
+                            child.style.background = i === index ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)';
+                        });
                     }
                 } else {
                     // Session not found in database
