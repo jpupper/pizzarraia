@@ -28,6 +28,23 @@ var kaleidoCenterY = null;
 // Sistema de cursores remotos (compatible con TouchDesigner)
 var PS; // Instancia de CursorServer (PointServer) para gestionar cursores de otros clientes
 
+// Parámetro URL: shownames=false => no dibujar nombres ni punteros remotos en el GUI buffer
+// true por defecto si no se especifica
+function getBooleanUrlParam(name, defaultValue) {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const val = params.get(name);
+        if (val === null) return defaultValue;
+        const s = String(val).toLowerCase();
+        return !(s === 'false' || s === '0' || s === 'no');
+    } catch (e) {
+        return defaultValue;
+    }
+}
+
+// Flag global para controlar la visualización de cursores/nombres remotos
+window.showRemoteNamesAndCursors = getBooleanUrlParam('shownames', true);
+
 // Variables de canvas
 var mainCanvas; // Canvas principal
 var drawBuffer; // Buffer para dibujar los pinceles (DEPRECATED - usar layers)
@@ -618,8 +635,10 @@ function draw() {
         updateGridBuffer();
     }
     
-    // Dibujar cursores de otros clientes en el GUI buffer
-    drawRemoteCursors(guiBuffer);
+    // Dibujar cursores de otros clientes en el GUI buffer (controlado por URL shownames=false)
+    if (window.showRemoteNamesAndCursors) {
+        drawRemoteCursors(guiBuffer);
+    }
     
     // Dibujar el puntero circular que muestra el tamaño del pincel (local) en el GUI buffer
     drawCustomCursor(guiBuffer);
