@@ -106,10 +106,10 @@ class ImageBrushManager {
      * Actualizar el preview de la imagen en la UI
      */
     updatePreview() {
+        // Ya no mostramos un preview separado; el estado de selección se refleja en la grilla de "Mis Imágenes Guardadas"
         const previewElement = document.getElementById('imageBrushPreview');
-        if (previewElement && this.imageData) {
-            previewElement.src = this.imageData;
-            previewElement.style.display = 'block';
+        if (previewElement) {
+            previewElement.style.display = 'none';
         }
     }
     
