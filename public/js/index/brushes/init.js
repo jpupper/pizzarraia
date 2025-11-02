@@ -82,6 +82,50 @@ document.addEventListener('DOMContentLoaded', async () => {
                     } else {
                         console.log(`ℹ️ Sesión ${sessionId} sin restricciones - todos los brushes disponibles`);
                     }
+
+                    // Cargar TODAS las imágenes por defecto para el ImageBrush si existen
+                    try {
+                        const defaultImageBrush = data.session.defaultImageBrush;
+                        if (defaultImageBrush && defaultImageBrush.enabled && Array.isArray(defaultImageBrush.images) && defaultImageBrush.images.length > 0) {
+                            const mgr = typeof getImageBrushManager !== 'undefined' ? getImageBrushManager() : null;
+                            const savedContainer = document.getElementById('savedImagesContainer');
+                            if (savedContainer) {
+                                // Crear grilla de miniaturas
+                                savedContainer.innerHTML = `<div id="savedImagesGrid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;"></div>`;
+                                const grid = document.getElementById('savedImagesGrid');
+                                defaultImageBrush.images.forEach((img, i) => {
+                                    if (img && img.imageData) {
+                                        const thumb = document.createElement('img');
+                                        thumb.src = img.imageData;
+                                        thumb.style.cssText = 'width: 64px; height: 64px; object-fit: cover; border: 1px solid var(--accent); border-radius: 5px; cursor: pointer; background: rgba(255,255,255,0.1)';
+                                        thumb.title = `Imagen ${i+1}`;
+                                        thumb.addEventListener('click', () => {
+                                            if (mgr) {
+                                                loadImage(img.imageData, (p5img) => {
+                                                    mgr.currentImage = p5img;
+                                                    mgr.imageData = img.imageData;
+                                                    mgr.updatePreview();
+                                                });
+                                            }
+                                        });
+                                        grid.appendChild(thumb);
+                                    }
+                                });
+                            }
+
+                            // Seleccionar automáticamente la primera imagen
+                            const firstImg = defaultImageBrush.images[0];
+                            if (mgr && firstImg && firstImg.imageData) {
+                                loadImage(firstImg.imageData, (p5img) => {
+                                    mgr.currentImage = p5img;
+                                    mgr.imageData = firstImg.imageData;
+                                    mgr.updatePreview();
+                                });
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('No se pudieron aplicar las imágenes por defecto del ImageBrush:', e);
+                    }
                 } else {
                     // Session not found in database
                     console.error(`❌ La sesión ${sessionId} no existe`);
