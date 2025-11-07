@@ -1174,6 +1174,16 @@ function touchMoved(event) {
 
 // Función para dibujar según el tipo de pincel
 function dibujarCoso(buffer, x, y, data) {
+    // Autoclean background: draw a black rectangle with opacity before drawing
+    const autocleanOpacity = parseInt(document.getElementById('autocleanOpacity').value);
+    if (autocleanOpacity > 0) {
+        buffer.push();
+        buffer.noStroke();
+        buffer.fill(0, 0, 0, autocleanOpacity);
+        buffer.rect(0, 0, buffer.width, buffer.height);
+        buffer.pop();
+    }
+    
     const col = convertToP5Color(data.c1);
     col.setAlpha(parseInt(data.av));
     const brushSize = parseInt(data.s);

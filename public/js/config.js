@@ -51,14 +51,20 @@ const config = {
     alphaValue: {
       min: 0,
       max: 255,
-      default: 150,
+      default: 255,
       step: 1
     },
     size: {
       min: 0,
       max: 100,
-      default: 10,
+      default: 35,
       step: 0.1
+    },
+    autocleanOpacity: {
+      min: 0,
+      max: 50,
+      default: 0,
+      step: 1
     },
     kaleidoSegments: {
       min: 1,
