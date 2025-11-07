@@ -77,7 +77,7 @@ function updateSliderValue(sliderId) {
 
 // Función para actualizar todos los valores numéricos
 function updateAllSliderValues() {
-    const sliderIds = ['alphaValue', 'size', 'kaleidoSegments', 'gridCols', 'gridRows', 'particleCount', 'speedForce', 'maxSpeed', 'particleLife', 'particleMaxSize', 'textSize', 'polygonSides', 'fillTolerance', 'shrinkSpeed', 'animSpeed'];
+    const sliderIds = ['alphaValue', 'size', 'kaleidoSegments', 'autocleanOpacity', 'gridCols', 'gridRows', 'particleCount', 'speedForce', 'maxSpeed', 'particleLife', 'particleMaxSize', 'textSize', 'polygonSides', 'fillTolerance', 'shrinkSpeed', 'animSpeed'];
     sliderIds.forEach(sliderId => updateSliderValue(sliderId));
 }
 
@@ -189,6 +189,13 @@ function setupBrushTypeEvents() {
   if (kaleidoSegmentsInput) {
     kaleidoSegmentsInput.addEventListener('input', function() {
       updateSliderValue('kaleidoSegments');
+    });
+  }
+  
+  const autocleanOpacityInput = document.getElementById('autocleanOpacity');
+  if (autocleanOpacityInput) {
+    autocleanOpacityInput.addEventListener('input', function() {
+      updateSliderValue('autocleanOpacity');
     });
   }
   
@@ -1361,24 +1368,24 @@ function renderLayerButtons() {
   }
 }
 
-// Función para establecer un color random en el primer slot de la paleta
+// Función para establecer un color blanco en el primer slot de la paleta
 function setRandomFirstColor() {
-  // Generar color random
-  const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+  // Usar blanco como color por defecto
+  const defaultColor = '#FFFFFF';
   
   // Aplicar al primer slot
   const firstSlot = document.querySelector('.palette-slot[data-slot="0"]');
   if (firstSlot) {
-    firstSlot.style.backgroundColor = randomColor;
+    firstSlot.style.backgroundColor = defaultColor;
   }
   
   // Aplicar al color picker
   const colorInput = document.getElementById('c1');
   if (colorInput) {
-    colorInput.value = randomColor;
+    colorInput.value = defaultColor;
   }
   
-  console.log('Color random inicial:', randomColor);
+  console.log('Color inicial:', defaultColor);
 }
 
 // Función para cerrar el modal de bienvenida

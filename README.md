@@ -1,5 +1,18 @@
 # 🎨 PizarraCollab - Pizarra Colaborativa en Tiempo Real
 
+## Parámetros de URL
+
+- shownames
+  - Controla la visualización de los nombres y los cursores remotos en el lienzo.
+  - Valor por defecto: `true` (si no se especifica, se muestran).
+  - Para ocultarlos: añade el parámetro en la URL con un valor "falso".
+    - Acepta: `shownames=false`, `shownames=0` o `shownames=no`.
+  - Ejemplos:
+    - `index.html?shownames=false`
+    - `/?session=abcdef&shownames=no`
+  - Comportamiento: cuando `shownames` es falso, no se dibujan ni los nombres ni los punteros/cursos remotos en el buffer GUI.
+
+
 Sistema de dibujo colaborativo en tiempo real construido con **P5.js** y **Socket.IO**.
 
 ## 📋 Descripción
