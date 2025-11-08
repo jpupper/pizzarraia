@@ -2548,13 +2548,13 @@ function applySessionColors(colors) {
         btn.style.color = colors.text;
         
         if (btn.classList.contains('active')) {
-            // Usar setProperty con important para sobrescribir CSS
-            btn.style.setProperty('background', `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`, 'important');
-            btn.style.setProperty('border-color', colors.secondary, 'important');
-            btn.style.setProperty('box-shadow', `0 0 15px ${colors.secondary}80`, 'important');
+            // Aplicar color de fondo sólido en lugar de gradiente
+            btn.style.backgroundColor = colors.secondary;
+            btn.style.borderColor = colors.secondary;
+            btn.style.boxShadow = `0 0 15px ${colors.secondary}80`;
         } else {
-            btn.style.setProperty('background-color', 'rgba(255, 255, 255, 0.1)', 'important');
-            btn.style.setProperty('border-color', colors.primary, 'important');
+            btn.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+            btn.style.borderColor = colors.primary;
         }
     });
     
