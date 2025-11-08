@@ -138,6 +138,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                             child.style.background = i === index ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)';
                         });
                     }
+
+                    // Aplicar valores iniciales de la sesión
+                    if (data.session.initialValues) {
+                        console.log('🎯 Aplicando valores iniciales de la sesión:', data.session.initialValues);
+                        applyInitialValues(data.session.initialValues);
+                    }
                 } else {
                     // Session not found in database
                     console.error(`❌ La sesión ${sessionId} no existe`);
@@ -567,9 +573,125 @@ function getCurrentBrushParams() {
     return params;
 }
 
+/**
+ * Aplica los valores iniciales de la sesión a los controles del canvas
+ * @param {Object} initialValues - Valores iniciales de la sesión
+ */
+function applyInitialValues(initialValues) {
+    console.log('🎯 [INIT] Aplicando valores iniciales:', initialValues);
+    
+    // Aplicar paleta de colores
+    if (initialValues.palette && Array.isArray(initialValues.palette) && initialValues.palette.length > 0) {
+        console.log('🎨 Aplicando paleta de colores:', initialValues.palette);
+        
+        // Buscar el contenedor de la paleta
+        const paletteContainer = document.querySelector('.color-palette');
+        if (paletteContainer) {
+            // Limpiar paleta existente
+            paletteContainer.innerHTML = '';
+            
+            // Agregar cada color de la paleta
+            initialValues.palette.forEach((colorHex, index) => {
+                const colorBtn = document.createElement('button');
+                colorBtn.className = 'color-btn';
+                colorBtn.style.backgroundColor = colorHex;
+                colorBtn.setAttribute('data-color', colorHex);
+                colorBtn.title = colorHex;
+                
+                // Evento click para seleccionar color
+                colorBtn.addEventListener('click', () => {
+                    const colorInput = document.getElementById('c1');
+                    if (colorInput) {
+                        colorInput.value = colorHex;
+                        // Trigger change event
+                        colorInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                    
+                    // Marcar como seleccionado
+                    document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('selected'));
+                    colorBtn.classList.add('selected');
+                });
+                
+                paletteContainer.appendChild(colorBtn);
+                
+                // Seleccionar el primer color por defecto
+                if (index === 0) {
+                    const colorInput = document.getElementById('c1');
+                    if (colorInput) {
+                        colorInput.value = colorHex;
+                    }
+                    colorBtn.classList.add('selected');
+                }
+            });
+            
+            console.log('✅ Paleta de colores aplicada');
+        }
+    }
+    
+    // Aplicar opacidad (alpha)
+    if (initialValues.alpha !== undefined) {
+        const alphaValue = Math.round(initialValues.alpha * 255); // Convertir de 0-1 a 0-255
+        const alphaInput = document.getElementById('av');
+        if (alphaInput) {
+            alphaInput.value = alphaValue;
+            // Actualizar el display si existe
+            const alphaDisplay = document.getElementById('av-value');
+            if (alphaDisplay) {
+                alphaDisplay.textContent = alphaValue;
+            }
+            console.log(`✅ Opacidad aplicada: ${alphaValue}`);
+        }
+    }
+    
+    // Aplicar tamaño de pincel
+    if (initialValues.size !== undefined) {
+        const sizeInput = document.getElementById('size');
+        if (sizeInput) {
+            sizeInput.value = initialValues.size;
+            // Actualizar el display si existe
+            const sizeDisplay = document.getElementById('size-value');
+            if (sizeDisplay) {
+                sizeDisplay.textContent = initialValues.size;
+            }
+            console.log(`✅ Tamaño de pincel aplicado: ${initialValues.size}`);
+        }
+    }
+    
+    // Aplicar caleidoscopio
+    if (initialValues.kaleidoscope && initialValues.kaleidoscope.slices !== undefined) {
+        const kaleidoInput = document.getElementById('kaleidoSegments');
+        if (kaleidoInput) {
+            kaleidoInput.value = initialValues.kaleidoscope.slices;
+            // Actualizar el display si existe
+            const kaleidoDisplay = document.getElementById('kaleidoSegments-value');
+            if (kaleidoDisplay) {
+                kaleidoDisplay.textContent = initialValues.kaleidoscope.slices;
+            }
+            console.log(`✅ Caleidoscopio aplicado: ${initialValues.kaleidoscope.slices} reflejos`);
+        }
+    }
+    
+    // Aplicar auto clean background (opacidad del fade continuo)
+    if (initialValues.autoClean !== undefined) {
+        const autoCleanInput = document.getElementById('autocleanOpacity');
+        if (autoCleanInput) {
+            autoCleanInput.value = initialValues.autoClean;
+            // Actualizar el display si existe
+            const autoCleanDisplay = document.getElementById('autocleanOpacity-value');
+            if (autoCleanDisplay) {
+                autoCleanDisplay.textContent = initialValues.autoClean;
+            }
+            console.log(`✅ Auto Clean Background aplicado: ${initialValues.autoClean} (opacidad del fade)`);
+        }
+    }
+    
+    console.log('✅ [INIT] Valores iniciales aplicados correctamente');
+}
+
 // Hacer funciones disponibles globalmente
 if (typeof window !== 'undefined') {
     window.getActiveBrush = getActiveBrush;
     window.getCurrentBrushParams = getCurrentBrushParams;
     window.forceHideNonAllowedButtons = forceHideNonAllowedButtons;
+    window.applyInitialValues = applyInitialValues;
 }

@@ -801,7 +801,7 @@ app.get('/pizarraia/api/analytics/summary', isAuthenticated, async (req, res) =>
 // Create a new session
 app.post('/pizarraia/api/sessions/create', isAuthenticated, async (req, res) => {
   try {
-    const { sessionId, name, description, isPublic, allowedBrushTypes, accessConfig, restrictions, customization, initialLayers, defaultImageBrush } = req.body;
+    const { sessionId, name, description, isPublic, allowedBrushTypes, accessConfig, restrictions, customization, initialLayers, defaultImageBrush, initialValues } = req.body;
     
     if (!sessionId || !name) {
       return res.status(400).json({ error: 'Session ID y nombre son requeridos' });
@@ -832,7 +832,8 @@ app.post('/pizarraia/api/sessions/create', isAuthenticated, async (req, res) => 
       restrictions: restrictions || undefined,
       customization: customization || undefined,
       initialLayers: initialLayers || [],
-      defaultImageBrush: defaultImageBrush || undefined
+      defaultImageBrush: defaultImageBrush || undefined,
+      initialValues: initialValues || undefined
     });
     
     await session.save();
@@ -914,7 +915,7 @@ app.put('/pizarraia/api/sessions/:id', isAuthenticated, async (req, res) => {
       return res.status(404).json({ error: 'Sesión no encontrada o no tienes permisos' });
     }
     
-    const { sessionId, name, description, isPublic, allowedBrushTypes, accessConfig, restrictions, customization, initialLayers, defaultImageBrush } = req.body;
+    const { sessionId, name, description, isPublic, allowedBrushTypes, accessConfig, restrictions, customization, initialLayers, defaultImageBrush, initialValues } = req.body;
     
     // Actualizar campos
     if (sessionId) session.sessionId = sessionId;
@@ -927,6 +928,7 @@ app.put('/pizarraia/api/sessions/:id', isAuthenticated, async (req, res) => {
     if (customization !== undefined) session.customization = customization;
     if (initialLayers !== undefined) session.initialLayers = initialLayers;
     if (defaultImageBrush !== undefined) session.defaultImageBrush = defaultImageBrush;
+    if (initialValues !== undefined) session.initialValues = initialValues;
     
     await session.save();
     

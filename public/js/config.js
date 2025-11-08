@@ -62,7 +62,7 @@ const config = {
     },
     autocleanOpacity: {
       min: 0,
-      max: 50,
+      max: 255,
       default: 0,
       step: 1
     },
