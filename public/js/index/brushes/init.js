@@ -580,51 +580,43 @@ function getCurrentBrushParams() {
 function applyInitialValues(initialValues) {
     console.log('🎯 [INIT] Aplicando valores iniciales:', initialValues);
     
-    // Aplicar paleta de colores
+    // Aplicar paleta de colores a los 5 slots
     if (initialValues.palette && Array.isArray(initialValues.palette) && initialValues.palette.length > 0) {
         console.log('🎨 Aplicando paleta de colores:', initialValues.palette);
         
-        // Buscar el contenedor de la paleta
-        const paletteContainer = document.querySelector('.color-palette');
-        if (paletteContainer) {
-            // Limpiar paleta existente
-            paletteContainer.innerHTML = '';
-            
-            // Agregar cada color de la paleta
+        // Buscar los slots de la paleta
+        const paletteSlots = document.querySelectorAll('.palette-slot');
+        if (paletteSlots.length > 0) {
+            // Aplicar cada color a su slot correspondiente (máximo 5)
             initialValues.palette.forEach((colorHex, index) => {
-                const colorBtn = document.createElement('button');
-                colorBtn.className = 'color-btn';
-                colorBtn.style.backgroundColor = colorHex;
-                colorBtn.setAttribute('data-color', colorHex);
-                colorBtn.title = colorHex;
-                
-                // Evento click para seleccionar color
-                colorBtn.addEventListener('click', () => {
-                    const colorInput = document.getElementById('c1');
-                    if (colorInput) {
-                        colorInput.value = colorHex;
-                        // Trigger change event
-                        colorInput.dispatchEvent(new Event('input', { bubbles: true }));
-                    }
-                    
-                    // Marcar como seleccionado
-                    document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('selected'));
-                    colorBtn.classList.add('selected');
-                });
-                
-                paletteContainer.appendChild(colorBtn);
-                
-                // Seleccionar el primer color por defecto
-                if (index === 0) {
-                    const colorInput = document.getElementById('c1');
-                    if (colorInput) {
-                        colorInput.value = colorHex;
-                    }
-                    colorBtn.classList.add('selected');
+                if (index < paletteSlots.length) {
+                    const slot = paletteSlots[index];
+                    slot.style.backgroundColor = colorHex;
+                    slot.setAttribute('data-color', colorHex);
                 }
             });
             
-            console.log('✅ Paleta de colores aplicada');
+            // Si hay menos de 5 colores en la paleta, los slots restantes mantienen su color por defecto
+            
+            // Seleccionar el primer color por defecto
+            if (initialValues.palette.length > 0) {
+                const colorInput = document.getElementById('c1');
+                if (colorInput) {
+                    colorInput.value = initialValues.palette[0];
+                }
+                // Marcar el primer slot como activo
+                paletteSlots.forEach((slot, i) => {
+                    if (i === 0) {
+                        slot.classList.add('active');
+                        slot.style.border = '3px solid white';
+                    } else {
+                        slot.classList.remove('active');
+                        slot.style.border = '2px solid rgba(255,255,255,0.3)';
+                    }
+                });
+            }
+            
+            console.log('✅ Paleta de colores aplicada a los slots');
         }
     }
     

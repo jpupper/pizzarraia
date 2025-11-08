@@ -607,6 +607,20 @@ function draw() {
     // Limpiar el buffer GUI en cada frame
     guiBuffer.clear();
     
+    // Auto Clean Background: dibujar rectángulo de fade en TODAS las capas visibles
+    const autocleanOpacity = parseInt(document.getElementById('autocleanOpacity')?.value || 0);
+    if (autocleanOpacity > 0) {
+        for (let i = 0; i < 5; i++) {
+            if (layerVisibility[i]) {
+                layers[i].push();
+                layers[i].noStroke();
+                layers[i].fill(0, 0, 0, autocleanOpacity);
+                layers[i].rect(0, 0, layers[i].width, layers[i].height);
+                layers[i].pop();
+            }
+        }
+    }
+    
     // Renderizar todas las capas en orden (0 a 4) respetando visibilidad
     // La capa 0 ya tiene el fondo negro, no necesitamos background() aquí
     clear(); // Limpiar el canvas principal
@@ -1174,15 +1188,7 @@ function touchMoved(event) {
 
 // Función para dibujar según el tipo de pincel
 function dibujarCoso(buffer, x, y, data) {
-    // Autoclean background: draw a black rectangle with opacity before drawing
-    const autocleanOpacity = parseInt(document.getElementById('autocleanOpacity').value);
-    if (autocleanOpacity > 0) {
-        buffer.push();
-        buffer.noStroke();
-        buffer.fill(0, 0, 0, autocleanOpacity);
-        buffer.rect(0, 0, buffer.width, buffer.height);
-        buffer.pop();
-    }
+    // Auto clean background ahora se maneja en draw() para que se ejecute en cada frame
     
     const col = convertToP5Color(data.c1);
     col.setAlpha(parseInt(data.av));
