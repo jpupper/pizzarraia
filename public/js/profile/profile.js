@@ -2238,8 +2238,12 @@ function removeColorFromPalette(index) {
 function collectInitialValues() {
     // Recopilar paleta de colores
     const paletteContainer = document.getElementById('initialPaletteContainer');
-    const colorInputs = paletteContainer.querySelectorAll('input[type="color"]');
+    const colorInputs = paletteContainer ? paletteContainer.querySelectorAll('input[type="color"]') : [];
     const palette = Array.from(colorInputs).map(input => input.value);
+    
+    console.log('📊 Recopilando valores iniciales:');
+    console.log('  - Paleta de colores:', palette);
+    console.log('  - Total de colores:', palette.length);
     
     // Recopilar otros valores
     const alpha = parseInt(document.getElementById('initialAlpha').value) / 100; // Convertir a 0-1
@@ -2247,7 +2251,7 @@ function collectInitialValues() {
     const kaleidoSlices = parseInt(document.getElementById('initialKaleidoSlices').value);
     const autoCleanOpacity = parseInt(document.getElementById('initialAutoClean').value);
     
-    return {
+    const values = {
         palette,
         alpha,
         size,
@@ -2256,6 +2260,9 @@ function collectInitialValues() {
         },
         autoClean: autoCleanOpacity // 0 = desactivado, 1-255 = opacidad del fade continuo
     };
+    
+    console.log('✅ Valores iniciales recopilados:', values);
+    return values;
 }
 
 window.editSession = editSession;
