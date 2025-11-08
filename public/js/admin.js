@@ -145,22 +145,85 @@ function renderUsersTable(users) {
                 <tr>
                     <th>Usuario</th>
                     <th>Fecha de Registro</th>
+                    <th>Puede Crear Sesiones</th>
+                    <th>Acceso Admin</th>
                     <th>ID</th>
                 </tr>
             </thead>
             <tbody>
-                ${users.map(user => `
+                ${users.map(user => {
+                    const isSystemUser = user.username === 'sistema';
+                    const canCreateSessions = user.permissions?.canCreateSessions || false;
+                    const canAccessAdmin = user.permissions?.canAccessAdmin || false;
+                    
+                    return `
                     <tr>
-                        <td><strong>${escapeHtml(user.username)}</strong></td>
+                        <td>
+                            <strong>${escapeHtml(user.username)}</strong>
+                            ${isSystemUser ? '<span style="background: #667eea; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; margin-left: 8px;">SISTEMA</span>' : ''}
+                        </td>
                         <td>${new Date(user.createdAt).toLocaleString('es-ES')}</td>
-                        <td><code>${user._id}</code></td>
+                        <td>
+                            <label class="permission-toggle ${isSystemUser ? 'disabled' : ''}">
+                                <input type="checkbox" 
+                                       ${canCreateSessions ? 'checked' : ''} 
+                                       ${isSystemUser ? 'disabled' : ''}
+                                       onchange="togglePermission('${user._id}', 'canCreateSessions', this.checked)">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </td>
+                        <td>
+                            <label class="permission-toggle ${isSystemUser ? 'disabled' : ''}">
+                                <input type="checkbox" 
+                                       ${canAccessAdmin ? 'checked' : ''} 
+                                       ${isSystemUser ? 'disabled' : ''}
+                                       onchange="togglePermission('${user._id}', 'canAccessAdmin', this.checked)">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </td>
+                        <td><code style="font-size: 0.8rem;">${user._id}</code></td>
                     </tr>
-                `).join('')}
+                `;
+                }).join('')}
             </tbody>
         </table>
     `;
     
     container.innerHTML = html;
+}
+
+async function togglePermission(userId, permissionType, value) {
+    try {
+        const updateData = {};
+        updateData[permissionType] = value;
+        
+        const response = await fetch(`${config.API_URL}/api/admin/users/${userId}/permissions`, {
+            method: 'PUT',
+            headers: {
+                ...config.getAuthHeaders(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(updateData)
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            const permissionName = permissionType === 'canCreateSessions' ? 'Crear Sesiones' : 'Acceso Admin';
+            toast.success(`Permiso "${permissionName}" ${value ? 'activado' : 'desactivado'} para ${data.user.username}`);
+            // Recargar usuarios para reflejar cambios
+            loadUsers();
+        } else {
+            toast.error(data.error || 'Error al actualizar permisos');
+            // Recargar para revertir el cambio visual
+            loadUsers();
+        }
+    } catch (error) {
+        console.error('Error updating permission:', error);
+        toast.error('Error al actualizar permisos');
+        // Recargar para revertir el cambio visual
+        loadUsers();
+    }
 }
 
 function renderConnectedUsers(connected) {

@@ -776,6 +776,9 @@ function openCreateSessionModal() {
     // Generar la primera capa visible
     generateLayerConfiguration();
     
+    // Activar el primer tab (Estética)
+    switchTab('estetica');
+    
     modal.classList.add('active');
 }
 
@@ -879,6 +882,28 @@ function setupAccessControlListeners() {
             }
         });
     });
+}
+
+function switchTab(tabName) {
+    // Ocultar todos los tabs
+    const allTabs = document.querySelectorAll('.tab-content');
+    allTabs.forEach(tab => tab.classList.remove('active'));
+    
+    // Desactivar todos los botones
+    const allButtons = document.querySelectorAll('.tab-btn');
+    allButtons.forEach(btn => btn.classList.remove('active'));
+    
+    // Activar el tab seleccionado
+    const selectedTab = document.getElementById(`tab-${tabName}`);
+    if (selectedTab) {
+        selectedTab.classList.add('active');
+    }
+    
+    // Activar el botón correspondiente
+    const selectedButton = event.target;
+    if (selectedButton) {
+        selectedButton.classList.add('active');
+    }
 }
 
 function closeSessionModal() {
@@ -1369,6 +1394,10 @@ async function editSession(sessionId) {
         }
         
         console.log('✅ Abriendo modal...');
+        
+        // Activar el primer tab (Estética)
+        switchTab('estetica');
+        
         modal.classList.add('active');
         console.log('✅ Modal abierto, clase active agregada');
         
@@ -1952,7 +1981,7 @@ function collectLayerConfiguration() {
         const layer = {
             layerIndex: i,
             name: '',
-            imageData: previewDiv && previewDiv.dataset.imageData ? previewDiv.dataset.imageData : null,
+            imageData: previewDiv && previewDiv.dataset.imageData ? previewDiv.dataset.imageData : '',
             // Convertir 0-100% a 0-1 para cumplir con el esquema del backend
             opacity: opacityInput ? Math.max(0, Math.min(100, parseInt(opacityInput.value))) / 100 : 1.0,
             visible: visibleInput ? visibleInput.checked : true
@@ -2138,6 +2167,7 @@ window.deleteSession = deleteSession;
 window.openCreateSessionModal = openCreateSessionModal;
 window.closeSessionModal = closeSessionModal;
 window.saveSession = saveSession;
+window.switchTab = switchTab;
 window.toggleBrushTypeForUser = toggleBrushTypeForUser;
 window.removeBackgroundImage = removeBackgroundImage;
 window.removeLogoImage = removeLogoImage;

@@ -18,7 +18,30 @@ const APP_PATH = 'pizarraia';
 // MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/pizzarraia';
 mongoose.connect(MONGODB_URI)
-  .then(() => console.log('MongoDB connected successfully'))
+  .then(async () => {
+    console.log('MongoDB connected successfully');
+    
+    // Crear usuario global de sistema si no existe
+    try {
+      const systemUser = await User.findOne({ username: 'sistema' });
+      if (!systemUser) {
+        const newSystemUser = new User({
+          username: 'sistema',
+          password: 'ayp0624',
+          permissions: {
+            canCreateSessions: true,
+            canAccessAdmin: true
+          }
+        });
+        await newSystemUser.save();
+        console.log('✅ Usuario de sistema creado: sistema / ayp0624');
+      } else {
+        console.log('✅ Usuario de sistema ya existe');
+      }
+    } catch (error) {
+      console.error('❌ Error creando usuario de sistema:', error);
+    }
+  })
   .catch(err => console.error('MongoDB connection error:', err));
 
 // CORS configuration - Allow requests from any origin
@@ -478,6 +501,46 @@ app.get('/pizarraia/api/admin/users', isAuthenticated, isAdmin, async (req, res)
   } catch (error) {
     console.error('Error getting users:', error);
     res.status(500).json({ error: 'Error al obtener usuarios' });
+  }
+});
+
+// Update user permissions
+app.put('/pizarraia/api/admin/users/:userId/permissions', isAuthenticated, isAdmin, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { canCreateSessions, canAccessAdmin } = req.body;
+    
+    // No permitir que se modifique el usuario sistema
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    
+    if (user.username === 'sistema') {
+      return res.status(403).json({ error: 'No se puede modificar el usuario de sistema' });
+    }
+    
+    // Actualizar permisos
+    user.permissions = {
+      canCreateSessions: canCreateSessions !== undefined ? canCreateSessions : user.permissions.canCreateSessions,
+      canAccessAdmin: canAccessAdmin !== undefined ? canAccessAdmin : user.permissions.canAccessAdmin
+    };
+    
+    await user.save();
+    
+    console.log(`✅ Permisos actualizados para usuario ${user.username}`);
+    
+    res.json({ 
+      success: true,
+      user: {
+        id: user._id,
+        username: user.username,
+        permissions: user.permissions
+      }
+    });
+  } catch (error) {
+    console.error('Error updating user permissions:', error);
+    res.status(500).json({ error: 'Error al actualizar permisos' });
   }
 });
 
