@@ -91,6 +91,15 @@ const sessionSchema = new mongoose.Schema({
       category: { type: String, default: 'general', required: false }
     }]
   },
+  initialValues: {
+    palette: [{ type: String }], // Array de colores en formato hex
+    alpha: { type: Number, default: 1.0, min: 0, max: 1 }, // Opacidad inicial (0-1)
+    size: { type: Number, default: 10, min: 1, max: 100 }, // Tamaño de pincel inicial
+    kaleidoscope: {
+      slices: { type: Number, default: 1, min: 1, max: 12 } // Número de reflejos (1 = desactivado)
+    },
+    autoClean: { type: Number, default: 0, min: 0, max: 255 } // Opacidad del fade continuo (0 = desactivado)
+  },
   createdAt: {
     type: Date,
     default: Date.now

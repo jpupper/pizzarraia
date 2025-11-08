@@ -63,6 +63,12 @@
                 <button type="button" class="tab-btn" onclick="switchTab('personalizacion')">
                     🎨 Personalización Visual
                 </button>
+                <button type="button" class="tab-btn" onclick="switchTab('dibujo')">
+                    🖌️ Dibujo Sesión
+                </button>
+                <button type="button" class="tab-btn" onclick="switchTab('valores')">
+                    ⚙️ Valores Iniciales
+                </button>
             </div>
             
             <form id="sessionForm" onsubmit="saveSession(event)">
@@ -205,6 +211,10 @@
                         </div>
                     </div>
 
+                </div>
+
+                <!-- Tab 4: Dibujo Sesión -->
+                <div id="tab-dibujo" class="tab-content">
                     <!-- Configuración de Capas Iniciales -->
                     <div class="form-group">
                         <label>🎨 Capas Iniciales:</label>
@@ -235,6 +245,64 @@
                             <div id="defaultImagesList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; align-items: start;">
                                 <!-- Las imágenes por defecto se generarán dinámicamente aquí -->
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 5: Valores Iniciales -->
+                <div id="tab-valores" class="tab-content">
+                    <div class="form-group">
+                        <label>⚙️ Valores Iniciales de la Sesión:</label>
+                        <small style="display: block; margin-bottom: 15px; color: #999;">Configura los valores por defecto con los que arrancará la sesión</small>
+                        
+                        <!-- Paleta de Colores Inicial -->
+                        <div style="margin-bottom: 25px;">
+                            <label style="font-weight: 600; display: block; margin-bottom: 10px;">🎨 Paleta de Colores Inicial:</label>
+                            <small style="display: block; margin-bottom: 10px; color: #999;">Define los colores que estarán disponibles en la paleta al iniciar la sesión</small>
+                            <div id="initialPaletteContainer" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+                                <!-- Se generarán dinámicamente -->
+                            </div>
+                            <button type="button" onclick="addColorToPalette()" style="background: #667eea; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;">
+                                ➕ Agregar Color
+                            </button>
+                        </div>
+
+                        <!-- Alfa Inicial -->
+                        <div style="margin-bottom: 25px;">
+                            <label for="initialAlpha" style="font-weight: 600; display: block; margin-bottom: 5px;">💧 Opacidad Inicial (Alpha): <span id="alphaValue" style="color: #667eea;">100%</span></label>
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <input type="range" id="initialAlpha" min="0" max="100" value="100" style="flex: 1;" oninput="updateSliderValue('alphaValue', this.value, '%')">
+                                <span style="font-weight: 600; min-width: 50px; color: #999;">0-100%</span>
+                            </div>
+                        </div>
+
+                        <!-- Size Inicial -->
+                        <div style="margin-bottom: 25px;">
+                            <label for="initialSize" style="font-weight: 600; display: block; margin-bottom: 5px;">📏 Tamaño de Pincel Inicial: <span id="sizeValue" style="color: #667eea;">10px</span></label>
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <input type="range" id="initialSize" min="1" max="100" value="10" style="flex: 1;" oninput="updateSliderValue('sizeValue', this.value, 'px')">
+                                <span style="font-weight: 600; min-width: 50px; color: #999;">1-100px</span>
+                            </div>
+                        </div>
+
+                        <!-- Efecto Kaleido -->
+                        <div style="margin-bottom: 25px;">
+                            <label for="initialKaleidoSlices" style="font-weight: 600; display: block; margin-bottom: 5px;">✨ Efecto Caleidoscopio (Reflejos): <span id="slicesValue" style="color: #667eea;">1</span></label>
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <input type="range" id="initialKaleidoSlices" min="1" max="12" value="1" style="flex: 1;" oninput="updateSliderValue('slicesValue', this.value, '')">
+                                <span style="font-weight: 600; min-width: 80px; color: #999;">1-12 reflejos</span>
+                            </div>
+                            <small style="display: block; margin-top: 5px; color: #999;">1 reflejo = Caleidoscopio desactivado</small>
+                        </div>
+
+                        <!-- Auto Clean Background -->
+                        <div style="margin-bottom: 25px;">
+                            <label for="initialAutoClean" style="font-weight: 600; display: block; margin-bottom: 5px;">🧹 Auto Clean Background (Opacidad): <span id="autoCleanValue" style="color: #667eea;">0</span></label>
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <input type="range" id="initialAutoClean" min="0" max="255" value="0" style="flex: 1;" oninput="updateSliderValue('autoCleanValue', this.value, '')">
+                                <span style="font-weight: 600; min-width: 80px; color: #999;">0-255</span>
+                            </div>
+                            <small style="display: block; margin-top: 5px; color: #999;">Opacidad del rectángulo de fade continuo. 0 = desactivado, valores bajos = fade lento, valores altos = fade rápido</small>
                         </div>
                     </div>
                 </div>

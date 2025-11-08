@@ -776,6 +776,9 @@ function openCreateSessionModal() {
     // Generar la primera capa visible
     generateLayerConfiguration();
     
+    // Initialize initial values
+    setupInitialValues();
+    
     // Activar el primer tab (Estética)
     switchTab('estetica');
     
@@ -1083,6 +1086,9 @@ async function saveSession(event) {
         // Collect default image brush configuration
         const defaultImageBrush = collectDefaultImageBrushConfiguration();
         
+        // Collect initial values
+        const initialValues = collectInitialValues();
+        
         const requestBody = {
             sessionId,
             name,
@@ -1095,7 +1101,8 @@ async function saveSession(event) {
                 colors: colors
             },
             initialLayers: initialLayers,
-            defaultImageBrush: defaultImageBrush
+            defaultImageBrush: defaultImageBrush,
+            initialValues: initialValues
         };
         
         console.log('📤 Enviando request:', { url, method });
@@ -2162,6 +2169,95 @@ function collectDefaultImageBrushConfiguration() {
     return { enabled, images };
 }
 
+// ========== INITIAL VALUES FUNCTIONS ==========
+
+function setupInitialValues() {
+    // Paleta de colores por defecto
+    const defaultColors = ['#000000', '#ffffff', '#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+    const paletteContainer = document.getElementById('initialPaletteContainer');
+    paletteContainer.innerHTML = '';
+    
+    defaultColors.forEach(color => {
+        addColorToPaletteWithValue(color);
+    });
+    
+    // Inicializar valores de los sliders
+    updateSliderValue('alphaValue', 100, '%');
+    updateSliderValue('sizeValue', 10, 'px');
+    updateSliderValue('slicesValue', 1, '');
+    updateSliderValue('autoCleanValue', 0, '');
+}
+
+function updateSliderValue(elementId, value, suffix) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.textContent = value + suffix;
+    }
+}
+
+function addColorToPalette() {
+    addColorToPaletteWithValue('#000000');
+}
+
+function addColorToPaletteWithValue(colorValue) {
+    const container = document.getElementById('initialPaletteContainer');
+    const colorIndex = container.children.length;
+    
+    const colorItem = document.createElement('div');
+    colorItem.style.cssText = 'display: flex; align-items: center; gap: 8px; background: white; padding: 8px; border-radius: 8px; border: 2px solid #ddd;';
+    colorItem.dataset.colorIndex = colorIndex;
+    
+    colorItem.innerHTML = `
+        <input type="color" value="${colorValue}" style="width: 40px; height: 40px; border: none; cursor: pointer; border-radius: 4px;">
+        <button type="button" onclick="removeColorFromPalette(${colorIndex})" style="background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;">✖</button>
+    `;
+    
+    container.appendChild(colorItem);
+}
+
+function removeColorFromPalette(index) {
+    const container = document.getElementById('initialPaletteContainer');
+    const items = Array.from(container.children);
+    
+    // Encontrar el item con el índice correcto
+    const itemToRemove = items.find(item => parseInt(item.dataset.colorIndex) === index);
+    if (itemToRemove) {
+        itemToRemove.remove();
+    }
+    
+    // Reindexar los elementos restantes
+    Array.from(container.children).forEach((item, newIndex) => {
+        item.dataset.colorIndex = newIndex;
+        const button = item.querySelector('button');
+        if (button) {
+            button.onclick = () => removeColorFromPalette(newIndex);
+        }
+    });
+}
+
+function collectInitialValues() {
+    // Recopilar paleta de colores
+    const paletteContainer = document.getElementById('initialPaletteContainer');
+    const colorInputs = paletteContainer.querySelectorAll('input[type="color"]');
+    const palette = Array.from(colorInputs).map(input => input.value);
+    
+    // Recopilar otros valores
+    const alpha = parseInt(document.getElementById('initialAlpha').value) / 100; // Convertir a 0-1
+    const size = parseInt(document.getElementById('initialSize').value);
+    const kaleidoSlices = parseInt(document.getElementById('initialKaleidoSlices').value);
+    const autoCleanOpacity = parseInt(document.getElementById('initialAutoClean').value);
+    
+    return {
+        palette,
+        alpha,
+        size,
+        kaleidoscope: {
+            slices: kaleidoSlices // 1 = desactivado, 2-12 = activado
+        },
+        autoClean: autoCleanOpacity // 0 = desactivado, 1-255 = opacidad del fade continuo
+    };
+}
+
 window.editSession = editSession;
 window.deleteSession = deleteSession;
 window.openCreateSessionModal = openCreateSessionModal;
@@ -2185,6 +2281,12 @@ window.pickAndAddDefaultImage = pickAndAddDefaultImage;
 window.removeDefaultImage = removeDefaultImage;
 window.previewDefaultImage = previewDefaultImage;
 window.collectDefaultImageBrushConfiguration = collectDefaultImageBrushConfiguration;
+window.setupInitialValues = setupInitialValues;
+window.updateSliderValue = updateSliderValue;
+window.addColorToPalette = addColorToPalette;
+window.addColorToPaletteWithValue = addColorToPaletteWithValue;
+window.removeColorFromPalette = removeColorFromPalette;
+window.collectInitialValues = collectInitialValues;
 
 // Initialize
 initializeSocket();
