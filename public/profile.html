@@ -48,174 +48,193 @@
 
     <!-- Modal para crear/editar sesión -->
     <div id="sessionModal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content modal-content-tabs">
             <button class="modal-close" onclick="closeSessionModal()">×</button>
             <h2 id="sessionModalTitle">Crear Nueva Sesión</h2>
             
+            <!-- Tabs de navegación -->
+            <div class="session-tabs">
+                <button type="button" class="tab-btn active" onclick="switchTab('estetica')">
+                    ✨ Estética
+                </button>
+                <button type="button" class="tab-btn" onclick="switchTab('accesos')">
+                    🔐 Accesos
+                </button>
+                <button type="button" class="tab-btn" onclick="switchTab('personalizacion')">
+                    🎨 Personalización Visual
+                </button>
+            </div>
+            
             <form id="sessionForm" onsubmit="saveSession(event)">
-                <div class="form-group">
-                    <label for="sessionIdInput">ID de Sesión:</label>
-                    <input type="text" id="sessionIdInput" required readonly style="background: #f5f5f5; cursor: not-allowed;">
-                    <small>ID único generado automáticamente (15 dígitos)</small>
+                <!-- Tab 1: Estética -->
+                <div id="tab-estetica" class="tab-content active">
+                    <div class="form-group">
+                        <label for="sessionIdInput">ID de Sesión:</label>
+                        <input type="text" id="sessionIdInput" required readonly style="background: #f5f5f5; cursor: not-allowed;">
+                        <small>ID único generado automáticamente (15 dígitos)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sessionName">Nombre de la Sesión:</label>
+                        <input type="text" id="sessionName" required placeholder="Ej: Sesión de Arte Colaborativo">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sessionDescription">Descripción:</label>
+                        <textarea id="sessionDescription" rows="3" placeholder="Describe tu sesión..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="sessionIsPublic" checked>
+                            <span>Sesión Pública</span>
+                        </label>
+                        <small>Las sesiones públicas aparecen en la galería. Las privadas solo en el panel de administración.</small>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="sessionName">Nombre de la Sesión:</label>
-                    <input type="text" id="sessionName" required placeholder="Ej: Sesión de Arte Colaborativo">
-                </div>
-
-                <div class="form-group">
-                    <label for="sessionDescription">Descripción:</label>
-                    <textarea id="sessionDescription" rows="3" placeholder="Describe tu sesión..."></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="sessionIsPublic" checked>
-                        <span>Sesión Pública</span>
-                    </label>
-                    <small>Las sesiones públicas aparecen en la galería. Las privadas solo en el panel de administración.</small>
-                </div>
-
-                <div class="form-group">
-                    <label>⚙️ Configuración de Acceso y Herramientas:</label>
-                    <small style="display: block; margin-bottom: 15px;">Configura qué herramientas puede usar cada tipo de usuario</small>
-                    
-                    <!-- Usuarios NO Registrados -->
-                    <div class="access-config-section" data-user-type="notLogged">
-                        <div class="access-config-header">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="allowNotLogged" class="user-type-toggle" data-user-type="notLogged" checked>
-                                <span><strong>👤 Usuarios NO Registrados</strong></span>
-                            </label>
+                <!-- Tab 2: Accesos -->
+                <div id="tab-accesos" class="tab-content">
+                    <div class="form-group">
+                        <label>⚙️ Configuración de Acceso y Herramientas:</label>
+                        <small style="display: block; margin-bottom: 15px;">Configura qué herramientas puede usar cada tipo de usuario</small>
+                        
+                        <!-- Usuarios NO Registrados -->
+                        <div class="access-config-section" data-user-type="notLogged">
+                            <div class="access-config-header">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="allowNotLogged" class="user-type-toggle" data-user-type="notLogged" checked>
+                                    <span><strong>👤 Usuarios NO Registrados</strong></span>
+                                </label>
+                            </div>
+                            <div class="user-config-content">
+                                <div id="notLoggedBrushes" class="brush-types-grid" style="margin-top: 10px;">
+                                    <!-- Se llenará dinámicamente con brushes + restricciones -->
+                                </div>
+                            </div>
                         </div>
-                        <div class="user-config-content">
-                            <div id="notLoggedBrushes" class="brush-types-grid" style="margin-top: 10px;">
-                                <!-- Se llenará dinámicamente con brushes + restricciones -->
+
+                        <!-- Usuarios Registrados -->
+                        <div class="access-config-section" data-user-type="logged">
+                            <div class="access-config-header">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="allowLogged" class="user-type-toggle" data-user-type="logged" checked>
+                                    <span><strong>🔐 Usuarios Registrados</strong></span>
+                                </label>
+                            </div>
+                            <div class="user-config-content">
+                                <div id="loggedBrushes" class="brush-types-grid" style="margin-top: 10px;">
+                                    <!-- Se llenará dinámicamente con brushes + restricciones -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Usuarios Específicos -->
+                        <div class="access-config-section" data-user-type="specific">
+                            <div class="access-config-header">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="allowSpecific" class="user-type-toggle" data-user-type="specific">
+                                    <span><strong>👥 Usuarios Específicos</strong></span>
+                                </label>
+                            </div>
+                            <div id="specificUsersConfig" class="user-config-content" style="display: none; margin-top: 10px;">
+                                <input type="text" id="specificUsers" class="jpinput" placeholder="usuario1, usuario2, usuario3" style="width: 100%; margin-bottom: 10px;">
+                                <small style="display: block; margin-bottom: 10px;">Separa los nombres de usuario con comas</small>
+                                <div id="specificBrushes" class="brush-types-grid">
+                                    <!-- Se llenará dinámicamente con brushes + restricciones -->
+                                </div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Usuarios Registrados -->
-                    <div class="access-config-section" data-user-type="logged">
-                        <div class="access-config-header">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="allowLogged" class="user-type-toggle" data-user-type="logged" checked>
-                                <span><strong>🔐 Usuarios Registrados</strong></span>
-                            </label>
-                        </div>
-                        <div class="user-config-content">
-                            <div id="loggedBrushes" class="brush-types-grid" style="margin-top: 10px;">
-                                <!-- Se llenará dinámicamente con brushes + restricciones -->
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Usuarios Específicos -->
-                    <div class="access-config-section" data-user-type="specific">
-                        <div class="access-config-header">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="allowSpecific" class="user-type-toggle" data-user-type="specific">
-                                <span><strong>👥 Usuarios Específicos</strong></span>
-                            </label>
-                        </div>
-                        <div id="specificUsersConfig" class="user-config-content" style="display: none; margin-top: 10px;">
-                            <input type="text" id="specificUsers" class="jpinput" placeholder="usuario1, usuario2, usuario3" style="width: 100%; margin-bottom: 10px;">
-                            <small style="display: block; margin-bottom: 10px;">Separa los nombres de usuario con comas</small>
-                            <div id="specificBrushes" class="brush-types-grid">
-                                <!-- Se llenará dinámicamente con brushes + restricciones -->
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
-                <!-- Personalización Visual -->
-                <div class="form-group">
-                    <label>🎨 Personalización Visual:</label>
-                    <small style="display: block; margin-bottom: 15px; color: #999;">Personaliza cómo se ve la galería y la interfaz de dibujo de esta sesión</small>
-                    
-                    <div style="margin-bottom: 20px;">
-                        <label for="backgroundImageInput" style="font-weight: 600;">Imagen de Fondo:</label>
-                        <input type="file" id="backgroundImageInput" accept="image/*" style="display: block; margin-top: 5px;">
-                        <small style="color: #999;">Esta imagen aparecerá como fondo en la galería de la sesión</small>
-                        <div id="backgroundImagePreview" style="margin-top: 10px; display: none;">
-                            <img id="previewImg" style="max-width: 200px; max-height: 150px; border-radius: 8px; border: 2px solid #667eea;">
-                            <button type="button" onclick="removeBackgroundImage()" class="btn btn-danger btn-small" style="margin-top: 5px;">Eliminar Imagen</button>
-                        </div>
-                    </div>
-                    
-                    <div style="margin-bottom: 20px;">
-                        <label for="logoImageInput" style="font-weight: 600;">Logo de la Sesión:</label>
-                        <input type="file" id="logoImageInput" accept="image/*" style="display: block; margin-top: 5px;">
-                        <small style="color: #999;">Este logo aparecerá en el header de la galería</small>
-                        <div id="logoImagePreview" style="margin-top: 10px; display: none;">
-                            <img id="logoPreviewImg" style="max-width: 150px; max-height: 150px; border-radius: 8px; border: 2px solid #667eea;">
-                            <button type="button" onclick="removeLogoImage()" class="btn btn-danger btn-small" style="margin-top: 5px;">Eliminar Logo</button>
-                        </div>
-                    </div>
-                    
-                    <div style="margin-bottom: 20px;">
-                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-                            <input type="checkbox" id="useCustomColors" style="width: 20px; height: 20px; cursor: pointer;">
-                            <label for="useCustomColors" style="font-weight: 600; cursor: pointer; margin: 0;">Usar Colores Personalizados</label>
+                <!-- Tab 3: Personalización Visual -->
+                <div id="tab-personalizacion" class="tab-content">
+                    <div class="form-group">
+                        <label>🎨 Personalización Visual:</label>
+                        <small style="display: block; margin-bottom: 15px; color: #999;">Personaliza cómo se ve la galería y la interfaz de dibujo de esta sesión</small>
+                        
+                        <div style="margin-bottom: 20px;">
+                            <label for="backgroundImageInput" style="font-weight: 600;">Imagen de Fondo:</label>
+                            <input type="file" id="backgroundImageInput" accept="image/*" style="display: block; margin-top: 5px;">
+                            <small style="color: #999;">Esta imagen aparecerá como fondo en la galería de la sesión</small>
+                            <div id="backgroundImagePreview" style="margin-top: 10px; display: none;">
+                                <img id="previewImg" style="max-width: 200px; max-height: 150px; border-radius: 8px; border: 2px solid #667eea;">
+                                <button type="button" onclick="removeBackgroundImage()" class="btn btn-danger btn-small" style="margin-top: 5px;">Eliminar Imagen</button>
+                            </div>
                         </div>
                         
-                        <div id="customColorsContainer" style="opacity: 0.5; pointer-events: none; transition: all 0.3s ease;">
-                            <label style="font-weight: 600; display: block; margin-bottom: 10px;">Colores de la Interfaz:</label>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                                <div>
-                                    <label for="colorBackground" style="display: block; margin-bottom: 5px;">🎨 Fondo:</label>
-                                    <input type="color" id="colorBackground" value="#1a1a2e" style="width: 100%; height: 40px; border-radius: 8px; border: 2px solid #667eea; cursor: pointer;">
-                                </div>
-                                <div>
-                                    <label for="colorPrimary" style="display: block; margin-bottom: 5px;">✨ Color Primario:</label>
-                                    <input type="color" id="colorPrimary" value="#667eea" style="width: 100%; height: 40px; border-radius: 8px; border: 2px solid #667eea; cursor: pointer;">
-                                </div>
-                                <div>
-                                    <label for="colorSecondary" style="display: block; margin-bottom: 5px;">🌟 Color Secundario:</label>
-                                    <input type="color" id="colorSecondary" value="#764ba2" style="width: 100%; height: 40px; border-radius: 8px; border: 2px solid #667eea; cursor: pointer;">
-                                </div>
-                                <div>
-                                    <label for="colorText" style="display: block; margin-bottom: 5px;">📝 Tipografía:</label>
-                                    <input type="color" id="colorText" value="#ffffff" style="width: 100%; height: 40px; border-radius: 8px; border: 2px solid #667eea; cursor: pointer;">
-                                </div>
+                        <div style="margin-bottom: 20px;">
+                            <label for="logoImageInput" style="font-weight: 600;">Logo de la Sesión:</label>
+                            <input type="file" id="logoImageInput" accept="image/*" style="display: block; margin-top: 5px;">
+                            <small style="color: #999;">Este logo aparecerá en el header de la galería</small>
+                            <div id="logoImagePreview" style="margin-top: 10px; display: none;">
+                                <img id="logoPreviewImg" style="max-width: 150px; max-height: 150px; border-radius: 8px; border: 2px solid #667eea;">
+                                <button type="button" onclick="removeLogoImage()" class="btn btn-danger btn-small" style="margin-top: 5px;">Eliminar Logo</button>
                             </div>
-                            <small style="color: #999; display: block; margin-top: 10px;">Estos colores se aplicarán en la galería y en la interfaz de dibujo</small>
+                        </div>
+                        
+                        <div style="margin-bottom: 20px;">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                                <input type="checkbox" id="useCustomColors" style="width: 20px; height: 20px; cursor: pointer;">
+                                <label for="useCustomColors" style="font-weight: 600; cursor: pointer; margin: 0;">Usar Colores Personalizados</label>
+                            </div>
+                            
+                            <div id="customColorsContainer" style="opacity: 0.5; pointer-events: none; transition: all 0.3s ease;">
+                                <label style="font-weight: 600; display: block; margin-bottom: 10px;">Colores de la Interfaz:</label>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                    <div>
+                                        <label for="colorBackground" style="display: block; margin-bottom: 5px;">🎨 Fondo:</label>
+                                        <input type="color" id="colorBackground" value="#1a1a2e" style="width: 100%; height: 40px; border-radius: 8px; border: 2px solid #667eea; cursor: pointer;">
+                                    </div>
+                                    <div>
+                                        <label for="colorPrimary" style="display: block; margin-bottom: 5px;">✨ Color Primario:</label>
+                                        <input type="color" id="colorPrimary" value="#667eea" style="width: 100%; height: 40px; border-radius: 8px; border: 2px solid #667eea; cursor: pointer;">
+                                    </div>
+                                    <div>
+                                        <label for="colorSecondary" style="display: block; margin-bottom: 5px;">🌟 Color Secundario:</label>
+                                        <input type="color" id="colorSecondary" value="#764ba2" style="width: 100%; height: 40px; border-radius: 8px; border: 2px solid #667eea; cursor: pointer;">
+                                    </div>
+                                    <div>
+                                        <label for="colorText" style="display: block; margin-bottom: 5px;">📝 Tipografía:</label>
+                                        <input type="color" id="colorText" value="#ffffff" style="width: 100%; height: 40px; border-radius: 8px; border: 2px solid #667eea; cursor: pointer;">
+                                    </div>
+                                </div>
+                                <small style="color: #999; display: block; margin-top: 10px;">Estos colores se aplicarán en la galería y en la interfaz de dibujo</small>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Configuración de Capas Iniciales -->
-                <div class="form-group">
-                    <label>🎨 Capas Iniciales:</label>
-                    <small style="display: block; margin-bottom: 15px; color: #999;">Configura con cuántas capas empezará la sesión y qué imagen tendrá cada una</small>
-                    
-                    <div style="margin-bottom: 15px;">
-                        <label for="layerCount" style="font-weight: 600; display: block; margin-bottom: 5px;">Número de capas:</label>
-                        <input type="number" id="layerCount" min="1" max="10" value="1" style="width: 100px; padding: 8px; border: 2px solid #667eea; border-radius: 5px;" onchange="generateLayerConfiguration()">
-                        <small style="color: #999; margin-left: 10px;">Máximo 10 capas</small>
-                    </div>
-                    
-                    <div id="layersConfiguration" style="border: 2px solid #667eea; border-radius: 10px; padding: 15px; background: rgba(102, 126, 234, 0.05);">
-                        <!-- Las configuraciones de capas se generarán dinámicamente aquí -->
-                    </div>
-                </div>
-
-                <!-- Configuración de Imágenes por Defecto para Brush de Imagen -->
-                <div class="form-group">
-                    <label>🖼️ Imágenes por Defecto para Brush de Imagen:</label>
-                    <small style="display: block; margin-bottom: 15px; color: #999;">Configura imágenes que estarán disponibles por defecto en el brush de imagen de esta sesión</small>
-                    
-                    <!-- Checkbox eliminado: las imágenes por defecto se muestran/guardan si existen -->
-                    
-                    <div id="defaultImagesContainer" style="border: 2px solid #667eea; border-radius: 10px; padding: 15px; background: rgba(102, 126, 234, 0.05); display: none;">
+                    <!-- Configuración de Capas Iniciales -->
+                    <div class="form-group">
+                        <label>🎨 Capas Iniciales:</label>
+                        <small style="display: block; margin-bottom: 15px; color: #999;">Configura con cuántas capas empezará la sesión y qué imagen tendrá cada una</small>
+                        
                         <div style="margin-bottom: 15px;">
-                            <button type="button" onclick="pickAndAddDefaultImage()" style="background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;">
-                                ➕ Agregar Imagen
-                            </button>
+                            <label for="layerCount" style="font-weight: 600; display: block; margin-bottom: 5px;">Número de capas:</label>
+                            <input type="number" id="layerCount" min="1" max="10" value="1" style="width: 100px; padding: 8px; border: 2px solid #667eea; border-radius: 5px;" onchange="generateLayerConfiguration()">
+                            <small style="color: #999; margin-left: 10px;">Máximo 10 capas</small>
                         </div>
-                        <div id="defaultImagesList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; align-items: start;">
-                            <!-- Las imágenes por defecto se generarán dinámicamente aquí -->
+                        
+                        <div id="layersConfiguration" style="border: 2px solid #667eea; border-radius: 10px; padding: 15px; background: rgba(102, 126, 234, 0.05);">
+                            <!-- Las configuraciones de capas se generarán dinámicamente aquí -->
+                        </div>
+                    </div>
+
+                    <!-- Configuración de Imágenes por Defecto para Brush de Imagen -->
+                    <div class="form-group">
+                        <label>🖼️ Imágenes por Defecto para Brush de Imagen:</label>
+                        <small style="display: block; margin-bottom: 15px; color: #999;">Configura imágenes que estarán disponibles por defecto en el brush de imagen de esta sesión</small>
+                        
+                        <div id="defaultImagesContainer" style="border: 2px solid #667eea; border-radius: 10px; padding: 15px; background: rgba(102, 126, 234, 0.05); display: none;">
+                            <div style="margin-bottom: 15px;">
+                                <button type="button" onclick="pickAndAddDefaultImage()" style="background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;">
+                                    ➕ Agregar Imagen
+                                </button>
+                            </div>
+                            <div id="defaultImagesList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; align-items: start;">
+                                <!-- Las imágenes por defecto se generarán dinámicamente aquí -->
+                            </div>
                         </div>
                     </div>
                 </div>
