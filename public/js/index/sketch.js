@@ -732,8 +732,8 @@ function draw() {
         case 'text':
             // Añadir parámetros para text brush
             data.textContent = document.getElementById('textContent').value;
-            data.textSize = parseInt(document.getElementById('textSize').value);
             data.textFont = document.getElementById('textFont').value;
+            // textSize NO se envía - TextBrush usa el size global (data.s)
             break;
         case 'geometry':
             // Añadir parámetros para spirograph brush (size global controla radio principal)
@@ -1258,9 +1258,9 @@ function dibujarCoso(buffer, x, y, data) {
             if (textBrush) {
                 textBrush.draw(buffer, x, y, {
                     color: col,
+                    size: brushSize, // USAR brushSize (size global) en lugar de textSize
                     kaleidoSegments: data.kaleidoSegments || 1,
                     textContent: data.textContent || 'TEXTO',
-                    textSize: data.textSize || 40,
                     textFont: data.textFont || 'Arial'
                 });
             }

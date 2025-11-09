@@ -12,7 +12,6 @@ class TextBrush extends BaseBrush {
             supportsKaleidoscope: true,
             parameters: {
                 textContent: { default: 'TEXTO', label: 'Texto' },
-                textSize: { min: 10, max: 200, default: 40, step: 5, label: 'Tamaño' },
                 textFont: { default: 'Arial', label: 'Fuente' }
             }
         });
@@ -58,9 +57,7 @@ class TextBrush extends BaseBrush {
                 <option value="Josefin Sans">Josefin Sans</option>
             </select>
             <br>
-            <label>Text Size: <span id="textSize-value">40</span></label>
-            <input type="range" value="40" id="textSize" min="10" max="200" step="5" class="jpslider">
-            <br>
+            <p style="font-size: 11px; color: #999; margin: 5px 0;">💡 Usa el slider "Size" global para cambiar el tamaño del texto</p>
         `;
     }
 
@@ -74,7 +71,7 @@ class TextBrush extends BaseBrush {
     }
 
     draw(buffer, x, y, params) {
-        // Usar size general del brush en lugar de textSize específico
+        // USAR SIEMPRE EL SIZE GLOBAL DEL SLIDER
         const { color, size = 40, kaleidoSegments = 1, textContent = 'TEXTO', textFont = 'Arial' } = params;
         
         if (kaleidoSegments <= 1) {
@@ -100,8 +97,8 @@ class TextBrush extends BaseBrush {
     getSyncData(params) {
         return {
             textContent: params.textContent || 'TEXTO',
-            textSize: params.textSize || 40,
             textFont: params.textFont || 'Arial'
+            // textSize NO se envía porque usa el size global
         };
     }
 }

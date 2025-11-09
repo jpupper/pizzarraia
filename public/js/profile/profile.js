@@ -762,8 +762,10 @@ function openCreateSessionModal() {
     const layerCountInputInit = document.getElementById('layerCount');
     if (layerCountInputInit) {
         layerCountInputInit.value = '1';
-        generateLayerConfiguration(1);
     }
+    
+    // Generar la configuración de la primera capa (DEBE IR DESPUÉS de setear el valor)
+    generateLayerConfiguration(1);
     
     // Initialize default image brush configuration
     setupDefaultImageBrush();
@@ -772,9 +774,6 @@ function openCreateSessionModal() {
     if (defaultImagesContainerEl) {
         defaultImagesContainerEl.style.display = 'block';
     }
-
-    // Generar la primera capa visible
-    generateLayerConfiguration();
     
     // Initialize initial values
     setupInitialValues();
@@ -2199,17 +2198,23 @@ function addColorToPalette() {
     addColorToPaletteWithValue('#000000');
 }
 
-function addColorToPaletteWithValue(colorValue) {
+function addColorToPaletteWithValue(colorValue, isRandom = false) {
     const container = document.getElementById('initialPaletteContainer');
     const colorIndex = container.children.length;
     
     const colorItem = document.createElement('div');
-    colorItem.style.cssText = 'display: flex; align-items: center; gap: 8px; background: white; padding: 8px; border-radius: 8px; border: 2px solid #ddd;';
+    colorItem.style.cssText = 'display: flex; flex-direction: column; gap: 6px; background: white; padding: 10px; border-radius: 8px; border: 2px solid #ddd;';
     colorItem.dataset.colorIndex = colorIndex;
     
     colorItem.innerHTML = `
-        <input type="color" value="${colorValue}" style="width: 40px; height: 40px; border: none; cursor: pointer; border-radius: 4px;">
-        <button type="button" onclick="removeColorFromPalette(${colorIndex})" style="background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;">✖</button>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <input type="color" value="${colorValue}" style="width: 50px; height: 50px; border: none; cursor: pointer; border-radius: 4px;">
+            <button type="button" onclick="removeColorFromPalette(${colorIndex})" style="background: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-weight: bold;">✖</button>
+        </div>
+        <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #333; cursor: pointer;">
+            <input type="checkbox" ${isRandom ? 'checked' : ''} data-random-checkbox style="cursor: pointer;">
+            <span style="font-weight: 600;">🎲 RDM (Randomizar)</span>
+        </label>
     `;
     
     container.appendChild(colorItem);
@@ -2236,10 +2241,18 @@ function removeColorFromPalette(index) {
 }
 
 function collectInitialValues() {
-    // Recopilar paleta de colores
+    // Recopilar paleta de colores con sus configuraciones de randomización
     const paletteContainer = document.getElementById('initialPaletteContainer');
-    const colorInputs = paletteContainer ? paletteContainer.querySelectorAll('input[type="color"]') : [];
-    const palette = Array.from(colorInputs).map(input => input.value);
+    const colorItems = paletteContainer ? Array.from(paletteContainer.children) : [];
+    
+    const palette = colorItems.map(item => {
+        const colorInput = item.querySelector('input[type="color"]');
+        const randomCheckbox = item.querySelector('[data-random-checkbox]');
+        return {
+            color: colorInput ? colorInput.value : '#000000',
+            random: randomCheckbox ? randomCheckbox.checked : false
+        };
+    });
     
     console.log('📊 Recopilando valores iniciales:');
     console.log('  - Paleta de colores:', palette);

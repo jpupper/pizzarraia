@@ -179,11 +179,22 @@ class BrushRegistry {
                 const brushId = button.getAttribute('data-brush');
                 this.setActive(brushId);
 
-                // Actualizar clases activas
-                buttons.forEach(btn => btn.classList.remove('active'));
+                // Actualizar clases activas - IMPORTANTE: buscar TODOS los .brush-btn en el documento
+                document.querySelectorAll('.brush-btn').forEach(btn => btn.classList.remove('active'));
                 button.classList.add('active');
             });
         });
+        
+        // Activar el primer brush por defecto si ninguno está activo
+        const activeButton = document.querySelector('.brush-btn.active');
+        if (!activeButton && buttons.length > 0) {
+            const firstButton = buttons[0];
+            firstButton.classList.add('active');
+            const firstBrushId = firstButton.getAttribute('data-brush');
+            if (firstBrushId) {
+                this.setActive(firstBrushId);
+            }
+        }
     }
 
     /**

@@ -92,7 +92,10 @@ const sessionSchema = new mongoose.Schema({
     }]
   },
   initialValues: {
-    palette: [{ type: String }], // Array de colores en formato hex
+    palette: [{ 
+      color: { type: String, required: true }, // Color en formato hex
+      random: { type: Boolean, default: false } // Si debe randomizarse al entrar
+    }],
     alpha: { type: Number, default: 1.0, min: 0, max: 1 }, // Opacidad inicial (0-1)
     size: { type: Number, default: 10, min: 1, max: 100 }, // Tamaño de pincel inicial
     kaleidoscope: {
