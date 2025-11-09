@@ -77,7 +77,7 @@ function updateSliderValue(sliderId) {
 
 // Función para actualizar todos los valores numéricos
 function updateAllSliderValues() {
-    const sliderIds = ['alphaValue', 'size', 'kaleidoSegments', 'autocleanOpacity', 'gridCols', 'gridRows', 'particleCount', 'speedForce', 'maxSpeed', 'particleLife', 'particleMaxSize', 'textSize', 'polygonSides', 'fillTolerance', 'shrinkSpeed', 'animSpeed'];
+    const sliderIds = ['alphaValue', 'size', 'kaleidoSegments', 'autocleanOpacity', 'gridCols', 'gridRows', 'particleCount', 'speedForce', 'maxSpeed', 'particleLife', 'particleMaxSize', 'polygonSides', 'fillTolerance', 'shrinkSpeed', 'animSpeed'];
     sliderIds.forEach(sliderId => updateSliderValue(sliderId));
 }
 
@@ -339,21 +339,12 @@ function setupBrushTypeEvents() {
   // Event listener for particle size slider
   particleMaxSizeInput.addEventListener('input', function() {
     // Actualizar el tamaño máximo de las partículas
-    const particleMaxSize = parseInt(this.value);
-    updateArtBrushParameters({ particleMaxSize: particleMaxSize });
     updateSliderValue('particleMaxSize');
   });
   
-  // Add event listeners for text brush parameters
-  const textSizeInput = document.getElementById('textSize');
+  // TextBrush ahora usa el slider Size global, no tiene textSize específico
   
-  if (textSizeInput) {
-    textSizeInput.addEventListener('input', function() {
-      updateSliderValue('textSize');
-    });
-  }
-  
-  // Add event listeners for spirograph brush parameters
+  // Add event listeners for geometry brush parameters
   const spiroModuloInput = document.getElementById('spiroModulo');
   const spiroIncInput = document.getElementById('spiroInc');
   const radius2Input = document.getElementById('radius2');

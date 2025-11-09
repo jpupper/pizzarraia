@@ -552,8 +552,8 @@ function getCurrentBrushParams() {
                 break;
             case 'text':
                 params.textContent = document.getElementById('textContent')?.value || 'TEXTO';
-                params.textSize = parseInt(document.getElementById('textSize')?.value || 40);
                 params.textFont = document.getElementById('textFont')?.value || 'Arial';
+                // textSize NO se envía - TextBrush usa el size global
                 break;
             case 'geometry':
                 params.polygonSides = parseInt(document.getElementById('polygonSides')?.value || 5);
@@ -588,11 +588,29 @@ function applyInitialValues(initialValues) {
         const paletteSlots = document.querySelectorAll('.palette-slot');
         if (paletteSlots.length > 0) {
             // Aplicar cada color a su slot correspondiente (máximo 5)
-            initialValues.palette.forEach((colorHex, index) => {
+            initialValues.palette.forEach((paletteItem, index) => {
                 if (index < paletteSlots.length) {
                     const slot = paletteSlots[index];
-                    slot.style.backgroundColor = colorHex;
-                    slot.setAttribute('data-color', colorHex);
+                    
+                    // Determinar el color final
+                    let finalColor;
+                    
+                    // Si el formato es el nuevo (objeto con color y random)
+                    if (typeof paletteItem === 'object' && paletteItem.color) {
+                        if (paletteItem.random) {
+                            // Generar color aleatorio
+                            finalColor = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+                            console.log(`🎲 Color ${index + 1} randomizado: ${paletteItem.color} → ${finalColor}`);
+                        } else {
+                            finalColor = paletteItem.color;
+                        }
+                    } else {
+                        // Formato antiguo (string directo) - compatibilidad
+                        finalColor = paletteItem;
+                    }
+                    
+                    slot.style.backgroundColor = finalColor;
+                    slot.setAttribute('data-color', finalColor);
                 }
             });
             
@@ -600,10 +618,32 @@ function applyInitialValues(initialValues) {
             
             // Seleccionar el primer color por defecto
             if (initialValues.palette.length > 0) {
+                const firstPaletteItem = initialValues.palette[0];
+                let firstColor;
+                
+                if (typeof firstPaletteItem === 'object' && firstPaletteItem.color) {
+                    firstColor = firstPaletteItem.random 
+                        ? paletteSlots[0].style.backgroundColor // Ya fue randomizado arriba
+                        : firstPaletteItem.color;
+                } else {
+                    firstColor = firstPaletteItem;
+                }
+                
                 const colorInput = document.getElementById('c1');
                 if (colorInput) {
-                    colorInput.value = initialValues.palette[0];
+                    // Convertir rgb a hex si es necesario
+                    const slotColor = paletteSlots[0].style.backgroundColor;
+                    if (slotColor.startsWith('rgb')) {
+                        const rgb = slotColor.match(/\d+/g);
+                        if (rgb) {
+                            firstColor = '#' + rgb.map(x => parseInt(x).toString(16).padStart(2, '0')).join('');
+                        }
+                    } else {
+                        firstColor = slotColor;
+                    }
+                    colorInput.value = firstColor;
                 }
+                
                 // Marcar el primer slot como activo
                 paletteSlots.forEach((slot, i) => {
                     if (i === 0) {

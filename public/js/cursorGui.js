@@ -244,7 +244,9 @@ class CursorGUI {
      */
     cancelLongPress() {
         this.isPressing = false;
-        // No hay timer que cancelar en el sistema de doble click
+        // NO resetear lastClickTime/lastClickX/lastClickY aquí
+        // porque podría ser el primer click de un doble click
+        // El timer automático se encargará de resetearlos si no hay segundo click
     }
     
     /**

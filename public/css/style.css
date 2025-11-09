@@ -709,9 +709,9 @@ select option {
 }
 
 .brush-btn.active {
-    background-color: var(--accent);
-    border-color: #FFFFFF;
-    box-shadow: 0 0 15px rgba(138, 79, 191, 0.8);
+    background-color: var(--accent) !important;
+    border-color: #FFFFFF !important;
+    box-shadow: 0 0 15px rgba(138, 79, 191, 0.8) !important;
     transform: scale(1.05);
 }
 
