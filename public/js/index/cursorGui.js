@@ -265,6 +265,11 @@ class CursorGUI {
      * Mostrar el selector de color
      */
     show(x, y) {
+        // Cargar brushes si el registry ya está listo (por si falló en el constructor)
+        if (this.brushButtons.length <= 1) { // 1 porque background siempre se añade al final
+            this.loadBrushesFromRegistry();
+        }
+
         this.cancelLongPress(); // Resetear estado de presión al mostrar
         this.isVisible = true;
         this.centerX = x;
@@ -498,7 +503,7 @@ class CursorGUI {
                 brushTypeInput.value = brush.id;
 
                 // Disparar evento change para actualizar la interfaz
-                const event = new Event('change');
+                const event = new Event('change', { bubbles: true });
                 brushTypeInput.dispatchEvent(event);
 
                 // Sincronizar con los botones de la interfaz principal
@@ -1898,6 +1903,9 @@ if (typeof window !== 'undefined') {
 // Compatibilidad con eventos de carga
 if (typeof window !== 'undefined') {
     window.addEventListener('load', function () {
-        console.log('✅ CursorGUI: DOM totalmente cargado');
+        if (window.cursorGUI) {
+            window.cursorGUI.loadBrushesFromRegistry();
+        }
+        console.log('✅ CursorGUI: DOM y Brushes cargados');
     });
 }
