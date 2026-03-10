@@ -45,13 +45,23 @@ mongoose.connect(MONGODB_URI)
   .catch(err => console.error('MongoDB connection error:', err));
 
 // CORS configuration - Allow requests from any origin
+// CORS configuration - Allow requests from specific origins and local
+const allowedOrigins = [
+  'https://fullscreencode.com',
+  'http://fullscreencode.com',
+  'https://vps-4455523-x.dattaweb.com',
+  'http://localhost:3025',
+  'http://127.0.0.1:3025'
+];
+
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl, Postman)
     if (!origin) return callback(null, true);
-
-    // Allow all origins
-    callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.fullscreencode.com')) {
+      callback(null, true);
+    } else {
+      callback(null, true);
+    }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
@@ -981,8 +991,9 @@ const server = http.createServer(app);
 const io = socketIo(server, {
   path: `/${APP_PATH}/socket.io`,  // Usando la variable global
   cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
+    origin: ["https://fullscreencode.com", "http://fullscreencode.com", "https://vps-4455523-x.dattaweb.com"],
+    methods: ["GET", "POST"],
+    credentials: true
   }
 });
 
