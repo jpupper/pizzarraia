@@ -16,7 +16,7 @@ const port = 3025;
 const APP_PATH = 'pizzarraia';
 
 // MongoDB connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/pizzarraia';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/pizzarraia';
 mongoose.connect(MONGODB_URI)
   .then(async () => {
     console.log('MongoDB connected successfully');

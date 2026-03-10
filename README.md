@@ -1,18 +1,5 @@
 # 🎨 PizarraCollab - Pizarra Colaborativa en Tiempo Real
 
-## Parámetros de URL
-
-- shownames
-  - Controla la visualización de los nombres y los cursores remotos en el lienzo.
-  - Valor por defecto: `true` (si no se especifica, se muestran).
-  - Para ocultarlos: añade el parámetro en la URL con un valor "falso".
-    - Acepta: `shownames=false`, `shownames=0` o `shownames=no`.
-  - Ejemplos:
-    - `index.html?shownames=false`
-    - `/?session=abcdef&shownames=no`
-  - Comportamiento: cuando `shownames` es falso, no se dibujan ni los nombres ni los punteros/cursos remotos en el buffer GUI.
-
-
 Sistema de dibujo colaborativo en tiempo real construido con **P5.js** y **Socket.IO**.
 
 ## 📋 Descripción
@@ -34,55 +21,56 @@ PizarraCollab es una aplicación web que permite a múltiples usuarios dibujar j
 - 📱 **Código QR** para compartir sesiones
 - 🔒 **Autenticación de usuarios** (opcional)
 
-## 🌐 Parámetros URL
+## 🌐 Parámetros URL (Query Variables)
 
-La aplicación soporta los siguientes parámetros en la URL:
+La aplicación utiliza variables en la URL para personalizar el comportamiento de la interfaz y las sesiones:
 
-### `?session=ID` o `?sesion=ID`
-Conecta a una sesión específica.
-```
-https://tu-dominio.com/pizarraia/index.html?session=ABC123
-```
+### Para el Lienzo de Dibujo (`index.html`)
 
-### `?intromodal=false` o `?modalintro=false`
-Oculta el modal de bienvenida al cargar la página.
-```
-https://tu-dominio.com/pizarraia/index.html?intromodal=false
-```
+| Variable | Valores | Descripción |
+| :--- | :--- | :--- |
+| `session` o `sesion` | `ID` (ej: `abc123`) | ID de la sesión a la que conectarse. Por defecto es `0`. |
+| `shownames` | `true` / `false` | Muestra u oculta los nombres y cursores remotos de otros usuarios. |
+| `showgui` | `true` / `false` | Muestra u oculta el botón "Open GUI" y los controles de zoom por defecto. |
+| `intromodal` o `modalintro` | `true` / `false` | Fuerza la aparición o el ocultamiento del modal de bienvenida inicial. |
 
-### `?intromodal=true` o `?modalintro=true`
-Fuerza mostrar el modal de bienvenida (incluso si el usuario está logueado).
-```
-https://tu-dominio.com/pizarraia/index.html?intromodal=true
-```
+**Ejemplos:**
+- Ocultar nombres y GUI: `index.html?shownames=false&showgui=false`
+- Forzar ocultar modal: `index.html?intromodal=false`
+- Sesión específica: `index.html?sesion=MI_SALA_DE_ARTE`
 
-### `?showgui=false`
-Oculta por defecto el botón de interfaz y los controles de zoom. Útil para presentaciones o capturas limpias.
-```
-https://tu-dominio.com/pizarraia/index.html?showgui=false
-```
-**Nota:** Puedes presionar la tecla **G** para mostrar/ocultar estos controles en cualquier momento.
+### Para la Galería (`gallery.html`)
 
-### Combinación de parámetros
-Puedes combinar múltiples parámetros:
-```
-https://tu-dominio.com/pizarraia/index.html?sesion=ABC123&intromodal=false&showgui=false
-```
+| Variable | Valores | Descripción |
+| :--- | :--- | :--- |
+| `session` o `sesion` | `ID` (ej: `abc123`) | Filtra las imágenes para mostrar solo las de esa sesión y aplica el diseño/logo personalizado de la misma. |
+
+## 🔗 Enlaces Internos
+
+Puedes acceder a las diferentes secciones de la plataforma desde estos enlaces:
+
+- **Lienzo Principal**: [index.html](https://fullscreencode.com/pizzarraia/index.html)
+- **Galería Pública**: [gallery.html](https://fullscreencode.com/pizzarraia/gallery.html)
+- **Perfil y Gestión**: [profile.html](https://fullscreencode.com/pizzarraia/profile.html) (Requiere Login)
+- **Acceso**: [login.html](https://fullscreencode.com/pizzarraia/login.html)
+- **Registro**: [register.html](https://fullscreencode.com/pizzarraia/register.html)
+
+---
 
 ## 🎨 Personalización de Sesiones (Session Workspace)
 
-Cada sesión puede personalizarse completamente:
+Cada sesión puede personalizarse completamente desde el perfil de usuario:
 
-- **Logo**: Aparece en el header de la galería y en la interfaz de dibujo
-- **Background**: Imagen de fondo para la galería
+- **Logo**: Aparece en el header de la galería y en la interfaz de dibujo.
+- **Background**: Imagen de fondo para la galería de la sesión.
 - **Colores personalizados**:
-  - Color de fondo
-  - Color primario (botones, highlights)
-  - Color secundario (acentos, gradientes)
-  - Color de tipografía
-- **Control de acceso**: Usuarios no logueados, logueados, o específicos
-- **Brushes permitidos**: Selección de qué herramientas están disponibles
-- **Restricciones**: Kaleidoscopio, capas, limpiar canvas
+  - Color de fondo (Background UI).
+  - Color primario (Botones y realces).
+  - Color secundario (Acentos y gradientes).
+  - Color de tipografía.
+- **Control de acceso**: Público, solo registrados, o solo usuarios seleccionados.
+- **Configuración de herramientas**: Selector de brushes permitidos.
+- **Restricciones activas**: Bloqueo de kaleidoscopio, capas o botón de limpiar canvas.
 
 ## 🚀 Tecnologías
 
@@ -95,7 +83,7 @@ Cada sesión puede personalizarse completamente:
 ## 📦 Estructura del Proyecto
 
 ```
-pizarraia/
+pizzarraia/
 ├── public/
 │   ├── index.html          # Interfaz de dibujo principal
 │   ├── gallery.html        # Galería de imágenes
@@ -108,35 +96,26 @@ pizarraia/
 │       ├── sketch.js       # Lógica principal de dibujo (P5.js)
 │       ├── config.js       # Configuración de la app
 │       ├── general.js      # Funciones generales
-│       ├── profile.js      # Gestión de sesiones
-│       ├── gallery.js      # Galería de imágenes
-│       └── brushes/        # Sistema de brushes
-│           ├── BaseBrush.js
-│           ├── BrushRegistry.js
-│           ├── standardbrush.js
-│           ├── linebrush.js
-│           ├── artbrush.js
-│           └── ...
+│       ├── cursorGui.js    # Interfaz flotante de pinceles
+│       └── brushes/        # Sistema de brushes dinámicos
 ├── models/
-│   ├── Session.js          # Modelo de sesión
+│   ├── Session.js          # Modelo de sesión (MongoDB)
 │   ├── User.js             # Modelo de usuario
 │   └── Image.js            # Modelo de imagen
 ├── server.js               # Servidor Express + Socket.IO
 └── README.md
-
 ```
 
 ## 🔧 Instalación
 
 ```bash
 # Clonar repositorio
-git clone [tu-repo]
+git clone https://github.com/tu-usuario/pizzarraia.git
 
 # Instalar dependencias
 npm install
 
-# Configurar variables de entorno
-# Crear archivo .env con:
+# Configurar variables de entorno (.env)
 # MONGODB_URI=tu_mongodb_uri
 # JWT_SECRET=tu_secret_key
 # PORT=3025
@@ -147,8 +126,8 @@ npm start
 
 ## 👨‍💻 Autor
 
-Creado por **JPupper** - [https://fullscreencode.com/jpupper](https://fullscreencode.com/jpupper/)
+Creado por **JPupper** - [fullscreencode.com/jpupper](https://fullscreencode.com/jpupper/)
 
 ## 📄 Licencia
 
-Este proyecto es privado y propietario.
+Este proyecto es propiedad privada de **JPupper** y **fullscreencode.com**. Todos los derechos reservados.

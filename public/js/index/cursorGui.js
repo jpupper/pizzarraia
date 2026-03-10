@@ -92,6 +92,10 @@ class CursorGUI {
         this.brushButtonSpacing = 6;
         this.brushButtonCols = 2; // 2 columnas
 
+        // Variables para input inline real
+        this.activeInlineInput = null;
+        this.activeInlineInputControlId = null;
+
         // Cargar brushes del registry
         this.loadBrushesFromRegistry();
     }
@@ -340,6 +344,11 @@ class CursorGUI {
             currentY += brushControls.length * this.barSpacing;
         }
 
+        // Altura dinámica: debe ser el MAXIMO entre el final de los parámetros y el final de los pinceles
+        const brushRows = Math.ceil(this.brushButtons.length / this.brushButtonCols);
+        const brushesTotalHeight = brushRows * (this.brushButtonSize + this.brushButtonSpacing);
+        const brushesEndY = this.brushButtonsY + brushesTotalHeight;
+
         // Calcular dimensiones del contenedor PRIMERO (más ancho para incluir botones a la izquierda)
         const barX = this.centerX - this.sizeBarWidth / 2;
         this.containerX = this.brushButtonsX - this.containerPadding;
@@ -349,9 +358,10 @@ class CursorGUI {
         // Posición del botón de cierre (esquina superior derecha del CONTENEDOR)
         this.closeButtonX = this.containerX + this.containerWidth - this.closeButtonSize - 5;
         this.closeButtonY = this.containerY + 5;
-        // Altura dinámica basada en cuántos controles hay (incluye parámetros y headers)
-        let endY = currentY; // Usar currentY que ya incluye todo
-        this.containerHeight = endY - this.closeButtonY + this.containerPadding * 3;
+
+        // Altura dinámica basada en el punto más bajo entre pinceles y parámetros
+        const endY = Math.max(currentY, brushesEndY);
+        this.containerHeight = endY - this.containerY + this.containerPadding;
 
         console.log('Cursor GUI mostrado en:', x, y);
     }
@@ -367,6 +377,16 @@ class CursorGUI {
         this.hoveredSaturation = null;
         this.hoveredBrightness = null;
         this.hoveredPaletteSlot = null;
+
+        // Eliminar input activo si existe
+        if (this.activeInlineInput) {
+            if (document.body.contains(this.activeInlineInput)) {
+                document.body.removeChild(this.activeInlineInput);
+            }
+            this.activeInlineInput = null;
+            this.activeInlineInputControlId = null;
+        }
+
         this.cancelLongPress();
     }
 
@@ -811,6 +831,24 @@ class CursorGUI {
             this.closeButtonY += deltaY;
             this.containerX += deltaX;
             this.containerY += deltaY;
+
+            // Sincronizar posición del input inline si existe
+            if (this.activeInlineInput) {
+                // Obtener el control actual para saber su Y
+                const activeBrush = window.brushRegistry ? brushRegistry.get(this.currentBrushType) : null;
+                const brushControls = activeBrush ? activeBrush.getCursorGUIControls() : [];
+                let currentY = this.dynamicSlidersY;
+                const barX = this.centerX - this.sizeBarWidth / 2;
+
+                for (const control of brushControls) {
+                    if (control.id === this.activeInlineInputControlId) {
+                        this.activeInlineInput.style.left = (barX + 60) + 'px';
+                        this.activeInlineInput.style.top = (currentY + 4) + 'px';
+                        break;
+                    }
+                    currentY += this.barSpacing;
+                }
+            }
         }
     }
 
@@ -862,8 +900,8 @@ class CursorGUI {
             return true;
         }
 
-        // Verificar si hizo click en un slider dinámico
-        if (this.handleDynamicSliderClick(x, y)) {
+        // Verificar si hizo click en un control dinámico
+        if (this.handleDynamicControlClick(x, y)) {
             return true;
         }
 
@@ -1143,112 +1181,277 @@ class CursorGUI {
     }
 
     /**
-     * Verificar si un punto está en un slider dinámico y actualizar su valor
+     * Verificar si un punto está en un control dinámico y actualizar su valor
      */
-    handleDynamicSliderClick(x, y) {
+    handleDynamicControlClick(x, y) {
         const activeBrush = window.brushRegistry ? brushRegistry.get(this.currentBrushType) : null;
         const brushControls = activeBrush ? activeBrush.getCursorGUIControls() : [];
 
         if (brushControls.length === 0) return false;
 
         const barX = this.centerX - this.sizeBarWidth / 2;
-        let currentSliderY = this.dynamicSlidersY;
+        let currentY = this.dynamicSlidersY;
 
         for (const control of brushControls) {
             if (x >= barX && x <= barX + this.sizeBarWidth &&
-                y >= currentSliderY && y <= currentSliderY + this.sizeBarHeight) {
-
-                // Calcular nuevo valor
-                const percentage = (x - barX) / this.sizeBarWidth;
-                const newValue = control.min + (control.max - control.min) * percentage;
-                const steppedValue = Math.round(newValue / control.step) * control.step;
-                const clampedValue = Math.max(control.min, Math.min(control.max, steppedValue));
+                y >= currentY && y <= currentY + this.sizeBarHeight) {
 
                 // Inicializar brushParams si no existe
                 if (!this.brushParams[this.currentBrushType]) {
                     this.brushParams[this.currentBrushType] = {};
                 }
 
-                // Actualizar valor en brushParams
-                this.brushParams[this.currentBrushType][control.id] = clampedValue;
-
-                // Sincronizar con input HTML si existe Y disparar evento
+                // Obtener valor actual
                 const htmlInput = document.getElementById(control.id);
-                if (htmlInput) {
-                    htmlInput.value = clampedValue;
+                let currentValue = htmlInput ? htmlInput.value : (this.brushParams[this.currentBrushType][control.id] || control.default);
 
-                    // DISPARAR EVENTO INPUT para que el brush detecte el cambio
-                    const inputEvent = new Event('input', { bubbles: true });
-                    htmlInput.dispatchEvent(inputEvent);
+                if (control.type === 'slider' || !control.type) {
+                    // CALCULAR VALOR DEL SLIDER
+                    const percentage = (x - barX) / this.sizeBarWidth;
+                    const newValue = control.min + (control.max - control.min) * percentage;
+                    const steppedValue = Math.round(newValue / control.step) * control.step;
+                    const clampedValue = Math.max(control.min, Math.min(control.max, steppedValue));
 
-                    // Actualizar el span de valor si existe
-                    const valueSpan = document.getElementById(`${control.id}-value`);
-                    if (valueSpan) {
-                        valueSpan.textContent = clampedValue.toFixed(control.step < 1 ? 2 : 0);
-                    }
+                    this.updateControlValue(control.id, clampedValue);
                 }
-
-                console.log(`Parámetro ${control.id} actualizado a:`, clampedValue);
+                else if (control.type === 'text') {
+                    // SI YA ESTÁ ABIERTO EL INPUT PARA ESTE CONTROL, NO HACER NADA
+                    if (this.activeInlineInput && this.activeInlineInputControlId === control.id) {
+                        return true;
+                    }
+                    // EDITAR TEXTO CON INPUT INLINE (NO MÁS ALERT/PROMPT)
+                    this.showInlineInput(control.id, barX + 60, currentY + 4, this.sizeBarWidth - 70, this.sizeBarHeight - 8, currentValue);
+                }
+                else if (control.type === 'select') {
+                    // CICLAR OPCIONES DEL SELECT
+                    const options = control.options || [];
+                    let nextIndex = (options.indexOf(currentValue) + 1) % options.length;
+                    const newValue = options[nextIndex];
+                    this.updateControlValue(control.id, newValue);
+                }
 
                 return true;
             }
-            currentSliderY += this.barSpacing;
+            currentY += this.barSpacing;
         }
 
         return false;
     }
 
     /**
-     * Dibujar un slider dinámico para parámetros del brush
+     * Actualizar valor de un control y sincronizar con la interfaz
      */
-    drawDynamicSlider(buffer, control, y) {
-        const barX = this.centerX - this.sizeBarWidth / 2;
-
-        // Fondo de la barra
-        buffer.noStroke();
-        buffer.fill(50, 50, 50, 200);
-        buffer.rect(barX, y, this.sizeBarWidth, this.sizeBarHeight, 15);
-
-        // Obtener valor actual del HTML input (fuente única de verdad)
-        const htmlInput = document.getElementById(control.id);
-        let currentValue;
-
-        if (htmlInput && htmlInput.value !== '') {
-            // Usar valor del HTML input si existe
-            currentValue = parseFloat(htmlInput.value);
-        } else {
-            // Fallback: usar brushParams o default
-            if (!this.brushParams[this.currentBrushType]) {
-                this.brushParams[this.currentBrushType] = {};
-            }
-            if (this.brushParams[this.currentBrushType][control.id] === undefined) {
-                this.brushParams[this.currentBrushType][control.id] = control.default;
-            }
-            currentValue = this.brushParams[this.currentBrushType][control.id];
+    updateControlValue(controlId, value) {
+        if (!this.brushParams[this.currentBrushType]) {
+            this.brushParams[this.currentBrushType] = {};
         }
 
-        const percentage = (currentValue - control.min) / (control.max - control.min);
+        this.brushParams[this.currentBrushType][controlId] = value;
 
-        // Barra de progreso
-        buffer.fill(138, 79, 191, 180);
-        buffer.rect(barX, y, this.sizeBarWidth * percentage, this.sizeBarHeight, 15);
+        // Sincronizar con input HTML
+        const htmlInput = document.getElementById(controlId);
+        if (htmlInput) {
+            htmlInput.value = value;
+            const event = new Event('input', { bubbles: true });
+            htmlInput.dispatchEvent(event);
 
-        // Indicador
-        const indicatorX = barX + this.sizeBarWidth * percentage;
-        buffer.fill(100, 200, 255);
-        buffer.stroke(255, 255, 255, 200);
-        buffer.strokeWeight(2);
-        buffer.ellipse(indicatorX, y + this.sizeBarHeight / 2, 18, 18);
+            // Disparar cambio si es un select
+            const changeEvent = new Event('change', { bubbles: true });
+            htmlInput.dispatchEvent(changeEvent);
 
-        // Label y valor
-        buffer.fill(255, 255, 255, 230);
+            const valueSpan = document.getElementById(`${controlId}-value`);
+            if (valueSpan) {
+                valueSpan.textContent = typeof value === 'number' ? value.toFixed(2) : value;
+            }
+        }
+
+        console.log(`Parámetro ${controlId} actualizado a:`, value);
+    }
+
+    /**
+     * Mostrar un input real de HTML sobre la GUI de p5.js
+     */
+    showInlineInput(controlId, x, y, width, height, initialValue) {
+        console.log('showInlineInput:', { controlId, x, y });
+
+        // Eliminar input activo previo si existe
+        if (this.activeInlineInput) {
+            if (document.body.contains(this.activeInlineInput)) {
+                document.body.removeChild(this.activeInlineInput);
+            }
+        }
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = initialValue;
+        input.id = 'inline-brush-input';
+
+        // Atributos para mejorar experiencia mobile
+        input.autocomplete = 'off';
+        input.autocorrect = 'off';
+        input.spellcheck = false;
+        input.setAttribute('inputmode', 'text');
+
+        // Estilo Premium Reforzado
+        Object.assign(input.style, {
+            position: 'fixed',
+            left: x + 'px',
+            top: y + 'px',
+            width: width + 'px',
+            height: height + 'px',
+            zIndex: '999999', // El más alto posible
+            background: 'rgba(20, 20, 30, 0.98)',
+            color: '#ffffff',
+            border: '2px solid #a855f7',
+            borderRadius: '6px',
+            padding: '0 10px',
+            fontSize: '14px',
+            fontWeight: '600',
+            fontFamily: "'Poppins', sans-serif",
+            outline: 'none',
+            boxShadow: '0 0 20px rgba(168, 85, 247, 0.4)',
+            transition: 'border-color 0.2s, box-shadow 0.2s',
+            pointerEvents: 'auto',
+            userSelect: 'text',
+            webkitUserSelect: 'text'
+        });
+
+        document.body.appendChild(input);
+        this.activeInlineInput = input;
+        this.activeInlineInputControlId = controlId;
+
+        // Foco con pequeño delay para que mobile no lo pierda instantáneamente
+        setTimeout(() => {
+            input.focus({ preventScroll: true });
+            input.select();
+        }, 50);
+
+        // --- EVENTOS ---
+
+        // Evitar que el click se propague al canvas de p5.js
+        const stopProp = (e) => {
+            e.stopPropagation();
+            if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+        };
+
+        input.onmousedown = stopProp;
+        input.ontouchstart = stopProp;
+        input.onclick = stopProp;
+        input.onmouseup = stopProp;
+        input.ontouchend = stopProp;
+
+        input.oninput = (e) => {
+            this.updateControlValue(controlId, e.target.value);
+        };
+
+        input.onkeydown = (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                input.blur();
+            }
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                input.value = initialValue;
+                this.updateControlValue(controlId, initialValue);
+                input.blur();
+            }
+        };
+
+        let isCleaningUp = false;
+        input.onblur = () => {
+            if (isCleaningUp) return;
+            isCleaningUp = true;
+
+            // Timeout mayor para asegurar que mobile procese el evento antes de borrar el elemento
+            setTimeout(() => {
+                if (this.activeInlineInput === input) {
+                    if (document.body.contains(input)) {
+                        document.body.removeChild(input);
+                    }
+                    this.activeInlineInput = null;
+                    this.activeInlineInputControlId = null;
+                }
+            }, 200);
+        };
+    }
+
+    /**
+     * Dibujar un control dinámico (puedes ser slider, texto o desplegable)
+     */
+    drawDynamicControl(buffer, control, y) {
+        const barX = this.centerX - this.sizeBarWidth / 2;
+
+        // Fondo común de la barra
         buffer.noStroke();
-        buffer.textAlign(LEFT, CENTER);
-        buffer.textSize(11);
-        buffer.text(control.label, barX + 5, y + this.sizeBarHeight / 2);
+        buffer.fill(50, 50, 50, 200);
+        buffer.rect(barX, y, this.sizeBarWidth, this.sizeBarHeight, 12);
 
-        buffer.textAlign(RIGHT, CENTER);
-        buffer.text(currentValue.toFixed(control.step < 1 ? 2 : 0), barX + this.sizeBarWidth - 5, y + this.sizeBarHeight / 2);
+        // Obtener valor actual
+        const htmlInput = document.getElementById(control.id);
+        let currentValue = htmlInput ? htmlInput.value : (this.brushParams[this.currentBrushType][control.id] || control.default);
+
+        if (control.type === 'slider' || !control.type) {
+            // DISEÑO SLIDER (Original)
+            const percentage = (parseFloat(currentValue) - control.min) / (control.max - control.min);
+            buffer.fill(138, 79, 191, 180);
+            buffer.rect(barX, y, this.sizeBarWidth * percentage, this.sizeBarHeight, 12);
+
+            const indicatorX = barX + this.sizeBarWidth * percentage;
+            buffer.fill(100, 200, 255);
+            buffer.stroke(255, 255, 255, 200);
+            buffer.strokeWeight(1.5);
+            buffer.ellipse(indicatorX, y + this.sizeBarHeight / 2, 16, 16);
+
+            buffer.fill(255, 255, 255, 230);
+            buffer.noStroke();
+            buffer.textAlign(LEFT, CENTER);
+            buffer.textSize(10);
+            buffer.text(control.label, barX + 8, y + this.sizeBarHeight / 2);
+            buffer.textAlign(RIGHT, CENTER);
+            buffer.text(parseFloat(currentValue).toFixed(control.step < 1 ? 2 : 0), barX + this.sizeBarWidth - 8, y + this.sizeBarHeight / 2);
+        }
+        else if (control.type === 'text') {
+            // DISEÑO TEXTO
+            buffer.fill(255, 255, 255, 30);
+            buffer.rect(barX + 60, y + 4, this.sizeBarWidth - 70, this.sizeBarHeight - 8, 4);
+
+            buffer.fill(255, 255, 255, 230);
+            buffer.noStroke();
+            buffer.textAlign(LEFT, CENTER);
+            buffer.textSize(10);
+            buffer.text(control.label, barX + 8, y + this.sizeBarHeight / 2);
+
+            buffer.textAlign(LEFT, CENTER);
+            buffer.textSize(11);
+            let displayText = currentValue.toString();
+            if (displayText.length > 18) displayText = displayText.substring(0, 15) + '...';
+            buffer.text(displayText, barX + 65, y + this.sizeBarHeight / 2);
+
+            // Icono de edición (lápiz simple)
+            buffer.textAlign(RIGHT, CENTER);
+            buffer.textSize(10);
+            buffer.text('✎', barX + this.sizeBarWidth - 8, y + this.sizeBarHeight / 2);
+        }
+        else if (control.type === 'select') {
+            // DISEÑO SELECT
+            buffer.fill(255, 255, 255, 30);
+            buffer.rect(barX + 60, y + 4, this.sizeBarWidth - 70, this.sizeBarHeight - 8, 4);
+
+            buffer.fill(255, 255, 255, 230);
+            buffer.noStroke();
+            buffer.textAlign(LEFT, CENTER);
+            buffer.textSize(10);
+            buffer.text(control.label, barX + 8, y + this.sizeBarHeight / 2);
+
+            buffer.textAlign(LEFT, CENTER);
+            buffer.textSize(11);
+            buffer.text(currentValue.toString(), barX + 65, y + this.sizeBarHeight / 2);
+
+            // Flechas de selección
+            buffer.textAlign(RIGHT, CENTER);
+            buffer.textSize(10);
+            buffer.text('⇆', barX + this.sizeBarWidth - 8, y + this.sizeBarHeight / 2);
+        }
     }
 
     /**
@@ -1681,10 +1884,10 @@ class CursorGUI {
         const brushControls = activeBrush ? activeBrush.getCursorGUIControls() : [];
 
         if (!this.brushParamsCollapsed && brushControls.length > 0) {
-            let currentSliderY = this.dynamicSlidersY;
+            let currentY = this.dynamicSlidersY;
             brushControls.forEach(control => {
-                this.drawDynamicSlider(buffer, control, currentSliderY);
-                currentSliderY += this.barSpacing;
+                this.drawDynamicControl(buffer, control, currentY);
+                currentY += this.barSpacing;
             });
         }
 

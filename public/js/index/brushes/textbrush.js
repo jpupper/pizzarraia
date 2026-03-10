@@ -18,10 +18,28 @@ class TextBrush extends BaseBrush {
     }
 
     getCursorGUIControls() {
-        // TextBrush usa el size general del brush, no necesita parámetro específico
-        return [];
+        return [
+            {
+                id: 'textContent',
+                type: 'text',
+                label: 'Texto',
+                default: 'TEXTO'
+            },
+            {
+                id: 'textFont',
+                type: 'select',
+                label: 'Fuente',
+                default: 'Arial',
+                options: [
+                    'Arial', 'Roboto', 'Montserrat', 'Lato', 'Open Sans', 'Poppins',
+                    'Dancing Script', 'Pacifico', 'Indie Flower', 'Shadows Into Light',
+                    'Permanent Marker', 'Caveat', 'Satisfy', 'Quicksand', 'Comfortaa',
+                    'Josefin Sans'
+                ]
+            }
+        ];
     }
-    
+
     drawCursorGUIPreview(buffer, x, y, size, color) {
         buffer.push();
         buffer.fill(color);
@@ -31,7 +49,7 @@ class TextBrush extends BaseBrush {
         buffer.text('A', x, y);
         buffer.pop();
     }
-    
+
     renderControls() {
         return `
             <label>Text</label>
@@ -73,7 +91,7 @@ class TextBrush extends BaseBrush {
     draw(buffer, x, y, params) {
         // USAR SIEMPRE EL SIZE GLOBAL DEL SLIDER
         const { color, size = 40, kaleidoSegments = 1, textContent = 'TEXTO', textFont = 'Arial' } = params;
-        
+
         if (kaleidoSegments <= 1) {
             this.drawBasicText(buffer, x, y, textContent, size, textFont, color);
         } else {
@@ -84,7 +102,7 @@ class TextBrush extends BaseBrush {
             const distance = Math.sqrt(dx * dx + dy * dy);
             const angle = Math.atan2(dy, dx);
             const angleStep = (Math.PI * 2) / kaleidoSegments;
-            
+
             for (let i = 0; i < kaleidoSegments; i++) {
                 const segmentAngle = angleStep * i;
                 const newX = centerX + Math.cos(angle + segmentAngle) * distance;

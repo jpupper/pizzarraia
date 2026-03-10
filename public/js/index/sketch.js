@@ -898,7 +898,12 @@ function draw() {
 // FUNCIONES DE EVENTOS
 // ============================================================
 
-function mousePressed() {
+function mousePressed(event) {
+    // Si el click es sobre un elemento HTML que no es el canvas, no bloquear
+    if (event && event.target && event.target.tagName !== 'CANVAS') {
+        return true; // Permitir el comportamiento por defecto
+    }
+
     // Verificar si se hizo click en una scrollbar
     if (handleScrollbarClick(mouseX, mouseY)) {
         return; // Click en scrollbar, no procesar más eventos
