@@ -147,7 +147,7 @@ npm start
 
 ## 👨‍💻 Autor
 
-Creado por **JPupper** - [jeyder.com.ar/jpupper](https://jeyder.com.ar/jpupper/)
+Creado por **JPupper** - [https://fullscreencode.com/jpupper](https://fullscreencode.com/jpupper/)
 
 ## 📄 Licencia
 
