@@ -8,9 +8,9 @@ const http = require('http');
 
 // Configuración
 const IS_LOCAL = true; // Cambiar a false para probar en producción
-const BASE_URL = IS_LOCAL 
-  ? 'http://localhost:3025/pizarraia'
-  : 'https://vps-4455523-x.dattaweb.com/pizarraia';
+const BASE_URL = IS_LOCAL
+  ? 'http://localhost:3025/pizzarraia'
+  : 'https://vps-4455523-x.dattaweb.com/pizzarraia';
 
 // Función helper para hacer requests
 function makeRequest(path, method = 'GET', data = null) {
@@ -18,7 +18,7 @@ function makeRequest(path, method = 'GET', data = null) {
     const url = new URL(BASE_URL + path);
     const isHttps = url.protocol === 'https:';
     const lib = isHttps ? https : http;
-    
+
     const options = {
       hostname: url.hostname,
       port: url.port || (isHttps ? 443 : 80),
@@ -31,11 +31,11 @@ function makeRequest(path, method = 'GET', data = null) {
 
     const req = lib.request(options, (res) => {
       let body = '';
-      
+
       res.on('data', (chunk) => {
         body += chunk;
       });
-      
+
       res.on('end', () => {
         try {
           const jsonBody = JSON.parse(body);
@@ -93,7 +93,7 @@ async function runTests() {
       username: testUsername,
       password: 'test123'
     });
-    
+
     if (result.status === 200 || result.status === 201) {
       console.log('✅ Status:', result.status);
       console.log('📦 Response:', result.body);

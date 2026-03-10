@@ -131,7 +131,7 @@ app.get('/pizzarraia', (req, res) => {
 app.get('/', (req, res) => {
   res.statusCode = 200;
   res.setHeader('Content-Type', 'text/plain');
-  res.end('Pizarraia Server');
+  res.end('Pizzarraia Server');
 });
 
 // API Routes
