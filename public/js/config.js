@@ -16,7 +16,7 @@ const config = {
   get SOCKET_URL() {
     return this.isLocal
       ? `http://localhost:${PORT}`
-      : 'https://vps-4455523-x.dattaweb.com';
+      : window.location.origin; // Usa el dominio actual (funciona para VPS o fullscreencode.com)
   },
 
   // Path base de la aplicación
