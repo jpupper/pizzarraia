@@ -1,166 +1,166 @@
 var GUI = document.getElementById("gui");
 var MODAL = document.getElementById("modal");
 
-window.onload = function() {
-    initializeSlidersFromConfig();
-    setupButtonEvents();
-    setupCloseButton();
-    setupBrushTypeEvents();
-    setupBrushSelector();
-    setupColorPalette();
-    renderLayerButtons(); // Renderizar capas dinámicamente
-    setupLayerSelector();
-    setupSocketControls();
-    setupChat();
-    setupTabs();
-    checkUserAuthentication();
-    setRandomFirstColor(); // Color random en primer slot
-    setupGuiAutoClose(); // Cerrar GUI al hacer click afuera
+window.onload = function () {
+  initializeSlidersFromConfig();
+  setupButtonEvents();
+  setupCloseButton();
+  setupBrushTypeEvents();
+  setupBrushSelector();
+  setupColorPalette();
+  renderLayerButtons(); // Renderizar capas dinámicamente
+  setupLayerSelector();
+  setupSocketControls();
+  setupChat();
+  setupTabs();
+  checkUserAuthentication();
+  setRandomFirstColor(); // Color random en primer slot
+  setupGuiAutoClose(); // Cerrar GUI al hacer click afuera
 };
 
 // Función para inicializar sliders desde config.js
 function initializeSlidersFromConfig() {
-    if (!config || !config.sliders) {
-        console.warn('Config.sliders no está definido');
-        return;
+  if (!config || !config.sliders) {
+    console.warn('Config.sliders no está definido');
+    return;
+  }
+
+  const sliders = config.sliders;
+
+  // Aplicar configuración a cada slider
+  Object.keys(sliders).forEach(sliderId => {
+    const slider = document.getElementById(sliderId);
+    if (slider) {
+      const sliderConfig = sliders[sliderId];
+      slider.min = sliderConfig.min;
+      slider.max = sliderConfig.max;
+      slider.value = sliderConfig.default;
+      slider.step = sliderConfig.step;
+
+      console.log(`Slider ${sliderId} configurado: min=${sliderConfig.min}, max=${sliderConfig.max}, value=${sliderConfig.default}, step=${sliderConfig.step}`);
     }
-    
-    const sliders = config.sliders;
-    
-    // Aplicar configuración a cada slider
-    Object.keys(sliders).forEach(sliderId => {
-        const slider = document.getElementById(sliderId);
-        if (slider) {
-            const sliderConfig = sliders[sliderId];
-            slider.min = sliderConfig.min;
-            slider.max = sliderConfig.max;
-            slider.value = sliderConfig.default;
-            slider.step = sliderConfig.step;
-            
-            console.log(`Slider ${sliderId} configurado: min=${sliderConfig.min}, max=${sliderConfig.max}, value=${sliderConfig.default}, step=${sliderConfig.step}`);
-        }
-    });
-    
-    // Inicializar variables globales del Art Brush con los valores por defecto
-    if (config.sliders.speedForce) {
-        window.artBrushSpeedForce = config.sliders.speedForce.default;
-        console.log('artBrushSpeedForce inicializado a:', window.artBrushSpeedForce);
-    }
-    if (config.sliders.maxSpeed) {
-        window.artBrushMaxSpeed = config.sliders.maxSpeed.default;
-        console.log('artBrushMaxSpeed inicializado a:', window.artBrushMaxSpeed);
-    }
-    
-    // Actualizar los valores numéricos iniciales
-    updateAllSliderValues();
+  });
+
+  // Inicializar variables globales del Art Brush con los valores por defecto
+  if (config.sliders.speedForce) {
+    window.artBrushSpeedForce = config.sliders.speedForce.default;
+    console.log('artBrushSpeedForce inicializado a:', window.artBrushSpeedForce);
+  }
+  if (config.sliders.maxSpeed) {
+    window.artBrushMaxSpeed = config.sliders.maxSpeed.default;
+    console.log('artBrushMaxSpeed inicializado a:', window.artBrushMaxSpeed);
+  }
+
+  // Actualizar los valores numéricos iniciales
+  updateAllSliderValues();
 }
 
 // Función para actualizar el valor numérico de un slider
 function updateSliderValue(sliderId) {
-    const slider = document.getElementById(sliderId);
-    const valueSpan = document.getElementById(sliderId + '-value');
-    
-    if (slider && valueSpan) {
-        let value = slider.value;
-        // Formatear según el tipo de slider
-        if (sliderId === 'size' || sliderId === 'speedForce' || sliderId === 'maxSpeed') {
-            value = parseFloat(value).toFixed(1);
-        } else if (sliderId === 'shrinkSpeed' || sliderId === 'animSpeed') {
-            // FlowerBrush sliders con 2 decimales
-            value = parseFloat(value).toFixed(2);
-        } else {
-            value = parseInt(value);
-        }
-        valueSpan.textContent = value;
+  const slider = document.getElementById(sliderId);
+  const valueSpan = document.getElementById(sliderId + '-value');
+
+  if (slider && valueSpan) {
+    let value = slider.value;
+    // Formatear según el tipo de slider
+    if (sliderId === 'size' || sliderId === 'speedForce' || sliderId === 'maxSpeed') {
+      value = parseFloat(value).toFixed(1);
+    } else if (sliderId === 'shrinkSpeed' || sliderId === 'animSpeed') {
+      // FlowerBrush sliders con 2 decimales
+      value = parseFloat(value).toFixed(2);
+    } else {
+      value = parseInt(value);
     }
+    valueSpan.textContent = value;
+  }
 }
 
 // Función para actualizar todos los valores numéricos
 function updateAllSliderValues() {
-    const sliderIds = ['alphaValue', 'size', 'kaleidoSegments', 'autocleanOpacity', 'gridCols', 'gridRows', 'particleCount', 'speedForce', 'maxSpeed', 'particleLife', 'particleMaxSize', 'polygonSides', 'fillTolerance', 'shrinkSpeed', 'animSpeed'];
-    sliderIds.forEach(sliderId => updateSliderValue(sliderId));
+  const sliderIds = ['alphaValue', 'size', 'kaleidoSegments', 'autocleanOpacity', 'gridCols', 'gridRows', 'particleCount', 'speedForce', 'maxSpeed', 'particleLife', 'particleMaxSize', 'polygonSides', 'fillTolerance', 'shrinkSpeed', 'animSpeed'];
+  sliderIds.forEach(sliderId => updateSliderValue(sliderId));
 }
 
 function setupCloseButton() {
-    const closeButton = document.getElementById("closeButton");
-    closeButton.addEventListener("click", closeGui);
-    closeButton.addEventListener("mouseover", () => {
-        isOverGui = true;
-    });
-    closeButton.addEventListener("mouseout", () => {
-        isOverGui = false;
-    });
+  const closeButton = document.getElementById("closeButton");
+  closeButton.addEventListener("click", closeGui);
+  closeButton.addEventListener("mouseover", () => {
+    isOverGui = true;
+  });
+  closeButton.addEventListener("mouseout", () => {
+    isOverGui = false;
+  });
 }
 
 function setupButtonEvents() {
-    const openButton = document.getElementById("opengui");
-    
-    // Eventos de hover
-    openButton.addEventListener("mouseover", () => {
-        isOverOpenButton = true;
-    });
-    openButton.addEventListener("mouseout", () => {
-        isOverOpenButton = false;
-    });
-    
-    // Evento de click para abrir el GUI
-    openButton.addEventListener("click", () => {
-        openGui();
-    });
+  const openButton = document.getElementById("opengui");
+
+  // Eventos de hover
+  openButton.addEventListener("mouseover", () => {
+    isOverOpenButton = true;
+  });
+  openButton.addEventListener("mouseout", () => {
+    isOverOpenButton = false;
+  });
+
+  // Evento de click para abrir el GUI
+  openButton.addEventListener("click", () => {
+    openGui();
+  });
 }
 
 function updateCurrentFont() {
-    const select = document.getElementById("fontSelector");
-    const textoInput = document.getElementById("texto1");
-    
-    // Actualizar el estilo del select
-    select.style.fontFamily = select.value;
-    // Actualizar el estilo del input de texto
-    textoInput.style.fontFamily = select.value;
+  const select = document.getElementById("fontSelector");
+  const textoInput = document.getElementById("texto1");
+
+  // Actualizar el estilo del select
+  select.style.fontFamily = select.value;
+  // Actualizar el estilo del input de texto
+  textoInput.style.fontFamily = select.value;
 }
 
-function openGui(){
-	console.log("ABRIR GUI");
-	document.getElementById("gui").style.display = "block";
-	document.getElementById("opengui").style.display = "none";
-	isRandomValues = false;
-	
-	// Forzar ocultamiento de botones no permitidos al abrir GUI
-	if (typeof forceHideNonAllowedButtons === 'function') {
-		setTimeout(() => forceHideNonAllowedButtons(), 50);
-	}
+function openGui() {
+  console.log("ABRIR GUI");
+  document.getElementById("gui").style.display = "block";
+  document.getElementById("opengui").style.display = "none";
+  isRandomValues = false;
+
+  // Forzar ocultamiento de botones no permitidos al abrir GUI
+  if (typeof forceHideNonAllowedButtons === 'function') {
+    setTimeout(() => forceHideNonAllowedButtons(), 50);
+  }
 }
 
-function closeGui(){
-	console.log("CERRAR GUI");
-	document.getElementById("gui").style.display = "none";
-	document.getElementById("opengui").style.display = "block";
-	
-	// Forzar ocultamiento de botones no permitidos al cerrar GUI
-	if (typeof forceHideNonAllowedButtons === 'function') {
-		setTimeout(() => forceHideNonAllowedButtons(), 50);
-	}
+function closeGui() {
+  console.log("CERRAR GUI");
+  document.getElementById("gui").style.display = "none";
+  document.getElementById("opengui").style.display = "block";
+
+  // Forzar ocultamiento de botones no permitidos al cerrar GUI
+  if (typeof forceHideNonAllowedButtons === 'function') {
+    setTimeout(() => forceHideNonAllowedButtons(), 50);
+  }
 }
 
 
-$("#gui").mouseover(function() {
+$("#gui").mouseover(function () {
   //console.log("ENTRA PLIS");
   isOverGui = true;
 });
 
-$("#gui").mouseleave(function() {
- // console.log("SALE PLIS");
+$("#gui").mouseleave(function () {
+  // console.log("SALE PLIS");
   isOverGui = false;
 });
 
 // Touch events for mobile
-$("#gui").on("touchstart", function() {
+$("#gui").on("touchstart", function () {
   isOverGui = true;
 });
 
-$("#gui").on("touchend", function() {
+$("#gui").on("touchend", function () {
   // Keep isOverGui true to prevent accidental drawing when touching GUI elements
-  setTimeout(function() {
+  setTimeout(function () {
     if (!$.contains(document.getElementById("gui"), document.activeElement)) {
       isOverGui = false;
     }
@@ -173,40 +173,40 @@ function setupBrushTypeEvents() {
   const alphaValueInput = document.getElementById('alphaValue');
   const sizeInput = document.getElementById('size');
   const kaleidoSegmentsInput = document.getElementById('kaleidoSegments');
-  
+
   if (alphaValueInput) {
-    alphaValueInput.addEventListener('input', function() {
+    alphaValueInput.addEventListener('input', function () {
       updateSliderValue('alphaValue');
     });
   }
-  
+
   if (sizeInput) {
-    sizeInput.addEventListener('input', function() {
+    sizeInput.addEventListener('input', function () {
       updateSliderValue('size');
     });
   }
-  
+
   if (kaleidoSegmentsInput) {
-    kaleidoSegmentsInput.addEventListener('input', function() {
+    kaleidoSegmentsInput.addEventListener('input', function () {
       updateSliderValue('kaleidoSegments');
     });
   }
-  
+
   const autocleanOpacityInput = document.getElementById('autocleanOpacity');
   if (autocleanOpacityInput) {
-    autocleanOpacityInput.addEventListener('input', function() {
+    autocleanOpacityInput.addEventListener('input', function () {
       updateSliderValue('autocleanOpacity');
     });
   }
-  
+
   const brushTypeSelect = document.getElementById('brushType');
-  
+
   // Only setup if brushTypeSelect exists (old system)
   if (!brushTypeSelect) {
     console.log('Brush type select not found - using new brush registry system');
     return;
   }
-  
+
   const classicBrushParams = document.getElementById('classicBrushParams');
   const pixelBrushParams = document.getElementById('pixelBrushParams');
   const artBrushParams = document.getElementById('artBrushParams');
@@ -215,24 +215,24 @@ function setupBrushTypeEvents() {
   const fillBrushParams = document.getElementById('fillBrushParams');
   const imageBrushParams = document.getElementById('imageBrushParams');
   const flowerBrushParams = document.getElementById('flowerBrushParams');
-  
+
   // Get all brush parameter containers
   const allBrushParams = document.querySelectorAll('.brushParams');
-  
+
   // Initial check
   toggleBrushParams();
-  
+
   // Add event listener for brush type changes
   brushTypeSelect.addEventListener('change', toggleBrushParams);
-  
+
   function toggleBrushParams() {
     // Hide all brush parameter containers
     allBrushParams.forEach(container => {
       container.style.display = 'none';
     });
-    
+
     // Show the appropriate container based on the selected brush type
-    switch(brushTypeSelect.value) {
+    switch (brushTypeSelect.value) {
       case 'classic':
         classicBrushParams.style.display = 'block';
         break;
@@ -267,13 +267,13 @@ function setupBrushTypeEvents() {
         break;
     }
   }
-  
+
   // Add event listeners for grid parameters (Pixel Brush)
   const gridColsInput = document.getElementById('gridCols');
   const gridRowsInput = document.getElementById('gridRows');
   const showGridCheckbox = document.getElementById('showGrid');
-  
-  gridColsInput.addEventListener('input', function() {
+
+  gridColsInput.addEventListener('input', function () {
     if (window.gridCols) {
       window.gridCols = parseInt(this.value);
       updateGridDimensions();
@@ -281,8 +281,8 @@ function setupBrushTypeEvents() {
     }
     updateSliderValue('gridCols');
   });
-  
-  gridRowsInput.addEventListener('input', function() {
+
+  gridRowsInput.addEventListener('input', function () {
     if (window.gridRows) {
       window.gridRows = parseInt(this.value);
       updateGridDimensions();
@@ -290,60 +290,60 @@ function setupBrushTypeEvents() {
     }
     updateSliderValue('gridRows');
   });
-  
-  showGridCheckbox.addEventListener('change', function() {
+
+  showGridCheckbox.addEventListener('change', function () {
     // Solo actualizar el buffer de la grilla cuando cambia la visibilidad
     updateGridBuffer();
   });
-  
+
   // Add event listeners for art brush parameters
   const particleCountInput = document.getElementById('particleCount');
   const speedForceInput = document.getElementById('speedForce');
   const maxSpeedInput = document.getElementById('maxSpeed');
   const particleLifeInput = document.getElementById('particleLife');
   const particleMaxSizeInput = document.getElementById('particleMaxSize');
-  
-  particleCountInput.addEventListener('input', function() {
+
+  particleCountInput.addEventListener('input', function () {
     // Asignar directamente el valor del slider a la variable global
     window.particleCount = parseInt(this.value);
     console.log('Particle count actualizado:', window.particleCount);
     updateSliderValue('particleCount');
   });
-  
+
   // Event listener for speed force slider
-  speedForceInput.addEventListener('input', function() {
+  speedForceInput.addEventListener('input', function () {
     // Actualizar el multiplicador de velocidad
     const speedForce = parseFloat(this.value);
     console.log('Speed Force slider cambiado a:', speedForce);
     updateArtBrushParameters({ speedForce: speedForce });
     updateSliderValue('speedForce');
   });
-  
+
   // Event listener for max speed slider
-  maxSpeedInput.addEventListener('input', function() {
+  maxSpeedInput.addEventListener('input', function () {
     // Actualizar el límite máximo de velocidad
     const maxSpeed = parseFloat(this.value);
     console.log('Max Speed slider cambiado a:', maxSpeed);
     updateArtBrushParameters({ maxSpeed: maxSpeed });
     updateSliderValue('maxSpeed');
   });
-  
+
   // Event listener for particle life slider
-  particleLifeInput.addEventListener('input', function() {
+  particleLifeInput.addEventListener('input', function () {
     // Actualizar la vida de las partículas
     const particleLife = parseInt(this.value);
     updateArtBrushParameters({ particleLife: particleLife });
     updateSliderValue('particleLife');
   });
-  
+
   // Event listener for particle size slider
-  particleMaxSizeInput.addEventListener('input', function() {
+  particleMaxSizeInput.addEventListener('input', function () {
     // Actualizar el tamaño máximo de las partículas
     updateSliderValue('particleMaxSize');
   });
-  
+
   // TextBrush ahora usa el slider Size global, no tiene textSize específico
-  
+
   // Add event listeners for geometry brush parameters
   const spiroModuloInput = document.getElementById('spiroModulo');
   const spiroIncInput = document.getElementById('spiroInc');
@@ -351,53 +351,53 @@ function setupBrushTypeEvents() {
   const npoints1Input = document.getElementById('npoints1');
   const borderScaleInput = document.getElementById('borderScale');
   const borderAlphaInput = document.getElementById('borderAlpha');
-  
+
   if (spiroModuloInput) {
-    spiroModuloInput.addEventListener('input', function() {
+    spiroModuloInput.addEventListener('input', function () {
       updateSliderValue('spiroModulo');
     });
   }
-  
+
   if (spiroIncInput) {
-    spiroIncInput.addEventListener('input', function() {
+    spiroIncInput.addEventListener('input', function () {
       updateSliderValue('spiroInc');
     });
   }
-  
+
   if (radius2Input) {
-    radius2Input.addEventListener('input', function() {
+    radius2Input.addEventListener('input', function () {
       updateSliderValue('radius2');
     });
   }
-  
+
   if (npoints1Input) {
-    npoints1Input.addEventListener('input', function() {
+    npoints1Input.addEventListener('input', function () {
       updateSliderValue('npoints1');
     });
   }
-  
+
   if (borderScaleInput) {
-    borderScaleInput.addEventListener('input', function() {
+    borderScaleInput.addEventListener('input', function () {
       updateSliderValue('borderScale');
     });
   }
-  
+
   if (borderAlphaInput) {
-    borderAlphaInput.addEventListener('input', function() {
+    borderAlphaInput.addEventListener('input', function () {
       updateSliderValue('borderAlpha');
     });
   }
-  
+
   // Add event listeners for fill brush parameters
   const fillToleranceInput = document.getElementById('fillTolerance');
-  
+
   if (fillToleranceInput) {
-    fillToleranceInput.addEventListener('input', function() {
+    fillToleranceInput.addEventListener('input', function () {
       updateSliderValue('fillTolerance');
       updateArtBrushParameters({ fillTolerance: parseInt(this.value) });
     });
   }
-  
+
   // Add event listeners for flower brush parameters
   const minSizeInput = document.getElementById('minSize');
   const maxSizeInput = document.getElementById('maxSize');
@@ -406,45 +406,45 @@ function setupBrushTypeEvents() {
   const flowerStrokeWeightInput = document.getElementById('flowerStrokeWeight');
   const strokeAlphaInput = document.getElementById('strokeAlpha');
   const shrinkSpeedInput = document.getElementById('shrinkSpeed');
-  
+
   if (minSizeInput) {
-    minSizeInput.addEventListener('input', function() {
+    minSizeInput.addEventListener('input', function () {
       updateSliderValue('minSize');
     });
   }
-  
+
   if (maxSizeInput) {
-    maxSizeInput.addEventListener('input', function() {
+    maxSizeInput.addEventListener('input', function () {
       updateSliderValue('maxSize');
     });
   }
-  
+
   if (frequencyInput) {
-    frequencyInput.addEventListener('input', function() {
+    frequencyInput.addEventListener('input', function () {
       updateSliderValue('frequency');
     });
   }
-  
+
   if (animSpeedInput) {
-    animSpeedInput.addEventListener('input', function() {
+    animSpeedInput.addEventListener('input', function () {
       updateSliderValue('animSpeed');
     });
   }
-  
+
   if (flowerStrokeWeightInput) {
-    flowerStrokeWeightInput.addEventListener('input', function() {
+    flowerStrokeWeightInput.addEventListener('input', function () {
       updateSliderValue('flowerStrokeWeight');
     });
   }
-  
+
   if (strokeAlphaInput) {
-    strokeAlphaInput.addEventListener('input', function() {
+    strokeAlphaInput.addEventListener('input', function () {
       updateSliderValue('strokeAlpha');
     });
   }
-  
+
   if (shrinkSpeedInput) {
-    shrinkSpeedInput.addEventListener('input', function() {
+    shrinkSpeedInput.addEventListener('input', function () {
       updateSliderValue('shrinkSpeed');
     });
   }
@@ -454,30 +454,30 @@ function setupBrushTypeEvents() {
 function setupBrushSelector() {
   const brushButtons = document.querySelectorAll('.brush-btn');
   const brushTypeInput = document.getElementById('brushType');
-  
+
   // If no brush buttons or brushType input, we're using the new brush registry system
   if (brushButtons.length === 0 || !brushTypeInput) {
     console.log('Using new brush registry system - old brush selector not needed');
     return;
   }
-  
+
   brushButtons.forEach(button => {
-    button.addEventListener('click', function() {
+    button.addEventListener('click', function () {
       // Remover clase active de todos los botones
       brushButtons.forEach(btn => btn.classList.remove('active'));
-      
+
       // Agregar clase active al botón clickeado
       this.classList.add('active');
-      
+
       // Actualizar el valor del input hidden
       const brushValue = this.getAttribute('data-brush');
       brushTypeInput.value = brushValue;
-      
+
       // Track brush change
       if (window.analyticsTracker) {
         window.analyticsTracker.trackBrushChange(brushValue);
       }
-      
+
       // Disparar evento change para que se actualicen los parámetros
       const event = new Event('change');
       brushTypeInput.dispatchEvent(event);
@@ -491,20 +491,20 @@ function setupLayerSelector() {
   const visibilityButtons = document.querySelectorAll('.layer-visibility-btn');
   const layerPreviews = document.querySelectorAll('[id^="layerPreview"]');
   const layerItems = document.querySelectorAll('.layer-item');
-  
+
   if (!layerButtons || layerButtons.length === 0) return;
-  
+
   // Event listeners para botones de selección de capa
   layerButtons.forEach((button, index) => {
-    button.addEventListener('click', function(e) {
+    button.addEventListener('click', function (e) {
       e.stopPropagation(); // Evitar que se propague al contenedor
-      
+
       // Remover clase active de todos los botones
       layerButtons.forEach(btn => btn.classList.remove('active'));
-      
+
       // Agregar clase active al botón clickeado
       this.classList.add('active');
-      
+
       // Actualizar la capa activa en sketch.js
       const layerIndex = parseInt(this.getAttribute('data-layer'));
       if (typeof window.activeLayer !== 'undefined') {
@@ -513,18 +513,18 @@ function setupLayerSelector() {
       }
     });
   });
-  
+
   // Event listeners para botones de visibilidad
   visibilityButtons.forEach((button, index) => {
-    button.addEventListener('click', function(e) {
+    button.addEventListener('click', function (e) {
       e.stopPropagation(); // Evitar que se propague al contenedor
-      
+
       const layerIndex = parseInt(this.getAttribute('data-layer'));
-      
+
       // Toggle visibilidad
       if (typeof window.layerVisibility !== 'undefined') {
         window.layerVisibility[layerIndex] = !window.layerVisibility[layerIndex];
-        
+
         // Toggle clase active
         if (window.layerVisibility[layerIndex]) {
           this.classList.add('active');
@@ -536,56 +536,56 @@ function setupLayerSelector() {
       }
     });
   });
-  
+
   // Event listeners para previsualizaciones (clickear para seleccionar capa)
   layerPreviews.forEach((preview, index) => {
-    preview.addEventListener('click', function(e) {
+    preview.addEventListener('click', function (e) {
       e.stopPropagation(); // Evitar que se propague al contenedor
-      
+
       const layerIndex = parseInt(this.id.replace('layerPreview', ''));
-      
+
       // Remover clase active de todos los botones
       layerButtons.forEach(btn => btn.classList.remove('active'));
-      
+
       // Agregar clase active al botón correspondiente
       const targetButton = document.querySelector(`.layer-btn[data-layer="${layerIndex}"]`);
       if (targetButton) {
         targetButton.classList.add('active');
       }
-      
+
       // Actualizar la capa activa
       if (typeof window.activeLayer !== 'undefined') {
         window.activeLayer = layerIndex;
         console.log('Capa activa cambiada a:', layerIndex, '(desde preview)');
       }
     });
-    
+
     // Cambiar cursor al pasar sobre el preview
     preview.style.cursor = 'pointer';
   });
-  
+
   // Event listeners para el contenedor completo de cada capa (NUEVO)
   layerItems.forEach((item, index) => {
     item.style.cursor = 'pointer';
-    
-    item.addEventListener('click', function(e) {
+
+    item.addEventListener('click', function (e) {
       // Solo procesar si no se clickeó en botones específicos
       if (e.target.closest('.layer-visibility-btn') || e.target.closest('.btn-delete-layer')) {
         return; // No hacer nada si se clickeó el botón de visibilidad o eliminar
       }
-      
+
       // Obtener el índice de la capa desde el botón dentro del contenedor
       const layerBtn = this.querySelector('.layer-btn');
       if (!layerBtn) return;
-      
+
       const layerIndex = parseInt(layerBtn.getAttribute('data-layer'));
-      
+
       // Remover clase active de todos los botones
       layerButtons.forEach(btn => btn.classList.remove('active'));
-      
+
       // Agregar clase active al botón correspondiente
       layerBtn.classList.add('active');
-      
+
       // Actualizar la capa activa
       if (typeof window.activeLayer !== 'undefined') {
         window.activeLayer = layerIndex;
@@ -599,41 +599,41 @@ function setupLayerSelector() {
 function setupColorPalette() {
   const paletteSlots = document.querySelectorAll('.palette-slot');
   const colorInput = document.getElementById('c1');
-  
+
   if (!paletteSlots || !colorInput) return;
-  
+
   // Event listener para cuando cambia el color picker
-  colorInput.addEventListener('input', function() {
+  colorInput.addEventListener('input', function () {
     // Actualizar el color del slot activo en el GUI
     const activeSlot = document.querySelector('.palette-slot.active');
     if (activeSlot) {
       activeSlot.style.backgroundColor = this.value;
     }
-    
+
     // Actualizar el color del slot activo en cursorGUI
     if (window.cursorGUI) {
       window.cursorGUI.updateActivePaletteSlot(this.value);
     }
-    
+
     // Track color change
     if (window.analyticsTracker) {
       window.analyticsTracker.trackColorChange(this.value);
     }
   });
-  
+
   // Event listeners para los slots
   paletteSlots.forEach((slot, index) => {
-    slot.addEventListener('click', function() {
+    slot.addEventListener('click', function () {
       // Remover clase active de todos los slots
       paletteSlots.forEach(s => {
         s.classList.remove('active');
         s.style.border = '2px solid rgba(255,255,255,0.3)';
       });
-      
+
       // Agregar clase active al slot clickeado
       this.classList.add('active');
       this.style.border = '3px solid white';
-      
+
       // Actualizar el color picker con el color del slot
       const slotColor = this.style.backgroundColor;
       // Convertir rgb a hex
@@ -645,12 +645,12 @@ function setupColorPalette() {
         }).join('');
         colorInput.value = hex;
       }
-      
+
       // Actualizar el slot activo en cursorGUI
       if (window.cursorGUI) {
         window.cursorGUI.selectPaletteSlot(index);
       }
-      
+
       console.log('Slot de paleta seleccionado:', index);
     });
   });
@@ -663,24 +663,24 @@ function updateArtBrushParameters(params) {
     console.warn('Art Brush Particle System no está inicializado');
     return;
   }
-  
+
   // Actualizar el multiplicador de velocidad (Speed Force)
   if (params.speedForce !== undefined) {
     window.artBrushSpeedForce = params.speedForce;
     console.log('artBrushSpeedForce actualizado a:', window.artBrushSpeedForce);
   }
-  
+
   // Actualizar el límite máximo de velocidad (Max Speed)
   if (params.maxSpeed !== undefined) {
     window.artBrushMaxSpeed = params.maxSpeed;
     console.log('artBrushMaxSpeed actualizado a:', window.artBrushMaxSpeed);
   }
-  
+
   // Actualizar la vida de las partículas
   if (params.particleLife !== undefined) {
     window.artBrushParticleLife = params.particleLife;
   }
-  
+
   // Actualizar el tamaño máximo de las partículas
   if (params.particleMaxSize !== undefined) {
     window.artBrushParticleMaxSize = params.particleMaxSize;
@@ -694,19 +694,19 @@ function downloadImage() {
     console.error('renderAllLayers no está disponible');
     return;
   }
-  
+
   // Combinar todas las capas visibles
   const combined = window.renderAllLayers();
-  
+
   // Obtener el canvas combinado
   const canvas = combined.canvas;
-  
+
   // Crear un nombre de archivo con timestamp
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
   const filename = `pizarracollab_${timestamp}.png`;
-  
+
   // Convertir el canvas a blob y descargar
-  canvas.toBlob(function(blob) {
+  canvas.toBlob(function (blob) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -725,29 +725,29 @@ function setupSocketControls() {
   const toggleSendBtn = document.getElementById('toggleSend');
   const sessionInput = document.getElementById('sessionInput');
   const changeSessionBtn = document.getElementById('changeSession');
-  
+
   // Inicializar el campo de sesión con la sesión actual
   sessionInput.value = config.getSessionId();
-  
+
   // Cargar información de la sesión
   loadSessionInfo(config.getSessionId());
-  
+
   // Inicializar los botones según la configuración actual
   if (!config.sockets.receiveEnabled) {
     toggleReceiveBtn.classList.remove('active');
     toggleReceiveBtn.classList.add('inactive');
   }
-  
+
   if (!config.sockets.sendEnabled) {
     toggleSendBtn.classList.remove('active');
     toggleSendBtn.classList.add('inactive');
   }
-  
+
   // Configurar evento para el botón de recepción de sockets (auriculares)
-  toggleReceiveBtn.addEventListener('click', function() {
+  toggleReceiveBtn.addEventListener('click', function () {
     // Cambiar el estado
     config.sockets.receiveEnabled = !config.sockets.receiveEnabled;
-    
+
     // Actualizar la apariencia del botón
     if (config.sockets.receiveEnabled) {
       this.classList.remove('inactive');
@@ -757,7 +757,7 @@ function setupSocketControls() {
       this.classList.remove('active');
       this.classList.add('inactive');
       console.log('Recepción de sockets desactivada');
-      
+
       // Si se desactiva la recepción, actualizar el contador de cursores
       const cursorCountElement = document.getElementById('cursorCount');
       if (cursorCountElement) {
@@ -765,12 +765,12 @@ function setupSocketControls() {
       }
     }
   });
-  
+
   // Configurar evento para el botón de envío de sockets (ojo)
-  toggleSendBtn.addEventListener('click', function() {
+  toggleSendBtn.addEventListener('click', function () {
     // Cambiar el estado
     config.sockets.sendEnabled = !config.sockets.sendEnabled;
-    
+
     // Actualizar la apariencia del botón
     if (config.sockets.sendEnabled) {
       this.classList.remove('inactive');
@@ -782,28 +782,28 @@ function setupSocketControls() {
       console.log('Envío de sockets desactivado');
     }
   });
-  
+
   // Configurar evento para el cambio de sesión automático
-  sessionInput.addEventListener('input', function() {
+  sessionInput.addEventListener('input', function () {
     const newSession = this.value.trim();
     if (newSession === '') {
       return; // No hacer nada si está vacío
     }
-    
+
     // Esperar un momento antes de cambiar la sesión para dar tiempo a que el usuario termine de escribir
     clearTimeout(this.sessionChangeTimeout);
-    this.sessionChangeTimeout = setTimeout(function() {
+    this.sessionChangeTimeout = setTimeout(function () {
       // Construir la nueva URL con el parámetro de sesión
       const currentUrl = new URL(window.location.href);
       currentUrl.searchParams.set('sesion', newSession);
-      
+
       // Cambiar la sesión sin alertas ni confirmaciones
       window.location.href = currentUrl.toString();
     }, 1000); // Esperar 1 segundo después de que el usuario deje de escribir
   });
-  
+
   // Permitir presionar Enter para cambiar inmediatamente
-  sessionInput.addEventListener('keypress', function(e) {
+  sessionInput.addEventListener('keypress', function (e) {
     if (e.key === 'Enter') {
       clearTimeout(this.sessionChangeTimeout);
       const newSession = this.value.trim();
@@ -814,7 +814,7 @@ function setupSocketControls() {
       }
     }
   });
-  
+
   // Ocultar el botón de cambiar sesión ya que ahora es automático
   if (changeSessionBtn) {
     changeSessionBtn.style.display = 'none';
@@ -837,15 +837,15 @@ function setupChat() {
   const sendChatBtn = document.getElementById('sendChatBtn');
   const chatMessages = document.getElementById('chatMessages');
   const chatUsernameSpan = document.getElementById('chatUsername');
-  
+
   if (!chatInput || !sendChatBtn || !chatMessages) {
     console.warn('Elementos del chat no encontrados');
     return;
   }
-  
+
   // Variable para almacenar el nombre de usuario del chat
   let username = '';
-  
+
   // Función para actualizar el nombre de usuario del chat
   function updateChatUsername() {
     // Si el usuario está logueado, usar su nombre de usuario
@@ -859,22 +859,22 @@ function setupChat() {
         console.log('Usuario del chat (generado):', username);
       }
     }
-    
+
     // Mostrar el nombre en la interfaz
     if (chatUsernameSpan) {
       chatUsernameSpan.textContent = username;
     }
   }
-  
+
   // Actualizar el nombre cuando el socket se conecta
-  socket.on('connect', function() {
+  socket.on('connect', function () {
     updateChatUsername();
     // Enviar username al servidor
     if (socket && socket.connected && username) {
       socket.emit('update_username', { username: username });
     }
   });
-  
+
   // Si ya está conectado, actualizar inmediatamente
   if (socket.connected) {
     updateChatUsername();
@@ -883,16 +883,16 @@ function setupChat() {
       socket.emit('update_username', { username: username });
     }
   }
-  
+
   // Actualizar el nombre cuando cambia el estado de autenticación
   // Esta función se llamará desde checkUserAuthentication
   window.updateChatUsername = updateChatUsername;
-  
+
   // Función para enviar mensaje
   function sendMessage() {
     const message = chatInput.value.trim();
     if (message === '') return;
-    
+
     // Enviar mensaje por socket
     if (socket && socket.connected) {
       socket.emit('chat_message', {
@@ -902,44 +902,44 @@ function setupChat() {
         timestamp: Date.now()
       });
     }
-    
+
     // Limpiar input
     chatInput.value = '';
   }
-  
+
   // Event listener para el botón de enviar
   sendChatBtn.addEventListener('click', sendMessage);
-  
+
   // Event listener para presionar Enter
-  chatInput.addEventListener('keypress', function(e) {
+  chatInput.addEventListener('keypress', function (e) {
     if (e.key === 'Enter') {
       sendMessage();
     }
   });
-  
+
   // Recibir mensajes de chat
-  socket.on('chat_message', function(data) {
+  socket.on('chat_message', function (data) {
     // Verificar que el mensaje es de la misma sesión
     if (data.session !== sessionId) return;
-    
+
     // Crear elemento de mensaje
     const messageDiv = document.createElement('div');
     messageDiv.className = 'chat-message';
-    
+
     const usernameSpan = document.createElement('span');
     usernameSpan.className = 'chat-username';
     usernameSpan.textContent = data.username + ':';
-    
+
     const textSpan = document.createElement('span');
     textSpan.className = 'chat-text';
     textSpan.textContent = ' ' + data.message;
-    
+
     messageDiv.appendChild(usernameSpan);
     messageDiv.appendChild(textSpan);
-    
+
     // Agregar mensaje al contenedor
     chatMessages.appendChild(messageDiv);
-    
+
     // Scroll automático al último mensaje
     chatMessages.scrollTop = chatMessages.scrollHeight;
   });
@@ -953,26 +953,26 @@ function setupChat() {
 function setupTabs() {
   const tabButtons = document.querySelectorAll('.tab-btn');
   const tabContents = document.querySelectorAll('.tab-content');
-  
+
   tabButtons.forEach(button => {
-    button.addEventListener('click', function() {
+    button.addEventListener('click', function () {
       const tabName = this.getAttribute('data-tab');
-      
+
       // Remover clase active de todos los botones
       tabButtons.forEach(btn => btn.classList.remove('active'));
-      
+
       // Agregar clase active al botón clickeado
       this.classList.add('active');
-      
+
       // Ocultar todo el contenido de las pestañas
       tabContents.forEach(content => content.classList.remove('active'));
-      
+
       // Mostrar el contenido de la pestaña seleccionada
       const selectedTab = document.getElementById('tab-' + tabName);
       if (selectedTab) {
         selectedTab.classList.add('active');
       }
-      
+
       console.log('Pestaña cambiada a:', tabName);
     });
   });
@@ -992,11 +992,11 @@ async function checkUserAuthentication() {
       headers: config.getAuthHeaders()
     });
     const data = await response.json();
-    
+
     if (data.authenticated) {
       currentUser = data.user;
       showUserLoggedIn(data.user.username);
-      
+
       // Actualizar el nombre del chat si la función existe
       if (typeof window.updateChatUsername === 'function') {
         window.updateChatUsername();
@@ -1004,7 +1004,7 @@ async function checkUserAuthentication() {
     } else {
       currentUser = null;
       showUserNotLoggedIn();
-      
+
       // Actualizar el nombre del chat si la función existe
       if (typeof window.updateChatUsername === 'function') {
         window.updateChatUsername();
@@ -1014,7 +1014,7 @@ async function checkUserAuthentication() {
     console.error('Error checking authentication:', error);
     showUserNotLoggedIn();
   }
-  
+
   // Verificar modal de bienvenida DESPUÉS de verificar autenticación
   checkWelcomeModal();
 }
@@ -1024,11 +1024,11 @@ function showUserLoggedIn(username) {
   const userNotLoggedIn = document.getElementById('userNotLoggedIn');
   const userLoggedIn = document.getElementById('userLoggedIn');
   const loggedUsername = document.getElementById('loggedUsername');
-  
+
   if (userNotLoggedIn) userNotLoggedIn.style.display = 'none';
   if (userLoggedIn) userLoggedIn.style.display = 'block';
   if (loggedUsername) loggedUsername.textContent = username;
-  
+
   console.log('Usuario logueado:', username);
 }
 
@@ -1036,32 +1036,32 @@ function showUserLoggedIn(username) {
 function showUserNotLoggedIn() {
   const userNotLoggedIn = document.getElementById('userNotLoggedIn');
   const userLoggedIn = document.getElementById('userLoggedIn');
-  
+
   if (userNotLoggedIn) userNotLoggedIn.style.display = 'block';
   if (userLoggedIn) userLoggedIn.style.display = 'none';
-  
+
   console.log('Usuario no logueado');
 }
 
 // Función para cerrar sesión
 async function logoutUser() {
   try {
-    await fetch(`${config.API_URL}/api/logout`, { 
+    await fetch(`${config.API_URL}/api/logout`, {
       method: 'POST',
       headers: config.getAuthHeaders()
     });
-    
+
     // Remove token from localStorage
     config.removeToken();
-    
+
     currentUser = null;
     showUserNotLoggedIn();
-    
+
     // Actualizar el nombre del chat después de cerrar sesión
     if (typeof window.updateChatUsername === 'function') {
       window.updateChatUsername();
     }
-    
+
     if (typeof toast !== 'undefined') toast.success('Sesión cerrada exitosamente');
   } catch (error) {
     console.error('Error al cerrar sesión:', error);
@@ -1079,16 +1079,16 @@ async function saveImageToServer() {
     if (userTab) userTab.click();
     return;
   }
-  
+
   // Verificar que renderAllLayers existe
   if (typeof window.renderAllLayers !== 'function') {
     if (typeof toast !== 'undefined') toast.warning('No hay imagen para guardar');
     return;
   }
-  
+
   // Obtener colaboradores de la sesión actual
   await loadCollaborators();
-  
+
   // Mostrar el modal
   document.getElementById('saveImageModal').classList.add('active');
   document.getElementById('imageTitle').value = '';
@@ -1115,14 +1115,14 @@ async function loadCollaborators() {
       headers: config.getAuthHeaders()
     });
     const data = await response.json();
-    
+
     const currentSessionId = config.getSessionId();
     const currentSession = data.sessions.find(s => s.sessionId === currentSessionId);
-    
+
     const collaboratorsList = document.getElementById('collaboratorsList');
-    
+
     if (currentSession && currentSession.users.length > 0) {
-      collaboratorsList.innerHTML = currentSession.users.map(user => 
+      collaboratorsList.innerHTML = currentSession.users.map(user =>
         `<span class="collaborator-chip">${escapeHtml(user.username)}</span>`
       ).join('');
     } else {
@@ -1143,11 +1143,11 @@ function getStringSizeInMB(str) {
 // Función para enviar el formulario de guardar
 async function submitSaveImage(event) {
   event.preventDefault();
-  
+
   const title = document.getElementById('imageTitle').value.trim();
   const description = document.getElementById('imageDescription').value.trim();
   const saveOnlyFinal = document.getElementById('saveOnlyFinal')?.checked || false;
-  
+
   try {
     // Deshabilitar botón de submit
     const submitBtn = event.target.querySelector('button[type="submit"]');
@@ -1155,21 +1155,21 @@ async function submitSaveImage(event) {
       submitBtn.disabled = true;
       submitBtn.textContent = 'Guardando...';
     }
-    
+
     console.log('=== INICIO GUARDADO DE IMAGEN ===');
     console.log('Límite del servidor: 100MB');
     console.log('Guardar solo imagen final:', saveOnlyFinal);
-    
+
     // Obtener colaboradores y sesión actual PRIMERO
     const currentSessionId = config.getSessionId();
     let collaborators = [];
-    
+
     try {
       const sessionResponse = await fetch(`${config.API_URL}/api/sessions`);
       if (sessionResponse.ok) {
         const sessionData = await sessionResponse.json();
         const currentSession = sessionData.sessions.find(s => s.sessionId === currentSessionId);
-        
+
         if (currentSession && currentSession.users) {
           collaborators = currentSession.users.map(user => ({
             socketId: user.socketId || '',
@@ -1182,30 +1182,30 @@ async function submitSaveImage(event) {
       console.warn('No se pudieron cargar colaboradores:', sessionError);
       // Continuar sin colaboradores
     }
-    
+
     // Combinar todas las capas visibles
     const combined = window.renderAllLayers();
-    
+
     // Convertir el canvas combinado a JPEG con calidad reducida (mucho más liviano)
     const canvas = combined.canvas;
     const imageData = canvas.toDataURL('image/jpeg', 0.85);
     const imageSizeMB = getStringSizeInMB(imageData);
-    
+
     console.log('Tamaño imagen final:', imageSizeMB, 'MB');
-    
+
     // Guardar cada capa por separado SOLO si no está marcado "solo final"
     const layersData = [];
     let totalLayersSize = 0;
-    
+
     if (!saveOnlyFinal && window.layers && window.layers.length > 0) {
       window.layers.forEach((layer, index) => {
         if (layer && layer.canvas) {
           const layerData = layer.canvas.toDataURL('image/jpeg', 0.85);
           const layerSize = getStringSizeInMB(layerData);
           totalLayersSize += parseFloat(layerSize);
-          
+
           console.log(`Capa ${index} (${index === 0 ? 'Fondo' : 'Capa ' + index}):`, layerSize, 'MB');
-          
+
           layersData.push({
             index: index,
             name: index === 0 ? 'Fondo' : `Capa ${index}`,
@@ -1216,19 +1216,19 @@ async function submitSaveImage(event) {
       });
       console.log('Tamaño total de capas:', totalLayersSize.toFixed(2), 'MB');
     }
-    
+
     const totalSize = parseFloat(imageSizeMB) + totalLayersSize;
     console.log('TAMAÑO TOTAL DEL PAYLOAD:', totalSize.toFixed(2), 'MB');
-    
+
     if (totalSize > 100) {
       console.error('⚠️ ADVERTENCIA: El tamaño total (' + totalSize.toFixed(2) + 'MB) supera el límite del servidor (100MB)');
       if (typeof toast !== 'undefined') {
         toast.warning('Imagen muy grande (' + totalSize.toFixed(2) + 'MB). Intenta con "Solo imagen final"');
       }
     }
-    
+
     console.log('Guardando con', layersData.length, 'capas y', collaborators.length, 'colaboradores');
-    
+
     // Enviar al servidor
     const response = await fetch(`${config.API_URL}/api/images`, {
       method: 'POST',
@@ -1245,15 +1245,15 @@ async function submitSaveImage(event) {
         sessionId: currentSessionId
       })
     });
-    
+
     const data = await response.json();
-    
+
     // Restaurar botón
     if (submitBtn) {
       submitBtn.disabled = false;
       submitBtn.textContent = 'Guardar Imagen';
     }
-    
+
     if (response.ok) {
       closeSaveModal();
       if (typeof toast !== 'undefined') toast.success('¡Imagen guardada exitosamente!');
@@ -1264,7 +1264,7 @@ async function submitSaveImage(event) {
   } catch (error) {
     console.error('Error guardando imagen:', error);
     if (typeof toast !== 'undefined') toast.error('Error al guardar la imagen. Por favor intenta de nuevo.');
-    
+
     // Restaurar botón en caso de error
     const submitBtn = event.target.querySelector('button[type="submit"]');
     if (submitBtn) {
@@ -1278,7 +1278,7 @@ async function submitSaveImage(event) {
 document.addEventListener('DOMContentLoaded', () => {
   const descriptionTextarea = document.getElementById('imageDescription');
   const charCount = document.getElementById('charCount');
-  
+
   if (descriptionTextarea && charCount) {
     descriptionTextarea.addEventListener('input', () => {
       const length = descriptionTextarea.value.length;
@@ -1293,12 +1293,12 @@ function getCurrentChatUsername() {
   if (currentUser && currentUser.username) {
     return currentUser.username;
   }
-  
+
   // Si no está logueado, generar nombre basado en socket.id
   if (typeof socket !== 'undefined' && socket && socket.id) {
     return generarNombreAleatorio(socket.id);
   }
-  
+
   // Fallback
   return 'Usuario Anónimo';
 }
@@ -1307,7 +1307,7 @@ function getCurrentChatUsername() {
 function shareSession() {
   const currentUrl = window.location.href;
   const sessionId = config.getSessionId();
-  
+
   // Copiar al portapapeles
   navigator.clipboard.writeText(currentUrl).then(() => {
     if (typeof toast !== 'undefined') toast.success(`¡Link copiado! Comparte esta sesión (${sessionId})`);
@@ -1321,17 +1321,17 @@ function shareSession() {
 function renderLayerButtons() {
   const container = document.getElementById('layersContainer');
   if (!container || typeof window.layers === 'undefined') return;
-  
+
   container.innerHTML = '';
-  
+
   window.layers.forEach((layer, index) => {
     const layerItem = document.createElement('div');
     layerItem.className = 'layer-item';
     layerItem.style.cssText = 'display: flex; align-items: center; gap: 6px; margin-bottom: 6px; padding: 6px; background: rgba(138, 79, 191, 0.15); border-radius: 8px;';
-    
+
     const isActive = window.activeLayer === index;
     const isVisible = window.layerVisibility[index];
-    
+
     layerItem.innerHTML = `
       <div style="display: flex; flex-direction: column; gap: 3px;">
         <button class="layer-btn ${isActive ? 'active' : ''}" data-layer="${index}" style="width: 35px; height: 28px; margin: 0; font-size: 0.9rem;">${index}</button>
@@ -1346,13 +1346,13 @@ function renderLayerButtons() {
       <span style="color: rgba(255,255,255,0.7); font-size: 0.8rem; flex: 1;">${index === 0 ? 'Fondo' : `Capa ${index}`}</span>
       ${window.layers.length > 1 ? `<button class="btn-delete-layer" onclick="deleteLayer(${index})" title="Eliminar Capa">×</button>` : ''}
     `;
-    
+
     container.appendChild(layerItem);
   });
-  
+
   // Re-attach event listeners
   setupLayerSelector();
-  
+
   // Update previews
   if (typeof updateLayerPreviews === 'function') {
     updateLayerPreviews();
@@ -1363,19 +1363,19 @@ function renderLayerButtons() {
 function setRandomFirstColor() {
   // Usar blanco como color por defecto
   const defaultColor = '#FFFFFF';
-  
+
   // Aplicar al primer slot
   const firstSlot = document.querySelector('.palette-slot[data-slot="0"]');
   if (firstSlot) {
     firstSlot.style.backgroundColor = defaultColor;
   }
-  
+
   // Aplicar al color picker
   const colorInput = document.getElementById('c1');
   if (colorInput) {
     colorInput.value = defaultColor;
   }
-  
+
   console.log('Color inicial:', defaultColor);
 }
 
@@ -1392,15 +1392,15 @@ function closeWelcomeModal() {
 // Función para mostrar el modal de bienvenida
 function checkWelcomeModal() {
   const modal = document.getElementById('welcomeModal');
-  
+
   // Verificar si hay parámetro modalintro=true en la URL (fuerza mostrar)
   const urlParams = new URLSearchParams(window.location.search);
   const forceModal = urlParams.get('modalintro') === 'true' || urlParams.get('intromodal') === 'true';
   const hideModal = urlParams.get('modalintro') === 'false' || urlParams.get('intromodal') === 'false';
-  
+
   // Verificar si el usuario está logueado
   const isUserLoggedIn = currentUser !== null && currentUser !== undefined;
-  
+
   if (modal) {
     // NO mostrar el modal si:
     // 1. Se fuerza ocultar con intromodal=false o modalintro=false
@@ -1425,18 +1425,22 @@ function checkWelcomeModal() {
 
 // Función para cerrar la GUI al hacer click afuera
 function setupGuiAutoClose() {
-    document.addEventListener('mousedown', function(event) {
-        const gui = document.getElementById('gui');
-        const openButton = document.getElementById('opengui');
-        
-        // Verificar si la GUI está visible
-        if (gui.style.display === 'block') {
-            // Verificar si el click fue fuera de la GUI
-            if (!gui.contains(event.target)) {
-                closeGui();
-            }
-        }
-    });
+  document.addEventListener('mousedown', function (event) {
+    const gui = document.getElementById('gui');
+    const openButton = document.getElementById('opengui');
+
+    // NO cerrar si el click es en el input del pincel o dentro del CursorGUI
+    if (event.target.id === 'inline-brush-input') return;
+    if (window.cursorGUI && window.cursorGUI.isPointInContainer(event.clientX, event.clientY)) return;
+
+    // Verificar si la GUI está visible
+    if (gui.style.display === 'block') {
+      // Verificar si el click fue fuera de la GUI
+      if (!gui.contains(event.target)) {
+        closeGui();
+      }
+    }
+  });
 }
 
 /**
@@ -1448,94 +1452,94 @@ function setupGuiAutoClose() {
  */
 async function loadInitialLayers(initialLayersConfig) {
   console.log('🎨 Cargando capas iniciales:', initialLayersConfig);
-  
+
   if (!window.layers || !window.layerVisibility) {
     console.error('❌ Sistema de capas no inicializado');
     return;
   }
-  
+
   try {
     // Limpiar capas existentes (excepto la primera que es el fondo)
     while (window.layers.length > 1) {
       window.layers.pop();
       window.layerVisibility.pop();
     }
-    
+
     // Ordenar las capas por índice
     const sortedLayers = [...initialLayersConfig].sort((a, b) => a.layerIndex - b.layerIndex);
-    
+
     for (const layerConfig of sortedLayers) {
       const { layerIndex, name, imageData, opacity, visible } = layerConfig;
-      
+
       console.log(`🖼️ Procesando capa ${layerIndex}: ${name || 'Sin nombre'}`);
-      
+
       // Asegurar que tenemos suficientes capas
-       while (window.layers.length <= layerIndex) {
-         if (typeof createGraphics === 'function') {
-           const newLayer = createGraphics(windowWidth, windowHeight);
-           newLayer.background(0); // Fondo negro por defecto
-           window.layers.push(newLayer);
-           window.layerVisibility.push(true);
-         } else {
-           console.error('❌ createGraphics no está disponible');
-           return;
-         }
-       }
-       
-       // Si hay datos de imagen, cargarlos
-       if (imageData && imageData.trim() !== '') {
-         try {
-           if (typeof loadImage === 'function') {
-             // Usar p5.js loadImage para cargar la imagen
-             loadImage(imageData, 
-               function(img) {
-                 // Callback de éxito
-                 const layer = window.layers[layerIndex];
-                 if (layer) {
-                   // Limpiar la capa
-                   layer.clear();
-                   layer.background(0);
-                   
-                   // Dibujar la imagen cargada
-                   layer.image(img, 0, 0, windowWidth, windowHeight);
-                   
-                   console.log(`✅ Imagen cargada en capa ${layerIndex}`);
-                   
-                   // Actualizar la UI de capas si existe
-                   if (typeof window.updateLayerUI === 'function') {
-                     window.updateLayerUI();
-                   }
-                 }
-               },
-               function() {
-                 // Callback de error
-                 console.error(`❌ Error cargando imagen para capa ${layerIndex}`);
-               }
-             );
-           } else {
-             console.error('❌ loadImage no está disponible');
-           }
-         } catch (error) {
-           console.error(`❌ Error procesando imagen de capa ${layerIndex}:`, error);
-         }
-       }
-      
+      while (window.layers.length <= layerIndex) {
+        if (typeof createGraphics === 'function') {
+          const newLayer = createGraphics(windowWidth, windowHeight);
+          newLayer.background(0); // Fondo negro por defecto
+          window.layers.push(newLayer);
+          window.layerVisibility.push(true);
+        } else {
+          console.error('❌ createGraphics no está disponible');
+          return;
+        }
+      }
+
+      // Si hay datos de imagen, cargarlos
+      if (imageData && imageData.trim() !== '') {
+        try {
+          if (typeof loadImage === 'function') {
+            // Usar p5.js loadImage para cargar la imagen
+            loadImage(imageData,
+              function (img) {
+                // Callback de éxito
+                const layer = window.layers[layerIndex];
+                if (layer) {
+                  // Limpiar la capa
+                  layer.clear();
+                  layer.background(0);
+
+                  // Dibujar la imagen cargada
+                  layer.image(img, 0, 0, windowWidth, windowHeight);
+
+                  console.log(`✅ Imagen cargada en capa ${layerIndex}`);
+
+                  // Actualizar la UI de capas si existe
+                  if (typeof window.updateLayerUI === 'function') {
+                    window.updateLayerUI();
+                  }
+                }
+              },
+              function () {
+                // Callback de error
+                console.error(`❌ Error cargando imagen para capa ${layerIndex}`);
+              }
+            );
+          } else {
+            console.error('❌ loadImage no está disponible');
+          }
+        } catch (error) {
+          console.error(`❌ Error procesando imagen de capa ${layerIndex}:`, error);
+        }
+      }
+
       // Configurar visibilidad y opacidad
       window.layerVisibility[layerIndex] = visible !== false; // Default true
-      
+
       // TODO: Implementar opacidad si el sistema lo soporta
       if (opacity !== undefined && opacity !== 1.0) {
         console.log(`⚠️ Opacidad ${opacity} para capa ${layerIndex} - funcionalidad pendiente`);
       }
     }
-    
+
     // Actualizar la UI de capas
     if (typeof window.updateLayerUI === 'function') {
       window.updateLayerUI();
     }
-    
+
     console.log('✅ Capas iniciales cargadas exitosamente');
-    
+
   } catch (error) {
     console.error('❌ Error cargando capas iniciales:', error);
   }
@@ -1543,7 +1547,7 @@ async function loadInitialLayers(initialLayersConfig) {
 
 async function loadSessionInfo(sessionId) {
   console.log('📋 Cargando información de sesión:', sessionId);
-  
+
   if (!sessionId || sessionId === '0') {
     // Ocultar info si no hay sesión válida
     const sessionInfoDiv = document.getElementById('sessionInfo');
@@ -1553,25 +1557,25 @@ async function loadSessionInfo(sessionId) {
     console.log('⚠️ Sesión inválida o 0, ocultando info');
     return;
   }
-  
+
   try {
     const url = `${config.API_URL}/api/sessions/${sessionId}`;
     console.log('🌐 Fetching:', url);
-    
+
     const response = await fetch(url);
     console.log('📡 Response status:', response.status);
-    
+
     if (response.ok) {
       const data = await response.json();
       const session = data.session;
-      
+
       console.log('✅ Sesión cargada:', session);
-      
+
       if (session) {
         const sessionInfoDiv = document.getElementById('sessionInfo');
         const sessionInfoName = document.getElementById('sessionInfoName');
         const sessionInfoDescription = document.getElementById('sessionInfoDescription');
-        
+
         if (sessionInfoDiv && sessionInfoName && sessionInfoDescription) {
           sessionInfoName.textContent = session.name || `Sesión ${sessionId}`;
           sessionInfoDescription.textContent = session.description || 'Sin descripción';
@@ -1580,7 +1584,7 @@ async function loadSessionInfo(sessionId) {
         } else {
           console.error('❌ Elementos del DOM no encontrados');
         }
-        
+
         // CARGAR LOGO DE SESIÓN
         if (session.customization && session.customization.logoImage) {
           const brandingContainer = document.getElementById('sessionBrandingLogo');
@@ -1592,21 +1596,21 @@ async function loadSessionInfo(sessionId) {
             console.log('⚠️ Elemento sessionBrandingLogo no encontrado');
           }
         }
-        
+
         // CARGAR NOMBRE Y DESCRIPCIÓN DEBAJO DEL LOGO
         const brandingName = document.getElementById('sessionBrandingName');
         const brandingDesc = document.getElementById('sessionBrandingDescription');
-        
+
         if (session.name && brandingName) {
           brandingName.textContent = session.name;
           console.log('✅ Nombre de sesión cargado:', session.name);
         }
-        
+
         if (session.description && brandingDesc) {
           brandingDesc.textContent = session.description;
           console.log('✅ Descripción de sesión cargada');
         }
-        
+
         // CARGAR CAPAS INICIALES
         if (session.initialLayers && session.initialLayers.length > 0) {
           loadInitialLayers(session.initialLayers);

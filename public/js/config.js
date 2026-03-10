@@ -1,36 +1,36 @@
-const APP_PATH = 'pizarraia';  // Variable global para el nombre de la aplicación
+const APP_PATH = 'pizzarraia';  // Variable global para el nombre de la aplicación
 const PORT = 3025;  // Variable global para el puerto
 
 const config = {
   // Detectar si estamos en local o en VPS
   isLocal: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1',
-  
+
   // URL de la API (incluye el path base)
   get API_URL() {
-    return this.isLocal 
-      ? `http://localhost:${PORT}/${APP_PATH}` 
+    return this.isLocal
+      ? `http://localhost:${PORT}/${APP_PATH}`
       : `https://vps-4455523-x.dattaweb.com/${APP_PATH}`;
   },
-  
+
   // URL para Socket.IO
   get SOCKET_URL() {
-    return this.isLocal 
-      ? `http://localhost:${PORT}` 
+    return this.isLocal
+      ? `http://localhost:${PORT}`
       : 'https://vps-4455523-x.dattaweb.com';
   },
-  
+
   // Path base de la aplicación
   get BASE_URL() {
     return `/${APP_PATH}`;
   },
-  
+
   // Get session ID from URL parameter, default to 0 if not present
-  getSessionId: function() {
+  getSessionId: function () {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get('sesion') || '0';
   },
-  
-  getSocketConfig: function() {
+
+  getSocketConfig: function () {
     return {
       url: this.SOCKET_URL,
       options: {
@@ -38,13 +38,13 @@ const config = {
       }
     };
   },
-  
+
   // Configuración para los controles de sockets
   sockets: {
     receiveEnabled: true,  // Por defecto, recibir sockets está activado
     sendEnabled: true      // Por defecto, enviar sockets está activado
   },
-  
+
   // Configuración de sliders - Valores mínimos, máximos y por defecto
   sliders: {
     // Sliders globales
@@ -72,7 +72,7 @@ const config = {
       default: 1,
       step: 1
     },
-    
+
     // Pixel Brush
     gridCols: {
       min: 4,
@@ -86,7 +86,7 @@ const config = {
       default: 32,
       step: 4
     },
-    
+
     // Art Brush
     particleCount: {
       min: 1,
@@ -118,7 +118,7 @@ const config = {
       default: 8,
       step: 1
     },
-    
+
     // Text Brush
     textSize: {
       min: 10,
@@ -126,7 +126,7 @@ const config = {
       default: 40,
       step: 5
     },
-    
+
     // Geometry Brush
     polygonSides: {
       min: 2,
@@ -134,7 +134,7 @@ const config = {
       default: 5,
       step: 1
     },
-    
+
     // Fill Brush
     fillTolerance: {
       min: 0,
@@ -146,19 +146,19 @@ const config = {
 };
 
 // Token management functions
-config.saveToken = function(token) {
+config.saveToken = function (token) {
   localStorage.setItem('pizarracollab_token', token);
 };
 
-config.getToken = function() {
+config.getToken = function () {
   return localStorage.getItem('pizarracollab_token');
 };
 
-config.removeToken = function() {
+config.removeToken = function () {
   localStorage.removeItem('pizarracollab_token');
 };
 
-config.getAuthHeaders = function() {
+config.getAuthHeaders = function () {
   const token = this.getToken();
   if (token) {
     return {
@@ -168,11 +168,11 @@ config.getAuthHeaders = function() {
   return {};
 };
 
-config.saveUser = function(user) {
+config.saveUser = function (user) {
   localStorage.setItem('pizarracollab_user', JSON.stringify(user));
 };
 
-config.getCurrentUser = function() {
+config.getCurrentUser = function () {
   const userStr = localStorage.getItem('pizarracollab_user');
   if (userStr) {
     try {
@@ -184,7 +184,7 @@ config.getCurrentUser = function() {
   return null;
 };
 
-config.removeUser = function() {
+config.removeUser = function () {
   localStorage.removeItem('pizarracollab_user');
 };
 
