@@ -1,3 +1,4 @@
+require('dotenv').config();   // .env propio (FSC_INTERNAL_KEY para el índice del ecosistema, etc.)
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -16,66 +17,39 @@ const port = 3025;
 const APP_PATH = 'pizzarraia';
 
 // MongoDB connection
+// MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/pizzarraia';
 mongoose.connect(MONGODB_URI)
   .then(async () => {
     console.log('MongoDB connected successfully');
-
-    // Crear usuario global de sistema si no existe
-    try {
-      const systemUser = await User.findOne({ username: 'sistema' });
-      if (!systemUser) {
-        const newSystemUser = new User({
-          username: 'sistema',
-          password: 'ayp0624',
-          permissions: {
-            canCreateSessions: true,
-            canAccessAdmin: true
-          }
-        });
-        await newSystemUser.save();
-        console.log('✅ Usuario de sistema creado: sistema / ayp0624');
-      } else {
-        console.log('✅ Usuario de sistema ya existe');
-      }
-    } catch (error) {
-      console.error('❌ Error creando usuario de sistema:', error);
-    }
   })
   .catch(err => console.error('MongoDB connection error:', err));
 
 // CORS configuration - Allow requests from any origin
 // CORS configuration - Allow requests from specific origins and local
-const allowedOrigins = [
-  'https://fullscreencode.com',
-  'http://fullscreencode.com',
-  'https://vps-4455523-x.dattaweb.com',
-  'http://localhost:3025',
-  'http://127.0.0.1:3025'
-];
 
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.fullscreencode.com')) {
-      callback(null, true);
-    } else {
-      callback(null, true);
-    }
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
-  credentials: true,
-  exposedHeaders: ['set-cookie']
-}));
-
-// Middleware - Aumentar límite para imágenes con múltiples capas
+// Middlewares
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 
-// Session storage in memory (simple approach)
-// Maps sessionToken -> userId
+// Session storage in memory
 const activeSessions = new Map();
+
+// Helper para obtener credenciales desde FSC_AUTH
+const FSC_AUTH_API = process.env.FSC_AUTH_API || 'https://vps-4455523-x.dattaweb.com/fscauth/api';
+async function centralAuth(endpoint, body) {
+  try {
+    const res = await fetch(`${FSC_AUTH_API}${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    return await res.json();
+  } catch (err) {
+    console.error('Error in Central Auth Proxy:', err);
+    return { error: 'Service Unavailable' };
+  }
+}
 
 // Generate random session token
 function generateSessionToken() {
@@ -112,7 +86,7 @@ const isAuthenticated = (req, res, next) => {
 const isAdmin = async (req, res, next) => {
   try {
     const user = await User.findById(req.userId);
-    if (!user || !user.permissions || !user.permissions.canAccessAdmin) {
+    if (!user || !user.permissions || !user.permissions.pizarraia || !user.permissions.pizarraia.canAccessAdmin) {
       return res.status(403).json({ error: 'No tienes permisos de administrador' });
     }
     next();
@@ -139,29 +113,20 @@ app.get('/', (req, res) => {
 app.post('/pizzarraia/api/register', async (req, res) => {
   try {
     const { username, password } = req.body;
+    const data = await centralAuth('/register', { username, password });
+    
+    if (data.error) return res.status(400).json(data);
 
-    if (!username || !password) {
-      return res.status(400).json({ error: 'Usuario y contraseña requeridos' });
-    }
-
-    const existingUser = await User.findOne({ username });
-    if (existingUser) {
-      return res.status(400).json({ error: 'El usuario ya existe' });
-    }
-
-    const user = new User({ username, password });
-    await user.save();
-
-    // Generate session token
+    // Mapear el usuario central
     const token = generateSessionToken();
-    activeSessions.set(token, user._id.toString());
+    activeSessions.set(token, data.user.id);
 
     res.json({
       success: true,
       token: token,
       user: {
-        id: user._id,
-        username: user.username
+        id: data.user.id,
+        username: data.user.username
       }
     });
   } catch (error) {
@@ -174,31 +139,20 @@ app.post('/pizzarraia/api/register', async (req, res) => {
 app.post('/pizzarraia/api/login', async (req, res) => {
   try {
     const { username, password } = req.body;
+    const data = await centralAuth('/login', { username, password });
+    
+    if (data.error) return res.status(401).json(data);
 
-    if (!username || !password) {
-      return res.status(400).json({ error: 'Usuario y contraseña requeridos' });
-    }
-
-    const user = await User.findOne({ username });
-    if (!user) {
-      return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
-    }
-
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
-    }
-
-    // Generate session token
+    // Mapear el usuario central
     const token = generateSessionToken();
-    activeSessions.set(token, user._id.toString());
+    activeSessions.set(token, data.user.id);
 
     res.json({
       success: true,
       token: token,
       user: {
-        id: user._id,
-        username: user.username
+        id: data.user.id,
+        username: data.user.username
       }
     });
   } catch (error) {
@@ -225,6 +179,81 @@ app.get('/pizzarraia/api/user', isAuthenticated, async (req, res) => {
   }
 });
 
+// ============================================================
+// 🗂️ FSC — índice universal de assets (lo llama el perfil de fscauth)
+// GET /pizzarraia/api/fsc/assets?username=X
+// Las sesiones y las imágenes SIGUEN viviendo en esta base (arquitectura
+// bicompartida): fscauth solo las INDEXA para el pasaporte de usuario.
+// Autorización: clave interna de fscauth o sesión FSC válida del propio usuario
+// (se verifica contra fscauth; esta app todavía tiene su propio login local).
+// ============================================================
+const FSCAUTH_VERIFY_URL = (process.env.FSCAUTH_URL || 'https://vps-4455523-x.dattaweb.com/fscauth') + '/api/auth/verify';
+
+async function fscAssetsAuthorized(req, username) {
+  const internal = process.env.FSC_INTERNAL_KEY || process.env.JWT_SECRET || '';
+  const key = req.headers['x-fsc-internal'];
+  if (internal && key && key === internal) return true;
+  const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  if (!token) return false;
+  try {
+    const r = await fetch(FSCAUTH_VERIFY_URL, { headers: { Authorization: 'Bearer ' + token } });
+    const d = await r.json();
+    if (!d || d.loggedIn !== true || !d.user) return false;
+    if (String(d.user.username || '').toLowerCase() === String(username || '').toLowerCase()) return true;
+    return d.user.role === 'ADMIN' || d.user.role === 'SYSTEM';
+  } catch (err) {
+    console.error('[FSC-ASSETS] no se pudo validar contra fscauth:', err.message);
+    return false;
+  }
+}
+
+app.get('/pizzarraia/api/fsc/assets', async (req, res) => {
+  const username = String(req.query.username || '').trim();
+  if (!username) return res.status(400).json({ error: 'username requerido' });
+  if (!(await fscAssetsAuthorized(req, username))) return res.status(401).json({ error: 'No autorizado' });
+
+  try {
+    const safe = username.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const rx = new RegExp('^' + safe + '$', 'i');
+
+    const sessions = await Session.find({ creatorUsername: rx }).sort({ createdAt: -1 }).limit(200).lean();
+    const images = await Image.find({ username: rx }).select('_id title description createdAt').sort({ createdAt: -1 }).limit(200).lean();
+
+    const groups = [];
+    if (sessions.length) {
+      groups.push({
+        type: 'session', label: 'Sesiones creadas', count: sessions.length,
+        items: sessions.map((s) => ({
+          id: s.sessionId,
+          title: s.name || 'Sesión sin nombre',
+          url: '/pizzarraia/index.html?sesion=' + encodeURIComponent(s.sessionId),
+          meta: { descripcion: s.description || '', publica: s.isPublic !== false }
+        }))
+      });
+    }
+    if (images.length) {
+      groups.push({
+        type: 'image', label: 'Imágenes', count: images.length,
+        items: images.map((i) => ({
+          id: String(i._id),
+          title: i.title || 'Sin título',
+          url: '/pizzarraia/gallery.html',
+          meta: { descripcion: i.description || '' }
+        }))
+      });
+    }
+
+    res.json({
+      ok: true, app: 'pizzarraia', username,
+      total: groups.reduce((n, g) => n + g.count, 0),
+      groups
+    });
+  } catch (err) {
+    console.error('[FSC-ASSETS] error:', err.message);
+    res.status(500).json({ error: 'No se pudo indexar los assets' });
+  }
+});
+
 // Check session
 app.get('/pizzarraia/api/check-session', async (req, res) => {
   if (req.userId) {
@@ -234,7 +263,8 @@ app.get('/pizzarraia/api/check-session', async (req, res) => {
         authenticated: true,
         user: {
           id: user._id,
-          username: user.username
+          username: user.username,
+          permissions: user.permissions?.pizarraia
         }
       });
     } catch (error) {
@@ -520,7 +550,6 @@ app.put('/pizzarraia/api/admin/users/:userId/permissions', isAuthenticated, isAd
     const { userId } = req.params;
     const { canCreateSessions, canAccessAdmin } = req.body;
 
-    // No permitir que se modifique el usuario sistema
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
@@ -530,12 +559,17 @@ app.put('/pizzarraia/api/admin/users/:userId/permissions', isAuthenticated, isAd
       return res.status(403).json({ error: 'No se puede modificar el usuario de sistema' });
     }
 
-    // Actualizar permisos
-    user.permissions = {
-      canCreateSessions: canCreateSessions !== undefined ? canCreateSessions : user.permissions.canCreateSessions,
-      canAccessAdmin: canAccessAdmin !== undefined ? canAccessAdmin : user.permissions.canAccessAdmin
+    // Actualizar permisos específicos para Pizarraia
+    if (!user.permissions) user.permissions = {};
+    if (!user.permissions.pizarraia) user.permissions.pizarraia = {};
+
+    user.permissions.pizarraia = {
+      canCreateSessions: canCreateSessions !== undefined ? canCreateSessions : user.permissions.pizarraia.canCreateSessions,
+      canAccessAdmin: canAccessAdmin !== undefined ? canAccessAdmin : user.permissions.pizarraia.canAccessAdmin
     };
 
+    // Usar markModified si es un objeto mixto
+    user.markModified('permissions');
     await user.save();
 
     console.log(`✅ Permisos actualizados para usuario ${user.username}`);
@@ -545,7 +579,7 @@ app.put('/pizzarraia/api/admin/users/:userId/permissions', isAuthenticated, isAd
       user: {
         id: user._id,
         username: user.username,
-        permissions: user.permissions
+        permissions: user.permissions.pizarraia
       }
     });
   } catch (error) {
