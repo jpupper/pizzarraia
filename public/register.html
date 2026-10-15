@@ -3,57 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro - PizarraCollab</title>
+    <title>Crear Cuenta — PizarraCollab</title>
+    <meta name="description" content="El registro de PizarraCollab es el de JPCONNECT, el pasaporte del ecosistema Fullscreen Code.">
     <link rel='stylesheet' href='css/style.css' />
-    <link rel='stylesheet' href='css/auth.css' />
 </head>
 <body>
-    <div class="auth-container">
-        <div class="auth-header">
-            <h1>🎨 PizarraCollab</h1>
-            <p>Crea tu cuenta para comenzar</p>
-        </div>
-
-        <div id="errorMessage" class="error-message"></div>
-        <div id="successMessage" class="success-message"></div>
-
-        <form id="registerForm">
-            <div class="form-group">
-                <label for="username">Usuario</label>
-                <input type="text" id="username" name="username" required 
-                       placeholder="Elige tu nombre de usuario" 
-                       autocomplete="username">
-                <div class="form-hint">Cualquier nombre de usuario</div>
-            </div>
-
-            <div class="form-group">
-                <label for="password">Contraseña</label>
-                <input type="password" id="password" name="password" required 
-                       placeholder="Crea una contraseña" 
-                       autocomplete="new-password">
-                <div class="password-strength">
-                    <div id="passwordStrengthBar" class="password-strength-bar"></div>
-                </div>
-                <div class="form-hint">Cualquier contraseña</div>
-            </div>
-
-            <div class="form-group">
-                <label for="confirmPassword">Confirmar Contraseña</label>
-                <input type="password" id="confirmPassword" name="confirmPassword" required 
-                       placeholder="Confirma tu contraseña" autocomplete="new-password">
-            </div>
-
-            <button type="submit" class="btn-primary">Crear Cuenta</button>
-        </form>
-
-        <div class="auth-footer">
-            <p>¿Ya tienes cuenta?</p>
-            <a href="login.html">Iniciar sesión</a>
-        </div>
+    <!-- Igual que login.html: puente al registro unificado (JPCONNECT). -->
+    <div class="auth-bridge">
+        <h1>PizarraCollab</h1>
+        <p>Te estamos llevando al registro del ecosistema…</p>
+        <a id="registroDirecto" href="https://fullscreencode.com/jpconnect/register.html">Crear cuenta en JPCONNECT</a>
     </div>
 
     <script src="js/config.js"></script>
-    <script src="js/register.js"></script>
+    <script src="js/auth.js"></script>
   <!-- botón FSC: solo el isotipo, abajo a la izquierda -->
   <script src="https://vps-4455523-x.dattaweb.com/fscauth/js/fsc-button.js?v=10"></script>
 </body>

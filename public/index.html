@@ -8,6 +8,7 @@
     <script src="https://unpkg.com/qrcode-generator@1.4.4/qrcode.js"></script>
     <script src='js/lib/jquery.js'> </script>
     <script src='js/config.js'> </script>
+    <script src='js/auth.js'> </script>
     <script src='js/index/nameGenerator.js'> </script>
     <script src='js/index/cursorGui.js'> </script>
     
@@ -560,14 +561,14 @@
         <div class="user-section">
             <h4>Mi Cuenta</h4>
             <div id="userNotLoggedIn" style="display: none;">
-                <p style="color: rgba(255,255,255,0.8); margin-bottom: 15px;">
+                <p class="user-hint">
                     Inicia sesión para guardar tus dibujos
                 </p>
-                <a href="login.html" class="btn-user-action" style="display: inline-block; padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; margin-right: 10px;">
-                    Iniciar Sesión
+                <a href="login.html" class="btn-user-action btn-jpc">
+                    Entrar con JPCONNECT
                 </a>
-                <a href="register.html" class="btn-user-action" style="display: inline-block; padding: 10px 20px; background: rgba(255,255,255,0.1); color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
-                    Registrarse
+                <a href="register.html" class="btn-user-action btn-jpc-sec">
+                    Crear cuenta
                 </a>
             </div>
             <div id="userLoggedIn" style="display: none;">
@@ -657,51 +658,42 @@
         </div>
     </div>
     
-    <!-- Modal de bienvenida -->
+    <!-- Pantalla de bienvenida: qué es el proyecto + acceso unificado -->
     <div id="welcomeModal" class="welcome-modal">
         <div class="welcome-modal-content">
-            <button class="welcome-modal-close" onclick="closeWelcomeModal()">×</button>
+            <button id="welcomeClose" class="welcome-modal-close" type="button" aria-label="Cerrar">×</button>
+
             <div class="welcome-header">
-                <h1>🎨 PizarraCollab</h1>
+                <h1 class="welcome-title">PizarraCollab</h1>
                 <p class="welcome-subtitle">Dibujo colaborativo en tiempo real</p>
             </div>
+
+            <p class="welcome-text">
+                Un lienzo compartido donde varias personas dibujan al mismo tiempo: cada
+                trazo aparece al instante en la pantalla del resto. Hay más de diez
+                pinceles (clásico, partículas, píxel, texto, geometría, imagen…), capas,
+                caleidoscopio y paletas propias; cada sala se personaliza con su nombre,
+                su fondo y sus permisos, y las obras terminadas quedan en la Galería
+                Global.
+            </p>
+
             <div class="welcome-actions">
-                <a href="login.html" class="welcome-btn welcome-btn-primary">
-                    <svg viewBox="0 0 24 24" width="20" height="20">
-                        <path fill="currentColor" d="M10,17V14H3V10H10V7L15,12L10,17M10,2H19A2,2 0 0,1 21,4V20A2,2 0 0,1 19,22H10A2,2 0 0,1 8,20V18H10V20H19V4H10V6H8V4A2,2 0 0,1 10,2Z"/>
-                    </svg>
-                    Login
-                </a>
-                <a href="register.html" class="welcome-btn welcome-btn-secondary">
-                    <svg viewBox="0 0 24 24" width="20" height="20">
-                        <path fill="currentColor" d="M15,14C12.33,14 7,15.33 7,18V20H23V18C23,15.33 17.67,14 15,14M6,10V7H4V10H1V12H4V15H6V12H9V10M15,12A4,4 0 0,0 19,8A4,4 0 0,0 15,4A4,4 0 0,0 11,8A4,4 0 0,0 15,12Z"/>
-                    </svg>
-                    Register
-                </a>
+                <a id="welcomePrimary" class="welcome-btn welcome-btn-primary" href="profile.html">Mi Perfil</a>
             </div>
             <p class="welcome-footer">o continúa sin cuenta para dibujar libremente</p>
-            
+
             <div class="welcome-explore-section">
                 <p class="welcome-explore-title">Explora más:</p>
                 <div class="welcome-explore-links">
-                    <a href="gallery.html" class="welcome-link welcome-link-primary">
-                        <svg viewBox="0 0 24 24" width="18" height="18">
-                            <path fill="currentColor" d="M22,16V4A2,2 0 0,0 20,2H8A2,2 0 0,0 6,4V16A2,2 0 0,0 8,18H20A2,2 0 0,0 22,16M11,12L13.03,14.71L16,11L20,16H8M2,6V20A2,2 0 0,0 4,22H18V20H4V6"/>
-                        </svg>
-                        Galería Global
-                    </a>
-                    <a href="profile.html" class="welcome-link welcome-link-secondary">
-                        <svg viewBox="0 0 24 24" width="18" height="18">
-                            <path fill="currentColor" d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
-                        </svg>
-                        Mi Perfil
-                    </a>
+                    <a href="gallery.html" class="welcome-link welcome-link-primary">Galería Global</a>
+                    <a href="index.html" class="welcome-link welcome-link-secondary">Ir al lienzo</a>
                 </div>
             </div>
         </div>
     </div>
-    
+
   <script src="js/index/toast.js"></script>
   <script src="js/index/general.js"></script>
-  </body>
+  <script src="https://vps-4455523-x.dattaweb.com/fscauth/js/fsc-button.js?v=10"></script>
+</body>
 </html>

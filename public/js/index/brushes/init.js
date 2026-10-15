@@ -292,7 +292,7 @@ async function applyAccessConfig(accessConfig, userType, currentUsername) {
         
         if (!accessConfig.notLogged?.allowed) {
             alert('⛔ Esta sesión solo está disponible para usuarios registrados.\n\nPor favor, inicia sesión para continuar.');
-            window.location.href = 'login.html';
+            irALogin();
             return null;
         }
         console.log(`✅ [INIT] Acceso permitido para usuario NO REGISTRADO`);

@@ -9,9 +9,10 @@ let interactionTypeChart;
 checkAuth();
 
 // Auto-refresh every 5 seconds
+// Las estadisticas llegan por socket; el refresco completo no necesita 5 s
 setInterval(() => {
     loadAllData();
-}, 5000);
+}, 30000);
 
 // Initialize Socket.IO for real-time updates
 function initSocket() {
@@ -20,6 +21,7 @@ function initSocket() {
     
     socket.on('connect', () => {
         console.log('Socket connected for analytics');
+        socket.emit('watch_analytics');
     });
     
     socket.on('analytics_update', (data) => {
@@ -40,7 +42,7 @@ async function checkAuth() {
         const data = await response.json();
         
         if (!data.authenticated) {
-            window.location.href = 'login.html';
+            irALogin('admin.html');
             return;
         }
         
@@ -71,7 +73,7 @@ async function checkAuth() {
         initCharts();
     } catch (error) {
         console.error('Error checking auth:', error);
-        window.location.href = 'login.html';
+        irALogin('admin.html');
     }
 }
 
@@ -357,18 +359,14 @@ async function deleteSessionAdmin(sessionId, sessionNumber) {
 }
 
 async function logout() {
-    try {
-        await fetch(`${config.API_URL}/api/logout`, { 
-            method: 'POST',
-            headers: config.getAuthHeaders()
-        });
-        
-        config.removeToken();
-        window.location.href = 'login.html';
-    } catch (error) {
-        console.error('Error logging out:', error);
-        window.location.href = 'login.html';
+    // Igual que en el perfil: el logout es el de JPCONNECT (revoca el token en
+    // el central) y se vuelve al inicio.
+    if (typeof window.cerrarSesionFSC === 'function') {
+        window.cerrarSesionFSC(config.BASE_URL + '/');
+        return;
     }
+    config.removeToken();
+    window.location.href = config.BASE_URL + '/';
 }
 
 // Make function globally available

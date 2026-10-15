@@ -35,8 +35,10 @@ app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 // Session storage in memory
 const activeSessions = new Map();
 
-// Helper para obtener credenciales desde FSC_AUTH
-const FSC_AUTH_API = process.env.FSC_AUTH_API || 'https://vps-4455523-x.dattaweb.com/fscauth/api';
+// Helper para obtener credenciales desde el acceso central del ecosistema.
+// OJO: el ingreso del ecosistema ES JPCONNECT (antes fscauth). Siempre al VPS:
+// en fullscreencode.com vive sólo el front (links para humanos).
+const FSC_AUTH_API = process.env.FSC_AUTH_API || 'https://vps-4455523-x.dattaweb.com/jpconnect/api';
 async function centralAuth(endpoint, body) {
   try {
     const res = await fetch(`${FSC_AUTH_API}${endpoint}`, {
@@ -57,7 +59,65 @@ function generateSessionToken() {
 }
 
 // Middleware to extract user from Authorization header
-app.use((req, res, next) => {
+// ------------------------------------------------------------
+// El header `Authorization: Bearer <token>` puede traer DOS cosas:
+//   1. la sesión corta y local que emite /api/login (compatibilidad), o
+//   2. el JWT del ecosistema que emite JPCONNECT (el camino normal hoy, porque
+//      la app ya no tiene formulario de login propio).
+// En el caso 2 se valida contra JPCONNECT (con cache corto) y se mapea al
+// documento LOCAL por `username`: es la clave con la que están guardadas las
+// sesiones y las imágenes, así que el perfil del usuario sigue mostrando TODO
+// lo suyo (antes se usaba el `_id` del ecosistema, que en esta base no existe).
+const FSC_VERIFY_URL = FSC_AUTH_API.replace(/\/+$/, '') + '/auth/verify';
+const FSC_CACHE_MS = 60 * 1000;
+const cacheTokensFSC = new Map();   // token -> { usuario, expira }
+
+async function verificarTokenFSC(token) {
+  const ahora = Date.now();
+  const hit = cacheTokensFSC.get(token);
+  if (hit && hit.expira > ahora) return hit.usuario;
+  try {
+    const r = await fetch(FSC_VERIFY_URL, { headers: { Authorization: 'Bearer ' + token } });
+    const d = r.ok ? await r.json().catch(() => null) : null;
+    const valido = !!(d && d.loggedIn === true && d.user && d.user.username);
+    if (cacheTokensFSC.size > 500) cacheTokensFSC.clear();
+    // Los tokens inválidos también se cachean (corto): si no, un token muerto
+    // en el navegador dispara un pedido al central en CADA request de la app.
+    cacheTokensFSC.set(token, {
+      usuario: valido ? d.user : null,
+      expira: ahora + (valido ? FSC_CACHE_MS : 30 * 1000)
+    });
+    return valido ? d.user : null;
+  } catch (err) {
+    console.error('[FSC] no se pudo validar el token contra JPCONNECT:', err.message);
+    return null;
+  }
+}
+
+function escaparRegex(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Documento local del usuario (la base de pizzarraia es la dueña de las
+// sesiones y las imágenes). Si la cuenta del ecosistema todavía no tiene
+// documento acá, se crea sin contraseña: el ingreso lo maneja JPCONNECT.
+async function usuarioLocalDe(fscUser) {
+  const username = String(fscUser.username || '').trim();
+  if (!username) return null;
+  const rx = new RegExp('^' + escaparRegex(username) + '$', 'i');
+  let user = await User.findOne({ username: rx });
+  if (!user) {
+    const datos = { username: username.toLowerCase(), role: fscUser.role || 'USUARIO' };
+    if (fscUser.email) datos.email = String(fscUser.email).toLowerCase();
+    user = await User.create(datos);
+    console.log('[FSC] usuario local creado para la cuenta del ecosistema:', user.username);
+  } else if (fscUser.email && !user.email) {
+    User.updateOne({ _id: user._id }, { $set: { email: String(fscUser.email).toLowerCase() } }).catch(() => {});
+  }
+  return user;
+}
+
+app.use(async (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.substring(7);
@@ -65,6 +125,20 @@ app.use((req, res, next) => {
     if (userId) {
       req.userId = userId;
       req.sessionToken = token;
+    } else {
+      const fscUser = await verificarTokenFSC(token);
+      if (fscUser) {
+        req.fscUser = fscUser;
+        try {
+          const local = await usuarioLocalDe(fscUser);
+          if (local) {
+            req.userId = local._id;
+            req.user = local;
+          }
+        } catch (err) {
+          console.error('[FSC] error mapeando el usuario local:', err.message);
+        }
+      }
     }
   }
   next();
@@ -85,8 +159,8 @@ const isAuthenticated = (req, res, next) => {
 // Middleware to check admin permissions
 const isAdmin = async (req, res, next) => {
   try {
-    const user = await User.findById(req.userId);
-    if (!user || !user.permissions || !user.permissions.pizarraia || !user.permissions.pizarraia.canAccessAdmin) {
+    const user = req.user || await User.findById(req.userId).lean();
+    if (!user || !User.permisosDe(user).canAccessAdmin) {
       return res.status(403).json({ error: 'No tienes permisos de administrador' });
     }
     next();
@@ -172,8 +246,11 @@ app.post('/pizzarraia/api/logout', (req, res) => {
 // Get current user
 app.get('/pizzarraia/api/user', isAuthenticated, async (req, res) => {
   try {
-    const user = await User.findById(req.userId).select('-password');
-    res.json({ user });
+    const user = await User.findById(req.userId).select('-password').lean();
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+    // Los permisos salen normalizados (las dos formas del schema resueltas):
+    // las páginas leen `user.permissions.canAccessAdmin` / `canCreateSessions`.
+    res.json({ user: Object.assign({}, user, { permissions: User.permisosDe(user) }) });
   } catch (error) {
     res.status(500).json({ error: 'Error en el servidor' });
   }
@@ -187,7 +264,7 @@ app.get('/pizzarraia/api/user', isAuthenticated, async (req, res) => {
 // Autorización: clave interna de fscauth o sesión FSC válida del propio usuario
 // (se verifica contra fscauth; esta app todavía tiene su propio login local).
 // ============================================================
-const FSCAUTH_VERIFY_URL = (process.env.FSCAUTH_URL || 'https://vps-4455523-x.dattaweb.com/fscauth') + '/api/auth/verify';
+const FSCAUTH_VERIFY_URL = FSC_AUTH_API.replace(/\/+$/, '') + '/auth/verify';
 
 async function fscAssetsAuthorized(req, username) {
   const internal = process.env.FSC_INTERNAL_KEY || process.env.JWT_SECRET || '';
@@ -216,7 +293,7 @@ app.get('/pizzarraia/api/fsc/assets', async (req, res) => {
     const safe = username.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const rx = new RegExp('^' + safe + '$', 'i');
 
-    const sessions = await Session.find({ creatorUsername: rx }).sort({ createdAt: -1 }).limit(200).lean();
+    const sessions = await Session.find({ creatorUsername: rx }).select('sessionId name description isPublic createdAt').sort({ createdAt: -1 }).limit(200).lean();
     const images = await Image.find({ username: rx }).select('_id title description createdAt').sort({ createdAt: -1 }).limit(200).lean();
 
     const groups = [];
@@ -258,13 +335,13 @@ app.get('/pizzarraia/api/fsc/assets', async (req, res) => {
 app.get('/pizzarraia/api/check-session', async (req, res) => {
   if (req.userId) {
     try {
-      const user = await User.findById(req.userId).select('-password');
+      const user = await User.findById(req.userId).select('-password').lean();
       res.json({
         authenticated: true,
         user: {
           id: user._id,
           username: user.username,
-          permissions: user.permissions?.pizarraia
+          permissions: User.permisosDe(user)
         }
       });
     } catch (error) {
@@ -1208,10 +1285,16 @@ io.on('connection', (socket) => {
     }
   });
 
+  // El panel de admin se suscribe para recibir solo las estadisticas
+  socket.on('watch_analytics', function () {
+    socket.join('fsc_admins');
+  });
+
   socket.on('chat_message', function (data) {
-    // Reenviar el mensaje a todos los clientes de la misma sesión
-    io.emit('chat_message', data);
-    console.log('Chat message from', data.username, ':', data.message);
+    // SOLO a la sala de la sesion del emisor (antes se emitia a TODOS los clientes del server)
+    const sessionId = socket.sessionId || (data && data.sessionId) || '0';
+    io.to(sessionId).emit('chat_message', data);
+    console.log('Chat message from', data.username, '-> sesion', sessionId, ':', data.message);
   });
 
   // Handle layer management
@@ -1336,8 +1419,8 @@ io.on('connection', (socket) => {
         stats.uniqueUsers = stats.usersList.length;
         await stats.save();
 
-        // Broadcast updated stats to all admin clients
-        io.emit('analytics_update', {
+        // Solo a esa sesion y a los paneles de admin suscritos (antes: a TODOS los clientes)
+        const analyticsPayload = {
           sessionId: sessionId || '0',
           stats: {
             totalInteractions: stats.totalInteractions,
@@ -1347,7 +1430,9 @@ io.on('connection', (socket) => {
             uniqueUsers: stats.uniqueUsers,
             hour: stats.hour
           }
-        });
+        };
+        io.to(sessionId || '0').emit('analytics_update', analyticsPayload);
+        io.to('fsc_admins').emit('analytics_update', analyticsPayload);
       }
     } catch (error) {
       console.error('Error tracking interaction:', error);

@@ -778,8 +778,9 @@ function draw() {
         isCursorOnly: true // Flag para indicar que es solo actualización de cursor
     };
 
-    // Enviar posición del cursor cada frame si el envío de sockets está habilitado
-    if (config.sockets.sendEnabled && socket && socket.connected) {
+    // Enviar posición del cursor: como mucho 20/s (antes 60/s: uno por frame)
+    if (config.sockets.sendEnabled && socket && socket.connected && (Date.now() - (window.__lastCursorEmit || 0)) >= 50) {
+        window.__lastCursorEmit = Date.now();
         socket.emit('cursor', cursorData);
     }
 

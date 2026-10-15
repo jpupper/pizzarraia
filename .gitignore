@@ -1,1 +1,7 @@
 node_modules/
+
+# Variables de entorno (credenciales reales - nunca versionar)
+.env
+
+# Deploy scripts (hardcodean credenciales del FTP y del VPS - no versionar)
+deploy_scripts/

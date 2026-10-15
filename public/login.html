@@ -3,44 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - PizarraCollab</title>
+    <title>Iniciar Sesión — PizarraCollab</title>
+    <meta name="description" content="El ingreso de PizarraCollab es el de JPCONNECT, el pasaporte del ecosistema Fullscreen Code.">
     <link rel='stylesheet' href='css/style.css' />
-    <link rel='stylesheet' href='css/auth.css' />
 </head>
 <body>
-    <div class="auth-container">
-        <div class="auth-header">
-            <h1>🎨 PizarraCollab</h1>
-            <p>Inicia sesión para continuar</p>
-        </div>
-
-        <div id="errorMessage" class="error-message"></div>
-        <div id="successMessage" class="success-message"></div>
-
-        <form id="loginForm">
-            <div class="form-group">
-                <label for="username">Usuario</label>
-                <input type="text" id="username" name="username" required 
-                       placeholder="Ingresa tu usuario" autocomplete="username">
-            </div>
-
-            <div class="form-group">
-                <label for="password">Contraseña</label>
-                <input type="password" id="password" name="password" required 
-                       placeholder="Ingresa tu contraseña" autocomplete="current-password">
-            </div>
-
-            <button type="submit" class="btn-primary">Iniciar Sesión</button>
-        </form>
-
-        <div class="auth-footer">
-            <p>¿No tienes cuenta?</p>
-            <a href="register.html">Crear una cuenta nueva</a>
-        </div>
+    <!-- PizarraCollab NO tiene formulario de login propio (regla §0.6 del manual
+         FSC): esta página es sólo un puente hacia el login unificado de
+         JPCONNECT. El redirect lo hace js/auth.js, igual que en jpshadereditor y
+         artedigitaldata; si el JS está bloqueado queda el link de abajo. -->
+    <div class="auth-bridge">
+        <h1>PizarraCollab</h1>
+        <p>Te estamos llevando al ingreso del ecosistema…</p>
+        <a id="loginDirecto" href="https://fullscreencode.com/jpconnect/login.html">Entrar con JPCONNECT</a>
     </div>
 
     <script src="js/config.js"></script>
-    <script src="js/login.js"></script>
+    <script src="js/auth.js"></script>
   <!-- botón FSC: solo el isotipo, abajo a la izquierda -->
   <script src="https://vps-4455523-x.dattaweb.com/fscauth/js/fsc-button.js?v=10"></script>
 </body>

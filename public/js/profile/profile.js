@@ -62,7 +62,7 @@ async function checkAuth() {
         const data = await response.json();
         
         if (!data.authenticated) {
-            window.location.href = 'login.html';
+            irALogin('profile.html');
             return;
         }
         
@@ -72,7 +72,7 @@ async function checkAuth() {
         loadUserSessions();
     } catch (error) {
         console.error('Error checking auth:', error);
-        window.location.href = 'login.html';
+        irALogin('profile.html');
     }
 }
 
@@ -479,20 +479,15 @@ function closeModal() {
 }
 
 async function logout() {
-    try {
-        await fetch(`${config.API_URL}/api/logout`, { 
-            method: 'POST',
-            headers: config.getAuthHeaders()
-        });
-        
-        // Remove token from localStorage
-        config.removeToken();
-        
-        window.location.href = 'login.html';
-    } catch (error) {
-        console.error('Error logging out:', error);
-        window.location.href = 'login.html';
+    // El logout del ecosistema lo hace JPCONNECT: revoca el token en el central
+    // y recién después limpia la copia local. Volver al login desde acá sería un
+    // rebote (si la cookie del central sigue viva, el SSO lo devuelve adentro).
+    if (typeof window.cerrarSesionFSC === 'function') {
+        window.cerrarSesionFSC(config.BASE_URL + '/');
+        return;
     }
+    config.removeToken();
+    window.location.href = config.BASE_URL + '/';
 }
 
 function escapeHtml(text) {

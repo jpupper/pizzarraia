@@ -1045,28 +1045,19 @@ function showUserNotLoggedIn() {
 
 // Función para cerrar sesión
 async function logoutUser() {
-  try {
-    await fetch(`${config.API_URL}/api/logout`, {
-      method: 'POST',
-      headers: config.getAuthHeaders()
-    });
-
-    // Remove token from localStorage
-    config.removeToken();
-
-    currentUser = null;
-    showUserNotLoggedIn();
-
-    // Actualizar el nombre del chat después de cerrar sesión
-    if (typeof window.updateChatUsername === 'function') {
-      window.updateChatUsername();
-    }
-
-    if (typeof toast !== 'undefined') toast.success('Sesión cerrada exitosamente');
-  } catch (error) {
-    console.error('Error al cerrar sesión:', error);
-    if (typeof toast !== 'undefined') toast.error('Error al cerrar sesión');
+  // El logout es el de JPCONNECT: revoca el token en el central y limpia la
+  // copia local (antes se le pegaba a /api/logout, que ya no cierra nada del
+  // ecosistema y dejaba la cookie del central viva).
+  if (typeof window.cerrarSesionFSC === 'function') {
+    window.cerrarSesionFSC(config.BASE_URL + '/');
+    return;
   }
+  config.removeToken();
+  config.removeUser();
+  currentUser = null;
+  showUserNotLoggedIn();
+  if (typeof window.updateChatUsername === 'function') window.updateChatUsername();
+  if (typeof toast !== 'undefined') toast.success('Sesión cerrada exitosamente');
 }
 
 // Función para abrir el modal de guardar imagen
@@ -1389,9 +1380,30 @@ function closeWelcomeModal() {
   }
 }
 
+// La pantalla de bienvenida ya no usa manejadores inline (regla §0.1 del
+// manual FSC): la cruz, el click en el fondo y Escape cierran el modal.
+function setupWelcomeModal() {
+  const modal = document.getElementById('welcomeModal');
+  if (!modal || modal.dataset.wired === '1') return;
+  modal.dataset.wired = '1';
+
+  const cerrar = document.getElementById('welcomeClose');
+  if (cerrar) cerrar.addEventListener('click', closeWelcomeModal);
+
+  // Click en el fondo oscuro (fuera de la tarjeta) también cierra.
+  modal.addEventListener('click', function (event) {
+    if (event.target === modal) closeWelcomeModal();
+  });
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && modal.classList.contains('active')) closeWelcomeModal();
+  });
+}
+
 // Función para mostrar el modal de bienvenida
 function checkWelcomeModal() {
   const modal = document.getElementById('welcomeModal');
+  setupWelcomeModal();
 
   // Verificar si hay parámetro modalintro=true en la URL (fuerza mostrar)
   const urlParams = new URLSearchParams(window.location.search);
@@ -1400,6 +1412,21 @@ function checkWelcomeModal() {
 
   // Verificar si el usuario está logueado
   const isUserLoggedIn = currentUser !== null && currentUser !== undefined;
+
+  // El botón principal de la pantalla lleva SIEMPRE al perfil: con sesión va
+  // directo, sin sesión pasa primero por el login unificado (JPCONNECT).
+  const principal = document.getElementById('welcomePrimary');
+  if (principal) {
+    if (isUserLoggedIn) {
+      principal.textContent = 'Mi Perfil';
+      principal.setAttribute('href', 'profile.html');
+    } else {
+      principal.textContent = 'Entrar con JPCONNECT';
+      principal.setAttribute('href', (window.pizarraAuth && window.pizarraAuth.urlLogin)
+        ? window.pizarraAuth.urlLogin('profile.html')
+        : 'login.html');
+    }
+  }
 
   if (modal) {
     // NO mostrar el modal si:
@@ -1631,6 +1658,7 @@ window.logoutUser = logoutUser;
 window.saveImageToServer = saveImageToServer;
 window.renderLayerButtons = renderLayerButtons;
 window.closeWelcomeModal = closeWelcomeModal;
+window.setupWelcomeModal = setupWelcomeModal;
 window.loadSessionInfo = loadSessionInfo;
 window.loadInitialLayers = loadInitialLayers;
 // handleSessionUpdate ahora está en updateSessionDraw.js

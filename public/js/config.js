@@ -145,6 +145,18 @@ const config = {
   }
 };
 
+// ============================================================
+// JPCONNECT — el acceso unificado del ecosistema Fullscreen
+// ============================================================
+// El login de esta app ES el de JPCONNECT (no hay formulario propio):
+//   * páginas humanas (login, registro, perfil) -> dominio público
+//   * API (sso-check, verify, logout)           -> SIEMPRE el VPS directo
+// Regla §1.b del manual FSC: el salto 307 del .htaccess borra el header
+// Authorization, así que la API nunca se arma con FSCAUTH_URL.
+config.FSCAUTH_URL = 'https://fullscreencode.com/jpconnect';
+config.FSCAUTH_API = 'https://vps-4455523-x.dattaweb.com/jpconnect/api';
+config.FSC_ORIGIN = APP_PATH;   // lo que identifica a esta app ante JPCONNECT
+
 // Token management functions
 config.saveToken = function (token) {
   localStorage.setItem('pizarracollab_token', token);
@@ -189,4 +201,8 @@ config.removeUser = function () {
 };
 
 // Exponer la configuración globalmente
+// El estándar FSC exige el nombre `window.CONFIG` (auth.js y los módulos
+// compartidos lo buscan así); la app venía usando `config`, que se mantiene
+// como alias para no romper las páginas existentes.
+window.CONFIG = config;
 window.config = config;
