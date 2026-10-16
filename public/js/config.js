@@ -163,7 +163,13 @@ config.saveToken = function (token) {
 };
 
 config.getToken = function () {
-  return localStorage.getItem('pizarracollab_token');
+  // La sesión puede estar con la clave de esta app o con las del ECOSISTEMA
+  // ('token', la que dejan el login unificado de JPCONNECT y el include del fondo):
+  // se adoptan las dos y se descarta el texto 'undefined' de un SSO incompleto.
+  var t = localStorage.getItem('pizarracollab_token') || localStorage.getItem('token') || '';
+  t = String(t).replace(/^"|"$/g, '');
+  if (!t || t === 'undefined' || t === 'null' || t.split('.').length !== 3) return null;
+  return t;
 };
 
 config.removeToken = function () {

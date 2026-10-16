@@ -10,7 +10,7 @@
 <body>
     <!-- PizarraCollab NO tiene formulario de login propio (regla §0.6 del manual
          FSC): esta página es sólo un puente hacia el login unificado de
-         JPCONNECT. El redirect lo hace js/auth.js, igual que en jpshadereditor y
+         JPCONNECT. El redirect lo hace js/auth.js?v=3, igual que en jpshadereditor y
          artedigitaldata; si el JS está bloqueado queda el link de abajo. -->
     <div class="auth-bridge">
         <h1>PizarraCollab</h1>
@@ -18,8 +18,8 @@
         <a id="loginDirecto" href="https://fullscreencode.com/jpconnect/login.html">Entrar con JPCONNECT</a>
     </div>
 
-    <script src="js/config.js"></script>
-    <script src="js/auth.js"></script>
+    <script src="js/config.js?v=3"></script>
+    <script src="js/auth.js?v=3"></script>
   <!-- botón FSC: solo el isotipo, abajo a la izquierda -->
   <script src="https://vps-4455523-x.dattaweb.com/fscauth/js/fsc-button.js?v=10"></script>
 </body>

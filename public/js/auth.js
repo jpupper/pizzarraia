@@ -55,8 +55,11 @@
   // vuelve a la página actual, sin los parámetros del SSO.
   function urlDeRetorno(destino) {
     // Sin destino se vuelve a la MISMA página (con su ?sesion=… si la tenía).
+    // Se resuelve contra la carpeta ACTUAL del usuario: la app se sirve en
+    // /pizarraia/ (y el hosting tiene además /pizzarraia/, un alias viejo), así que
+    // volver a una ruta fija sacaba al usuario de la carpeta donde estaba.
     var url = destino
-      ? new URL(destino, window.location.origin + config.BASE_URL + '/')
+      ? new URL(destino, window.location.href)
       : new URL(window.location.href);
     url.searchParams.delete('token');
     url.searchParams.delete('username');

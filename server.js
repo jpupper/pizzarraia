@@ -32,6 +32,34 @@ mongoose.connect(MONGODB_URI)
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 
+// CORS: lista blanca de ORÍGENES del ecosistema (mismo criterio que el
+// centralizador JPCONNECT). El front de esta app se sirve desde el FTP
+// (fullscreencode.com/pizarraia/) y llama a la API en el VPS: sin esta cabecera
+// el navegador bloquea /api/check-session y el usuario logueado rebota al login.
+const ORIGENES_FSC = [
+  'https://fullscreencode.com',
+  'https://www.fullscreencode.com',
+  'https://artedigitaldata.com',
+  'https://www.artedigitaldata.com',
+  'https://vuelapelucas3000.com',
+  'https://www.vuelapelucas3000.com',
+  'https://vuelapelucas3000.com.ar',
+  'https://www.vuelapelucas3000.com.ar',
+  'https://vps-4455523-x.dattaweb.com'
+];
+const esOrigenLocal = (o) => /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\]|192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)/.test(String(o));
+
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true);
+    if (ORIGENES_FSC.includes(origin) || esOrigenLocal(origin)) return cb(null, true);
+    return cb(null, false);
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
+
 // Session storage in memory
 const activeSessions = new Map();
 
